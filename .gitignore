@@ -1,0 +1,6 @@
+uploads/*
+data/store.json
+data/store.json.tmp
+.htaccess
+includes/config.php
+error_log
