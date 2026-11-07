@@ -1,5 +1,5 @@
 <?php
-require __DIR__ . '/includes/init.php';
+require dirname(__DIR__) . '/includes/init.php';
 require_login();
 
 $user = current_user();
@@ -25,7 +25,7 @@ function borrar_archivo($path) {
     if (!$path || strpos((string) $path, 'uploads/') !== 0) {
         return;
     }
-    $full = ROOT . '/' . $path;
+    $full = ROOT . '/public/' . $path;
     if (is_file($full)) {
         unlink($full);
     }

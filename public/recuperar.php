@@ -1,5 +1,5 @@
 <?php
-require __DIR__ . '/includes/init.php';
+require dirname(__DIR__) . '/includes/init.php';
 if (current_user()) {
     redirect('panel.php');
 }

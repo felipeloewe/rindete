@@ -1,5 +1,5 @@
 <?php
-require __DIR__ . '/includes/init.php';
+require dirname(__DIR__) . '/includes/init.php';
 require_role('administrador');
 
 $company = company_of();

@@ -1,5 +1,5 @@
 <?php
-require __DIR__ . '/includes/init.php';
+require dirname(__DIR__) . '/includes/init.php';
 require_login();
 
 $user = current_user();

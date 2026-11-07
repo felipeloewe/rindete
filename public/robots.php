@@ -1,5 +1,5 @@
 <?php
-require __DIR__ . '/includes/init.php';
+require dirname(__DIR__) . '/includes/init.php';
 
 header('Content-Type: text/plain; charset=UTF-8');
 $base = base_path();

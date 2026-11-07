@@ -687,7 +687,7 @@ function save_upload($field, $companyId) {
     if ($mime && !in_array($mime, $accepted, true)) {
         return ['ok' => false, 'error' => 'El archivo no coincide con su tipo.'];
     }
-    $dir = ROOT . '/uploads';
+    $dir = ROOT . '/public/uploads';
     if (!is_dir($dir)) {
         mkdir($dir, 0775, true);
     }

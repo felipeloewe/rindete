@@ -235,7 +235,7 @@ function factura_guardar_formato($companyId, array $archivo) {
         return ['ok' => true, 'path' => ''];
     }
     $ext = strtolower(pathinfo((string) $archivo['name'], PATHINFO_EXTENSION));
-    $dir = ROOT . '/uploads';
+    $dir = ROOT . '/public/uploads';
     if (!is_dir($dir)) {
         mkdir($dir, 0775, true);
     }
@@ -442,7 +442,7 @@ function factura_guardar_archivo($companyId, $requestId, $etiqueta, array $archi
         return $revision;
     }
     $ext = strtolower(pathinfo((string) $archivo['name'], PATHINFO_EXTENSION));
-    $dir = ROOT . '/uploads';
+    $dir = ROOT . '/public/uploads';
     if (!is_dir($dir)) {
         mkdir($dir, 0775, true);
     }

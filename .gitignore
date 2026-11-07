@@ -1,6 +1,8 @@
-uploads/*
+public/uploads/*
+!public/uploads/.gitkeep
 data/store.json
 data/store.json.tmp
 .htaccess
+!public/.htaccess
 includes/config.php
 error_log

@@ -1,6 +1,6 @@
 <?php
-require __DIR__ . '/includes/init.php';
-require __DIR__ . '/includes/sitio.php';
+require dirname(__DIR__) . '/includes/init.php';
+require dirname(__DIR__) . '/includes/sitio.php';
 
 header('Content-Type: application/xml; charset=UTF-8');
 echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";

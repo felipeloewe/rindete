@@ -1,5 +1,5 @@
 <?php
-require __DIR__ . '/includes/init.php';
+require dirname(__DIR__) . '/includes/init.php';
 
 $empresa = factura_empresa_por_token($_GET['t'] ?? '');
 if (!$empresa) {
