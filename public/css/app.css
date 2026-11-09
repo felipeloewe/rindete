@@ -1,12 +1,13 @@
 :root {
     color-scheme: light;
-    --ink: #03285b;
-    --sand: #eef3f7;
-    --line: #c5d4e2;
-    --accent: #066bf1;
+    --ink: #243044;
+    --sand: #cceeff;
+    --line: #9cd7e7;
+    --accent: #3370ff;
     --bad: #9b2c2c;
-    --header: #03285b;
-    --ok: #c1ff7f;
+    --header: #ffffff;
+    --ok: #d8f0d2;
+    --ok-ink: #178a12;
 }
 
 * { box-sizing: border-box; }
@@ -27,15 +28,16 @@ a { color: var(--accent); }
     gap: 1rem;
     padding: 1rem 1.25rem;
     background: var(--header);
+    border-bottom: 1px solid var(--line);
 }
 
-.marca { font-weight: 700; text-decoration: none; }
+.marca { font-weight: 700; text-decoration: none; color: var(--accent); }
 
 nav { display: flex; flex-wrap: wrap; gap: 1rem; }
 
-.top a { color: #f4f8fc; text-decoration: none; }
+.top a { color: var(--accent); text-decoration: none; }
 
-.top a:hover { color: white; }
+.top a:hover { color: #275ddc; }
 
 main { max-width: 56rem; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
 
@@ -46,7 +48,7 @@ main { max-width: 56rem; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
     padding: 1.25rem;
 }
 
-.bloque, .tabla { box-shadow: 0 1px 2px rgba(3, 40, 91, 0.05); }
+.bloque, .tabla { box-shadow: 0 10px 28px rgba(51, 112, 255, 0.08); }
 
 h1 { margin-top: 0; font-size: 1.6rem; color: var(--ink); }
 
@@ -87,7 +89,7 @@ form.plano { background: none; border: 0; padding: 0; margin: 0; }
 .tabla small { display: block; color: #5d6f86; }
 
 .chip { display: inline-block; border-radius: 999px; padding: 0.15rem 0.6rem; font-size: 0.82rem; }
-.chip-ok { background: var(--ok); color: var(--ink); }
+.chip-ok { background: var(--ok); color: var(--ok-ink); }
 .chip-warn { background: #fff4d6; color: #6a4b12; }
 
 .check input { display: inline; width: auto; margin-right: 0.4rem; }
@@ -110,12 +112,12 @@ fieldset { border: 1px solid var(--line); border-radius: 10px; margin: 0 0 0.9re
     cursor: pointer;
 }
 
-.boton:hover { background: #0558c9; color: white; }
+.boton:hover { background: #275ddc; color: white; }
 
-.boton.claro:hover { background: #eef5ff; color: var(--accent); }
+.boton.claro:hover { background: #eef3ff; color: var(--accent); }
 
 .aviso { padding: 0.7rem 0.85rem; border-radius: 8px; }
-.aviso.ok { background: var(--ok); color: var(--ink); }
+.aviso.ok { background: var(--ok); color: var(--ok-ink); }
 .aviso.mal { background: #fde8e8; color: var(--bad); }
 
 .ficha { display: grid; gap: 0.75rem; margin: 0; }
