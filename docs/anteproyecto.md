@@ -1,181 +1,189 @@
-# Rindete — Anteproyecto de alcance
+# Rindete — Etapas del alcance
 
-Actualizado el 9 de noviembre de 2026. Incorpora el listado de inicios, parametrización, rendición, reportería y asientos.
+Actualizado el 9 de noviembre de 2026. Los puntos ya acordados siguen todos. Aquí quedan ordenados en siete etapas y, en cada una, qué hace cada pieza. La propuesta se arma después, sobre este orden.
 
-Rindete cubre cómo nace una rendición, con qué reglas se carga, qué pasa con el saldo y cómo se ve en estados de cuenta, dashboards, cierres de mes y asientos. El listado queda incluido entero. Este documento lo ordena; no deja piezas fuera.
+La parametrización va primero porque el inicio, la carga y el cierre leen esas reglas.
+
+| Etapa | Qué resuelve | Qué deja lista |
+| --- | --- | --- |
+| 1. Parametrización | Reglas, cuentas, tarjetas, documentos y conexiones. | Parámetros que el resto de las etapas consulta. |
+| 2. Inicio | Cómo nace lo que se va a rendir o a pagar. | Fondo, rendición autorizada, documento, cargo de tarjeta, nómina, movimiento de caja o pago de socio. |
+| 3. Carga | Gastos, foto y clasificación. | Gastos confirmados, saldo recalculado y pre-asiento propuesto. |
+| 4. Saldos | Qué pasa cuando sobra o falta. | Cierre pedido, o rendición cerrada y otra abierta con el saldo. |
+| 5. Seguimiento | Estados de cuenta y dashboards. | Lectura del saldo para usuario, caja, tarjeta y socios. |
+| 6. Flujo de pagos | Lo que tesorería paga. | Pago en proceso o planilla banco emitida. |
+| 7. Cierre de mes | Asientos y pendientes. | Mes cerrado, asientos disponibles por API y saldos que siguen abiertos. |
 
 ## Actores
 
-| Actor | Participa en |
+| Actor | Qué hace |
 | --- | --- |
-| Usuario que rinde | Carga la rendición, sus gastos, montos y fotos. |
-| Aceptador | Flujo de aceptación y reglas generales de la solicitud. |
-| Tesorería | Procesa fondos solicitados, el documento único y la planilla banco. |
-| Usuario autorizado | Rinde sin solicitud, dentro de parámetros máximos. |
-| Usuario con privilegios | Documento único y tarjeta. En una tarjeta puede haber más de uno. |
-| Caja | Caja chica centralizada, fondos a usuarios y reposición. |
-| Socio | Paga varios documentos y centraliza formas de pago. |
-| Empresa o entidad | Dueña de fondos, tarjetas, caja y cuentas. Los socios recuperan rendiciones hacia distintas entidades. |
+| Usuario que rinde | Pide fondos cuando corresponde y carga gastos, montos y fotos. |
+| Aceptador | Recorre el flujo de aceptación en la solicitud y en el cierre pedido por saldo negativo. |
+| Tesorería | Procesa la entrega del fondo, el documento único y la planilla banco. |
+| Usuario autorizado | Abre una rendición sin solicitud, dentro de sus parámetros. |
+| Usuario con privilegios | Registra el documento único y opera tarjetas. En una tarjeta puede haber más de uno. |
+| Caja | Entrega fondos a usuarios, los centraliza y repone desde caja chica. |
+| Socio | Paga varios documentos, con formas de pago centralizadas. |
+| Empresa o entidad | Dueña de fondos, tarjetas, caja y cuentas. Recibe la recuperación de los socios. |
 
-## Siete formas de iniciar
+## Etapa 1. Parametrización
 
-Cada inicio trae su recorrido y el parámetro que el listado le asoció.
+Se mantiene antes de operar. Una carga, un asiento o un pago usa solo lo que esta etapa tiene vigente.
+
+### Cuentas contables genéricas
+
+Guarda las cuentas de uso general y la relación entre clasificación de gasto y cuenta. Cuando la carga confirma un gasto, arma el pre-asiento con esa cuenta. El pre-asiento espera el asiento de centralización del mes.
+
+### Cuentas contables de remuneraciones
+
+Guarda las cuentas de viáticos, asignaciones y bienes. Las filtra por el usuario que rinde, para que el traspaso llegue a su liquidación de sueldo. Si ese usuario tiene un concepto propio, el traspaso usa el concepto del usuario.
+
+### Conexiones API
+
+Registra cada sistema externo y para qué etapa sirve. Una conexión puede alimentar el pull de asientos, el flujo de pagos, o los dos. Las etapas 6 y 7 usan solo conexiones vigentes.
+
+### Flujo de aceptación y reglas generales
+
+Define quién acepta y en qué orden. Define también qué condición detiene el paso: monto sobre el máximo, tipo de gasto no permitido o usuario sin habilitación. Lo usan la solicitud de fondos y el cierre que pide un saldo negativo.
+
+### Tarjeta corporativa
+
+Mantiene las tarjetas de la empresa, marca los gastos que son propios de la tarjeta y fija los montos aceptados. La validación de un pago con tarjeta compara el cargo contra esta mantención.
+
+### Gastos aceptados
+
+Lista, para cada usuario que rinde, los gastos que puede cargar. En la carga, un gasto fuera de esa lista queda detenido.
+
+### Tipos de documento
+
+Administra vouchers, Transbank, sin comprobante y los demás tipos que se den de alta. Cada tipo tiene un monto aceptado. La carga ofrece solo esos tipos y detiene el gasto que supera el monto del tipo.
+
+## Etapa 2. Inicio de la rendición
+
+Hay siete caminos. Cada uno deja un objeto distinto para la carga o para tesorería.
 
 ### 1. Solicitud de fondos por rendir
 
-Recorrido: solicitud, aceptación, procesa tesorería, fondo por rendir.
-
-Parámetros propios:
-
-- Montos máximos de rendición.
-- Tipos de gasto aceptados e ítems específicos.
-
-Usa también el flujo de aceptación y las reglas generales.
+1. El usuario ingresa la solicitud: monto y motivo.
+2. La aceptación corre el flujo general. Revisa el monto máximo de rendición y que el tipo de gasto o el ítem específico esté permitido. Si una regla falla, la solicitud se detiene ahí.
+3. Tesorería toma lo aceptado y procesa la entrega del dinero.
+4. Al terminar, queda un fondo por rendir a nombre de quien rinde. El saldo inicial es el monto entregado.
 
 ### 2. Usuario autorizado a rendir sin solicitud
 
-Recorrido: usuario autorizado, parámetros máximos, sujeto a viáticos y asignación (ítems de remuneración).
-
-Parámetros propios:
-
-- Parámetros por usuario, cuando no son los generales.
-- Concepto de remuneraciones por usuario, cuando no es el general.
+1. El usuario autorizado abre la rendición directo, sin solicitud previa.
+2. El sistema aplica los parámetros máximos. Si el usuario tiene parámetros propios, usa esos. Si no, usa los generales.
+3. La rendición queda sujeta a viáticos y asignación, tratados como ítems de remuneración.
+4. Si el usuario tiene un concepto de remuneración propio, la rendición usa ese concepto. Si no, usa el general.
 
 ### 3. Documento único
 
-Recorrido: documento único, forma de pago, informa, procesa tesorería.
-
-Parámetros propios:
-
-- Usuarios con privilegios.
-- Comprobante de pago efectivo (contado).
+1. Un usuario con privilegio registra un solo documento y elige la forma de pago.
+2. Si la forma de pago es efectivo, exige el comprobante de pago al contado antes de seguir.
+3. El documento informa a tesorería.
+4. Tesorería lo procesa y el documento queda pagado o en el flujo de pagos, según el estado que tesorería le dé.
 
 ### 4. Tarjeta personal o corporativa
 
-Recorrido: usos de tarjeta personal o corporativa, pagos efectuados con tarjeta, y de ahí tres destinos: facturas por pagar con disminución (−), fondo por rendir de tarjeta, y validación.
-
-Parámetros propios:
-
-- Usuarios con privilegios, más de uno por tarjeta.
-- Flujo de gastos.
-- Flujo de DTE pagados, sin documento físico.
-
-La tarjeta corporativa, además, tiene mantención, gastos propios de la tarjeta y montos aceptados.
+1. Entran los pagos efectuados con tarjeta personal o corporativa.
+2. Cada pago produce tres resultados: disminuye facturas por pagar (−), abre un fondo por rendir de tarjeta, y queda en validación.
+3. La validación compara el pago con la mantención de la tarjeta, los gastos propios de la tarjeta y los montos aceptados.
+4. Operan la tarjeta los usuarios con privilegio. Puede haber más de uno por tarjeta.
+5. El flujo de gastos sigue hacia la carga, como cualquier rendición.
+6. El flujo de DTE pagados entra sin documento físico: el DTE ya pagado respalda el cargo.
+7. Lo que no calza después del pago queda para el dashboard de desviaciones ex-post.
 
 ### 5. Nómina de fondos solicitados
 
-Recorrido: nómina de fondos solicitados y planilla banco.
-
-Parámetro propio: control de documentos duplicados.
+1. Junta en una nómina los fondos ya solicitados y aceptados.
+2. Arma la planilla banco para pagar esa nómina.
+3. Antes de emitir la planilla, controla documentos duplicados. El documento repetido no entra a la planilla.
 
 ### 6. Caja chica centralizada
 
-Recorrido: fondos directos a usuarios, centralizados en caja. La reposición de fondos sale de la caja chica.
-
-Parámetro propio: auditoría de posible duplicidad de gasto.
+1. Entrega el fondo directo al usuario.
+2. Centraliza ese fondo en caja: el usuario lo recibe y la caja lleva el saldo.
+3. La reposición del fondo sale de la caja chica.
+4. Antes de reponer, audita una posible duplicidad de gasto y deja marcado el gasto que ya parece rendido, para revisión de caja.
 
 ### 7. Socios
 
-Recorrido: pago de múltiples documentos con distintas formas de pago. Esas formas de pago se centralizan.
+1. El socio paga varios documentos en un mismo acto.
+2. Cada documento puede usar una forma de pago distinta.
+3. Las formas de pago se centralizan: se mantienen una vez y se aplican a los documentos.
+4. El estado de cuenta de socios y el dashboard de recuperación leen esas formas de pago y la entidad a la que se recupera.
 
-Parámetro propio: formas de pago de socios.
+## Etapa 3. Carga de la rendición
 
-## Parametrización general
+La hace el usuario que rinde, sobre el fondo, la rendición autorizada, el cargo de tarjeta o el movimiento de caja que le corresponda.
 
-| Parámetro | Qué cubre |
+1. Abre la rendición y agrega gastos. Cada gasto lleva monto y foto.
+2. La foto obedece la parametrización: cuáles se piden y cómo se leen.
+3. El OCR lee la foto y propone los datos del documento. El usuario confirma o corrige antes de dejar el gasto.
+4. Selecciona tipo de documento, clasificación del gasto, centro de costo, sucursal y otros conceptos.
+5. El sistema detiene la línea cuando el gasto no está aceptado para ese usuario, cuando el monto supera el máximo de rendición o el monto del tipo de documento, o cuando falta el comprobante que la forma de pago exige.
+6. Sin comprobante solo sigue cuando ese tipo está parametrizado y el monto cabe en lo aceptado para el tipo.
+7. Cada gasto confirmado recalcula el saldo y propone el pre-asiento con la cuenta de su clasificación.
+
+## Etapa 4. Saldos
+
+El saldo es el monto por rendir menos los gastos confirmados. En una solicitud, el monto por rendir es el fondo entregado. En tarjeta, es el cargo validado. En la rendición que recibió un traspaso, es el saldo que llegó más el monto nuevo que se le haya sumado.
+
+| Situación | Qué hace |
 | --- | --- |
-| Cuentas contables genéricas | Cuentas de uso general y pre-asiento. |
-| Cuentas contables de remuneraciones | Filtro por el usuario que rinde, ligado a la liquidación de sueldo. |
-| Conexiones API | Integraciones disponibles para el sistema. |
-| Flujo de aceptación | Reglas generales de quién acepta y cuándo. |
-| Tarjeta corporativa | Mantención, gastos propios de la tarjeta y montos aceptados. |
-| Gastos aceptados | Filtro por el usuario que rinde. |
-| Tipos de documento | Vouchers, Transbank y sin comprobante, cada uno con montos aceptados. |
+| Saldo negativo | Los gastos superan lo que había por rendir. El sistema solicita el cierre. Esa solicitud entra al flujo de aceptación. Mientras nadie la acepta, la rendición sigue abierta y marcada con cierre pedido. |
+| Saldo positivo | Sobra monto. El sistema cierra esta rendición y abre una nueva con ese saldo. La nueva puede sumar un monto adicional, y ese monto pasa a formar parte de lo que hay que rendir. |
+| Saldo en cero | La rendición puede cerrarse cuadrada. No abre otra y no pide un cierre por exceso. |
 
-Los parámetros de cada inicio pisan al general cuando el listado dice «si no son generales»: parámetros por usuario y concepto de remuneraciones por usuario.
+El seguimiento de montos por rendir toma las rendiciones que siguen abiertas, incluidas las que nacieron de un traspaso.
 
-## Carga de la rendición
+## Etapa 5. Seguimiento
 
-La carga asigna gastos, monto y foto.
+Esta etapa lee. No entrega dinero y no contabiliza. Cada vista responde una pregunta distinta.
 
-- La foto se parametriza y se lee con OCR.
-- En cada gasto se elige tipo de documento, clasificación del gasto, centro de costo (CECO), sucursal y otros conceptos.
-- El tipo de documento respeta los tipos parametrizados: vouchers, Transbank, sin comprobante y el resto que se dé de alta, con sus montos aceptados.
-- Los gastos aceptados y los montos máximos filtran lo que ese usuario puede cargar.
-
-## Saldos
-
-| Saldo | Qué ocurre |
+| Vista | Qué hace |
 | --- | --- |
-| Negativo | Se solicita el cierre de la rendición. |
-| Positivo | Se cierra la rendición y el saldo pasa a una rendición nueva. Esa rendición nueva puede sumar un monto adicional a completar. |
+| Montos por rendir | Por usuario, muestra lo recibido, lo cargado y lo que falta. Incluye las rendiciones nuevas que arrastran saldo. |
+| EECC usuario | Lista entregas, gastos, cierres y saldo de ese usuario. El saldo coincide con el de sus rendiciones. |
+| EECC tarjeta del usuario | Lista cargos de sus tarjetas, lo validado, lo rendido y el fondo por rendir de tarjeta que sigue abierto. |
+| Desviaciones de tarjeta ex-post | Compara el pago de la tarjeta con lo rendido después y muestra la diferencia. |
+| Sumatoria | Suma el período por tipo de gasto y por tipo de documento. |
+| Remuneraciones | Muestra viáticos, asignaciones y bienes por usuario, y la desviación contra el concepto parametrizado. Esa desviación es la que después toma el asiento de traspaso. |
+| EECC agregado | Suma los estados de cuenta de los usuarios y conserva el detalle por persona. |
+| EECC caja chica | Muestra entregas a usuarios, reposiciones y saldo de la caja centralizada. |
+| EECC tarjeta de la empresa | Junta las tarjetas de la empresa: cargos, validación, fondos por rendir y desviaciones. |
+| EECC socios | Muestra documentos pagados, forma de pago y saldo por recuperar, separado por entidad. |
+| Socios por recuperar | Muestra qué rendiciones hay que recuperar desde socios hacia cada entidad. Incluye gastos de tarjeta o de bancos, según la empresa. |
 
-El seguimiento de montos por rendir muestra lo que sigue abierto después de ese traspaso.
+## Etapa 6. Flujo de pagos
 
-## Seguimiento y dashboards
+1. Reúne lo que tesorería tiene que pagar: fondos aceptados, documentos únicos informados y nóminas.
+2. El dashboard muestra cada pago como pendiente, en proceso o pagado.
+3. La planilla banco sale de la nómina que ya pasó el control de documentos duplicados.
+4. La API de pagos informa el estado a la conexión parametrizada para pagos.
+5. La reposición de caja chica se mueve dentro de la caja y no sale en la planilla banco.
+6. Los socios siguen con sus formas de pago centralizadas. El dashboard las muestra y no las reemplaza.
 
-| Vista | Qué muestra |
-| --- | --- |
-| Montos por rendir | Seguimiento de lo que cada usuario todavía tiene que rendir. |
-| Desviaciones de tarjeta ex-post | Desvíos de la tarjeta detectados después del pago. |
-| Sumatoria | Totales por tipo de gasto y por tipo de documento. |
-| Remuneraciones | Conceptos y desviaciones de viáticos, asignaciones y bienes. |
-| Socios por recuperar | Rendiciones por recuperar desde socios hacia distintas entidades. Incluye gastos con tarjeta o con bancos, según la empresa. |
-| Flujo de pagos | Dashboard del flujo de pagos, con API. |
+## Etapa 7. Cierre de mes y asientos
 
-## Estados de cuenta
+1. Toma las rendiciones del mes y sus pre-asientos.
+2. Arma los asientos por mes.
+3. El asiento de centralización junta esos movimientos y los lleva a contabilidad, con las cuentas genéricas de la clasificación.
+4. El asiento de traspaso mueve viáticos, asignaciones y bienes a la liquidación de sueldo del usuario que rinde, con la cuenta de remuneraciones de ese usuario.
+5. Cierra el mes. El cierre deja fijos los asientos del período.
+6. Los saldos que no se cerraron quedan como pendientes del mes. Siguen visibles en montos por rendir y en el estado de cuenta.
+7. El libro diario muestra los saldos contables de los asientos del mes.
+8. El pull de asientos deja esos asientos disponibles en la API para que el sistema contable los retire, por la conexión parametrizada.
 
-| Estado de cuenta | Quién o qué agrupa |
-| --- | --- |
-| EECC usuario | El usuario que rinde. |
-| EECC tarjeta del usuario | La tarjeta de ese usuario. |
-| EECC agregado | La suma por sobre los usuarios. |
-| EECC caja chica | La caja centralizada. |
-| EECC tarjeta de la empresa | Las tarjetas de la empresa. |
-| EECC socios | Los socios y lo que se les recupera. |
+## Lecturas que siguen abiertas a corrección
 
-## Cierre de mes y asientos
+El punto permanece dentro de la etapa aunque se ajuste la lectura.
 
-| Pieza | Para qué |
-| --- | --- |
-| Asientos por mes | Asientos del período. |
-| Cierres por mes | Cierre mensual de la rendición y sus saldos. |
-| Pendientes del mes | Saldos que siguen abiertos al cierre. |
-| Libro diario | Saldos contables día a día. |
-| Asiento de centralización | Centraliza la rendición en contabilidad. |
-| Asiento de traspaso | Pasa los conceptos de remuneraciones (viáticos, asignaciones, bienes) a la liquidación. |
-| Pre-asiento | Sale de las cuentas contables genéricas antes del asiento definitivo. |
-| Pull de asientos por API | Baja los asientos hacia o desde el sistema contable. |
+- «Más de uno por TC» está leído como más de un usuario con privilegio sobre la misma tarjeta.
+- El saldo negativo pide el cierre, y ese pedido lo confirma el flujo de aceptación.
+- El saldo positivo se traspasa a una rendición nueva, que puede recibir un monto adicional. En esta regla el sobrante no se devuelve en efectivo.
 
-Las cuentas usadas en esos asientos son las dos familias parametrizadas: genéricas y de remuneraciones. Las de remuneraciones se filtran por el usuario que rinde y por su liquidación de sueldo.
+## Siguiente paso
 
-## APIs
-
-| Superficie | Uso |
-| --- | --- |
-| Conexiones API | Parámetro general de integración. |
-| Pull de asientos | Intercambio de asientos. |
-| Flujo de pagos | Dashboard y API del circuito de pagos, incluida la planilla banco y lo que tesorería procesa. |
-
-## Controles de duplicidad
-
-- Nóminas: control de documentos duplicados.
-- Caja chica: auditoría de posible duplicidad de gasto.
-
-Son controles distintos. Uno mira el documento. El otro mira el gasto.
-
-## Lecturas usadas para no dejar huecos
-
-Estas tres lecturas ordenan frases del listado. El ítem sigue dentro del alcance aunque se ajuste la lectura.
-
-- En la tarjeta, «más de uno por TC» queda como más de un usuario con privilegio sobre la misma tarjeta.
-- El saldo negativo pide el cierre. Quién confirma ese cierre usa el flujo de aceptación.
-- El saldo positivo no se devuelve en efectivo dentro de esta regla: se traspasa a una rendición nueva, que puede recibir un monto adicional.
-
-## Orden para construir
-
-1. Parámetros generales y los siete inicios, con tesorería, caja, tarjeta y socios.
-2. Carga con foto, OCR, tipo de documento, clasificación, CECO, sucursal y conceptos.
-3. Saldos, traspaso a rendición nueva y seguimiento de montos por rendir.
-4. Dashboards y los seis estados de cuenta.
-5. Cierre de mes, asientos, pull de asientos y flujo de pagos por API.
+La propuesta se arma después, etapa por etapa, con este comportamiento.
