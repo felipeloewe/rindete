@@ -4,6 +4,7 @@
 <section class="bloque">
     <h1><?= esc($empresa['nombre'] ?? 'Tu empresa') ?></h1>
     <p>Hola, <?= esc($usuario['nombre'] ?? '') ?>. Esta es la cuenta de la empresa.</p>
+    <p><a class="boton" href="<?= base_url('gastos/nuevo') ?>">Registrar un gasto</a></p>
     <?php if ($empresa && $pais) : ?>
         <dl class="ficha">
             <div><dt>País</dt><dd><?= esc($pais['nombre']) ?></dd></div>
