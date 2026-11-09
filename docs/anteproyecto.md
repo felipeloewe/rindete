@@ -186,4 +186,4 @@ El punto permanece dentro de la etapa aunque se ajuste la lectura.
 
 ## Siguiente paso
 
-La propuesta se arma después, etapa por etapa, con este comportamiento.
+El documento para leer y compartir está en `docs/alcance-siete-etapas.pdf`. La propuesta se arma después, etapa por etapa, con este comportamiento.
