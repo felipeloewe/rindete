@@ -1,107 +1,181 @@
 # Rindete — Anteproyecto de alcance
 
-Borrador del 9 de noviembre de 2026. Fija el circuito que ya está dicho: una empresa entrega fondos por rendir y el trabajador rinde esos gastos. No diseña pantallas, API ni base de datos.
+Actualizado el 9 de noviembre de 2026. Incorpora el listado de inicios, parametrización, rendición, reportería y asientos.
 
-El listado de ítems anunciado para cerrar el alcance no vino en la conversación. Lo que sigue es solo el flujo descrito. Cada ítem que se agregue entra en una de cuatro casillas: incluido, regla, decisión abierta o fuera de alcance.
-
-## Qué resuelve
-
-Rindete lleva la cuenta de un fondo que la empresa ya entregó. Para cada trabajador queda registrado cuánto se le dio, qué gastos lo justifican y cuánto saldo queda.
-
-El circuito parte con el dinero ya asignado. No parte con una solicitud del trabajador ni con un reembolso de gastos pagados de su bolsillo.
-
-## Definiciones
-
-- **Fondo por rendir.** Dinero que la empresa entrega a un trabajador y que debe justificarse con gastos.
-- **Gasto rendido.** Un desembolso cargado a un fondo, con su comprobante.
-- **Saldo.** Monto entregado menos la suma de gastos de ese fondo. No se edita a mano.
-- **Cierre.** Acto de la empresa que congela el fondo y su cuadre.
-
-Mientras el fondo está abierto, un saldo positivo es dinero todavía no justificado. Al cerrar, ese mismo saldo se lee como monto a devolver. Un saldo negativo solo aparece si se aceptan gastos por sobre el fondo; al cierre se lee como monto a reembolsar.
+Rindete cubre cómo nace una rendición, con qué reglas se carga, qué pasa con el saldo y cómo se ve en estados de cuenta, dashboards, cierres de mes y asientos. El listado queda incluido entero. Este documento lo ordena; no deja piezas fuera.
 
 ## Actores
 
-| Actor | En este circuito |
+| Actor | Participa en |
 | --- | --- |
-| Empresa | Entrega el fondo y cierra la rendición. |
-| Trabajador | Ve sus fondos y carga los gastos que los rinden. |
+| Usuario que rinde | Carga la rendición, sus gastos, montos y fotos. |
+| Aceptador | Flujo de aceptación y reglas generales de la solicitud. |
+| Tesorería | Procesa fondos solicitados, el documento único y la planilla banco. |
+| Usuario autorizado | Rinde sin solicitud, dentro de parámetros máximos. |
+| Usuario con privilegios | Documento único y tarjeta. En una tarjeta puede haber más de uno. |
+| Caja | Caja chica centralizada, fondos a usuarios y reposición. |
+| Socio | Paga varios documentos y centraliza formas de pago. |
+| Empresa o entidad | Dueña de fondos, tarjetas, caja y cuentas. Los socios recuperan rendiciones hacia distintas entidades. |
 
-«Usuario» es la cuenta de acceso. En esta etapa hay dos papeles: quien entrega y quien rinde. No hay un tercer actor (aprobador, tesorería o contabilidad) hasta que un ítem lo nombre.
+## Siete formas de iniciar
 
-## Objetos
+Cada inicio trae su recorrido y el parámetro que el listado le asoció.
 
-| Objeto | Qué guarda | Relación |
-| --- | --- | --- |
-| Empresa | Nombre de la organización que entrega los fondos. | Dueña de los fondos y de sus trabajadores. |
-| Trabajador | Persona que recibe un fondo y lo rinde. | Pertenece a una empresa. |
-| Fondo por rendir | Monto entregado, moneda, motivo, fecha de entrega, estado y saldo. | Un fondo es de una empresa y de un trabajador. |
-| Gasto | Fecha, concepto, monto, tipo de comprobante y número de comprobante. | Un gasto pertenece a un solo fondo. |
+### 1. Solicitud de fondos por rendir
 
-El archivo del comprobante queda como dato opcional hasta que el listado lo vuelva obligatorio. El comprobante no es un objeto aparte.
+Recorrido: solicitud, aceptación, procesa tesorería, fondo por rendir.
 
-## Circuito
+Parámetros propios:
 
-1. **Entrega.** La empresa asigna un fondo a un trabajador. El fondo nace con saldo igual al monto entregado.
-2. **Carga.** El trabajador registra uno o más gastos contra ese fondo. Cada gasto trae su comprobante.
-3. **Cuadre.** El saldo se recalcula: entregado menos la suma de gastos. Nadie lo tipea.
-4. **Cierre.** La empresa da el fondo por rendido. El cuadre queda fijo: cuadrado, a devolver o a reembolsar.
+- Montos máximos de rendición.
+- Tipos de gasto aceptados e ítems específicos.
 
-Una rendición, en este alcance, es la suma de gastos de un fondo. No es un documento que agrupe varios fondos.
+Usa también el flujo de aceptación y las reglas generales.
 
-## Estados del fondo
+### 2. Usuario autorizado a rendir sin solicitud
 
-| Estado | Cuándo |
+Recorrido: usuario autorizado, parámetros máximos, sujeto a viáticos y asignación (ítems de remuneración).
+
+Parámetros propios:
+
+- Parámetros por usuario, cuando no son los generales.
+- Concepto de remuneraciones por usuario, cuando no es el general.
+
+### 3. Documento único
+
+Recorrido: documento único, forma de pago, informa, procesa tesorería.
+
+Parámetros propios:
+
+- Usuarios con privilegios.
+- Comprobante de pago efectivo (contado).
+
+### 4. Tarjeta personal o corporativa
+
+Recorrido: usos de tarjeta personal o corporativa, pagos efectuados con tarjeta, y de ahí tres destinos: facturas por pagar con disminución (−), fondo por rendir de tarjeta, y validación.
+
+Parámetros propios:
+
+- Usuarios con privilegios, más de uno por tarjeta.
+- Flujo de gastos.
+- Flujo de DTE pagados, sin documento físico.
+
+La tarjeta corporativa, además, tiene mantención, gastos propios de la tarjeta y montos aceptados.
+
+### 5. Nómina de fondos solicitados
+
+Recorrido: nómina de fondos solicitados y planilla banco.
+
+Parámetro propio: control de documentos duplicados.
+
+### 6. Caja chica centralizada
+
+Recorrido: fondos directos a usuarios, centralizados en caja. La reposición de fondos sale de la caja chica.
+
+Parámetro propio: auditoría de posible duplicidad de gasto.
+
+### 7. Socios
+
+Recorrido: pago de múltiples documentos con distintas formas de pago. Esas formas de pago se centralizan.
+
+Parámetro propio: formas de pago de socios.
+
+## Parametrización general
+
+| Parámetro | Qué cubre |
 | --- | --- |
-| Asignado | La empresa entregó el fondo y todavía no hay gastos. |
-| En rendición | Hay al menos un gasto y la empresa no ha cerrado. |
-| Cerrado | La empresa dio por rendida la entrega. No se agregan gastos. |
+| Cuentas contables genéricas | Cuentas de uso general y pre-asiento. |
+| Cuentas contables de remuneraciones | Filtro por el usuario que rinde, ligado a la liquidación de sueldo. |
+| Conexiones API | Integraciones disponibles para el sistema. |
+| Flujo de aceptación | Reglas generales de quién acepta y cuándo. |
+| Tarjeta corporativa | Mantención, gastos propios de la tarjeta y montos aceptados. |
+| Gastos aceptados | Filtro por el usuario que rinde. |
+| Tipos de documento | Vouchers, Transbank y sin comprobante, cada uno con montos aceptados. |
 
-## Reglas que ya se pueden fijar
+Los parámetros de cada inicio pisan al general cuando el listado dice «si no son generales»: parámetros por usuario y concepto de remuneraciones por usuario.
 
-1. No se carga un gasto sin un fondo asignado.
-2. Un gasto descuenta un solo fondo.
-3. El saldo es siempre entregado menos gastos. No hay ajuste manual.
-4. Solo la empresa cierra el fondo. El trabajador carga gastos y no cierra.
-5. Al cerrar, el resultado es uno de tres: cuadrado, a devolver o a reembolsar. Este anteproyecto muestra el resultado y no registra el pago ni la devolución del dinero.
+## Carga de la rendición
 
-## Dentro de este alcance
+La carga asigna gastos, monto y foto.
 
-- Empresa y trabajadores vinculados.
-- Alta de un fondo por rendir ya entregado.
-- Gastos de ese fondo, con tipo y número de comprobante.
-- Saldo calculado y cierre con cuadre fijo.
+- La foto se parametriza y se lee con OCR.
+- En cada gasto se elige tipo de documento, clasificación del gasto, centro de costo (CECO), sucursal y otros conceptos.
+- El tipo de documento respeta los tipos parametrizados: vouchers, Transbank, sin comprobante y el resto que se dé de alta, con sus montos aceptados.
+- Los gastos aceptados y los montos máximos filtran lo que ese usuario puede cargar.
 
-## Fuera de este alcance
+## Saldos
 
-Queda fuera hasta que un ítem lo traiga de vuelta:
+| Saldo | Qué ocurre |
+| --- | --- |
+| Negativo | Se solicita el cierre de la rendición. |
+| Positivo | Se cierra la rendición y el saldo pasa a una rendición nueva. Esa rendición nueva puede sumar un monto adicional a completar. |
 
-- Solicitud del fondo por parte del trabajador y su aprobación.
-- Gastos pagados del bolsillo, sin un fondo previo.
-- Devolución del efectivo, reembolso pagado y conciliación bancaria.
-- Contabilidad, centros de costo, impuestos y libro de compras.
-- Varios niveles de aprobación, notificaciones y aplicación móvil.
+El seguimiento de montos por rendir muestra lo que sigue abierto después de ese traspaso.
 
-## Decisiones abiertas
+## Seguimiento y dashboards
 
-Cada fila trae una propuesta para no frenar. Si el listado dice otra cosa, se cambia la fila y se ajusta el objeto que corresponda.
+| Vista | Qué muestra |
+| --- | --- |
+| Montos por rendir | Seguimiento de lo que cada usuario todavía tiene que rendir. |
+| Desviaciones de tarjeta ex-post | Desvíos de la tarjeta detectados después del pago. |
+| Sumatoria | Totales por tipo de gasto y por tipo de documento. |
+| Remuneraciones | Conceptos y desviaciones de viáticos, asignaciones y bienes. |
+| Socios por recuperar | Rendiciones por recuperar desde socios hacia distintas entidades. Incluye gastos con tarjeta o con bancos, según la empresa. |
+| Flujo de pagos | Dashboard del flujo de pagos, con API. |
 
-| Decisión | Propuesta para avanzar | Si el listado dice otra cosa |
-| --- | --- | --- |
-| Varios gastos por fondo | Sí. La rendición es la suma de gastos de un fondo, y se pueden cargar en más de un momento. | Si se rinde de una sola vez, sobra el estado En rendición. |
-| Varios fondos en una rendición | No. Un fondo se cierra solo. | Si una rendición agrupa fondos, aparece el objeto Rendición, distinto del fondo. |
-| Gastar de más | Se permite cargar el gasto. El saldo negativo se lee, al cierre, como monto a reembolsar. | Si no se puede pasar del monto, el gasto que lo supera se rechaza. |
-| Moneda | Pesos chilenos. Un monto y una moneda por fondo. | Otra moneda, o más de una, exige tipo de cambio en el cuadre. |
-| Comprobante | Tipo y número van con el gasto. El archivo es opcional. | Si el archivo es obligatorio, pasa a ser parte del alcance y no un dato diferible. |
-| Empresas | Se modela la empresa, y la operación de esta etapa es una empresa con sus trabajadores. | Si varias empresas operan a la vez, usuarios y fondos quedan aislados por empresa. |
-| Quién más interviene | Nadie. Empresa entrega y cierra; trabajador carga. | Un aprobador, tesorería o contabilidad es un actor nuevo y un paso nuevo antes o después del cierre. |
+## Estados de cuenta
 
-## Cómo entra el listado
+| Estado de cuenta | Quién o qué agrupa |
+| --- | --- |
+| EECC usuario | El usuario que rinde. |
+| EECC tarjeta del usuario | La tarjeta de ese usuario. |
+| EECC agregado | La suma por sobre los usuarios. |
+| EECC caja chica | La caja centralizada. |
+| EECC tarjeta de la empresa | Las tarjetas de la empresa. |
+| EECC socios | Los socios y lo que se les recupera. |
 
-Cuando lleguen los ítems, cada uno se clasifica antes de diseñar pantallas:
+## Cierre de mes y asientos
 
-- **Incluido**, si ya cabe en empresa, trabajador, fondo, gasto, saldo o cierre.
-- **Regla**, si precisa algo que este documento ya nombra (montos, comprobantes, quién cierra).
-- **Decisión**, si contradice una fila de la tabla anterior.
-- **Fuera**, si abre solicitud, pagos, contabilidad, impuestos u otro circuito.
+| Pieza | Para qué |
+| --- | --- |
+| Asientos por mes | Asientos del período. |
+| Cierres por mes | Cierre mensual de la rendición y sus saldos. |
+| Pendientes del mes | Saldos que siguen abiertos al cierre. |
+| Libro diario | Saldos contables día a día. |
+| Asiento de centralización | Centraliza la rendición en contabilidad. |
+| Asiento de traspaso | Pasa los conceptos de remuneraciones (viáticos, asignaciones, bienes) a la liquidación. |
+| Pre-asiento | Sale de las cuentas contables genéricas antes del asiento definitivo. |
+| Pull de asientos por API | Baja los asientos hacia o desde el sistema contable. |
 
-Con esa clasificación se actualiza este anteproyecto. El diseño de pantallas y de datos parte después, sobre el alcance ya clasificado.
+Las cuentas usadas en esos asientos son las dos familias parametrizadas: genéricas y de remuneraciones. Las de remuneraciones se filtran por el usuario que rinde y por su liquidación de sueldo.
+
+## APIs
+
+| Superficie | Uso |
+| --- | --- |
+| Conexiones API | Parámetro general de integración. |
+| Pull de asientos | Intercambio de asientos. |
+| Flujo de pagos | Dashboard y API del circuito de pagos, incluida la planilla banco y lo que tesorería procesa. |
+
+## Controles de duplicidad
+
+- Nóminas: control de documentos duplicados.
+- Caja chica: auditoría de posible duplicidad de gasto.
+
+Son controles distintos. Uno mira el documento. El otro mira el gasto.
+
+## Lecturas usadas para no dejar huecos
+
+Estas tres lecturas ordenan frases del listado. El ítem sigue dentro del alcance aunque se ajuste la lectura.
+
+- En la tarjeta, «más de uno por TC» queda como más de un usuario con privilegio sobre la misma tarjeta.
+- El saldo negativo pide el cierre. Quién confirma ese cierre usa el flujo de aceptación.
+- El saldo positivo no se devuelve en efectivo dentro de esta regla: se traspasa a una rendición nueva, que puede recibir un monto adicional.
+
+## Orden para construir
+
+1. Parámetros generales y los siete inicios, con tesorería, caja, tarjeta y socios.
+2. Carga con foto, OCR, tipo de documento, clasificación, CECO, sucursal y conceptos.
+3. Saldos, traspaso a rendición nueva y seguimiento de montos por rendir.
+4. Dashboards y los seis estados de cuenta.
+5. Cierre de mes, asientos, pull de asientos y flujo de pagos por API.
