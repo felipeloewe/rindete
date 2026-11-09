@@ -2,7 +2,7 @@
 
 Rendición de gastos. El aplicativo usa el mismo stack que Repositoria: CodeIgniter 4, PHP 8.2 y MySQL. Apache apunta a `public/`. `app/` y `writable/` quedan fuera de la web.
 
-Este corte cubre la cuenta y la empresa: registro, ingreso, datos de la persona y datos de la empresa. Gastos, rendiciones y pedido de factura vienen después.
+Este corte cubre la cuenta, la empresa y los gastos. Rendiciones y pedido de factura vienen después.
 
 ## Local
 

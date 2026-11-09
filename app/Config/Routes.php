@@ -16,4 +16,18 @@ $routes->group('', ['filter' => 'auth'], static function (RouteCollection $route
     $routes->post('cuenta', 'Cuenta::update');
     $routes->get('empresa', 'Empresa::index');
     $routes->post('empresa', 'Empresa::update');
+
+    $routes->get('gastos', 'Gastos::index');
+    $routes->get('gastos/nuevo', 'Gastos::nuevo');
+    $routes->post('gastos', 'Gastos::crear');
+    $routes->get('gastos/(:num)/editar', 'Gastos::editar/$1');
+    $routes->get('gastos/(:num)/comprobante', 'Gastos::comprobante/$1');
+    $routes->post('gastos/(:num)/eliminar', 'Gastos::eliminar/$1');
+    $routes->get('gastos/(:num)', 'Gastos::ver/$1');
+    $routes->post('gastos/(:num)', 'Gastos::actualizar/$1');
+
+    $routes->get('categorias', 'Categorias::index');
+    $routes->post('categorias', 'Categorias::crear');
+    $routes->post('categorias/(:num)/eliminar', 'Categorias::eliminar/$1');
+    $routes->post('categorias/(:num)', 'Categorias::actualizar/$1');
 });
