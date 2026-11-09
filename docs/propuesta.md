@@ -35,40 +35,41 @@ R.U.T.: 76.017.114-K
 | Condición | Pago por etapa / hito de avance |
 | Ejecutivo | FELIPE V |
 | Moneda | UF |
-| Valor UF del día | A completar |
-| Honorarios netos | A completar |
+| Valor UF del día | $41.226,39, el de la cotización de referencia |
+| Honorarios netos | 60,00 UF |
 
 ## Alcance
 
 Alcance: implementación del sistema de gestión de rendiciones de gastos (Rindete). Siete etapas, desde la parametrización de cuentas, documentos, tarjetas y conexiones hasta el cierre de mes y los asientos. El inicio tiene siete caminos. La carga registra el gasto con foto y clasificación. Los saldos, el seguimiento y el flujo de pagos cierran el recorrido hasta el asiento del mes.
 
-La parametrización queda primera: el inicio, la carga, los pagos y el cierre leen solo las reglas que esa etapa tiene vigentes. Los honorarios profesionales quedan a completar y se distribuyen en las siete etapas. Este borrador no fija cantidad en UF, precio unitario, descuento, valor de la UF en pesos ni totales.
+La parametrización queda primera: el inicio, la carga, los pagos y el cierre leen solo las reglas que esa etapa tiene vigentes. Los honorarios totales son los de la cotización de referencia: 60,00 UF netas. Esa cotización no trae un desglose de horas. Las 60 UF se reparten aquí entre las siete etapas según el peso de cada una. El valor UF referencial es $41.226,39. Los pesos de cada factura se reajustan a la UF del día.
 
 ## DISTRIBUCIÓN DEL PRESUPUESTO
 
-| Etapa | UF |
-| --- | --- |
-| Etapa 1 · Parametrización | A completar |
-| Etapa 2 · Inicio de la rendición (siete caminos) | A completar |
-| Etapa 3 · Carga | A completar |
-| Etapa 4 · Saldos | A completar |
-| Etapa 5 · Seguimiento | A completar |
-| Etapa 6 · Flujo de pagos | A completar |
-| Etapa 7 · Cierre de mes y asientos | A completar |
+| Etapa | UF | Participación | Total |
+| --- | ---: | ---: | ---: |
+| Etapa 1 · Parametrización | 8,00 | 13,3% | 329.811 |
+| Etapa 2 · Inicio de la rendición (siete caminos) | 14,00 | 23,3% | 577.169 |
+| Etapa 3 · Carga | 10,00 | 16,7% | 412.264 |
+| Etapa 4 · Saldos | 5,00 | 8,3% | 206.132 |
+| Etapa 5 · Seguimiento | 9,00 | 15,0% | 371.038 |
+| Etapa 6 · Flujo de pagos | 6,00 | 10,0% | 247.358 |
+| Etapa 7 · Cierre de mes y asientos | 8,00 | 13,3% | 329.811 |
+| Total | 60,00 | 100% | 2.473.583 |
 
 ## Ítems
 
-Cada etapa es un ítem. La descripción abre con el propósito y sigue con lo incluido. Cantidad, precio unitario, descuento y total quedan a completar.
+Cada etapa es un ítem. La cantidad es la parte de las 60 UF que le corresponde. El precio unitario es el valor UF de la cotización de referencia. El descuento es 0.
 
 | ÍTEM | DESCRIPCIÓN | CANTIDAD | PRECIO UNIT. | DCTO. | TOTAL |
 | --- | --- | --- | --- | --- | --- |
-| 1 | Etapa 1: Parametrización. Dejar vigentes las reglas, cuentas, tarjetas, documentos y conexiones que consultan el resto de las etapas. El detalle incluido está en la descripción del ítem 1. | A completar | A completar | A completar | A completar |
-| 2 | Etapa 2: Inicio de la rendición (siete caminos). Abrir lo que se rinde o se paga y dejar el objeto que sigue a la carga o a tesorería. El detalle incluido está en la descripción del ítem 2. | A completar | A completar | A completar | A completar |
-| 3 | Etapa 3: Carga. Registrar gastos con foto, lectura y clasificación, y dejar el gasto confirmado con su saldo y su pre-asiento. El detalle incluido está en la descripción del ítem 3. | A completar | A completar | A completar | A completar |
-| 4 | Etapa 4: Saldos. Resolver el faltante, el sobrante y la rendición cuadrada. El detalle incluido está en la descripción del ítem 4. | A completar | A completar | A completar | A completar |
-| 5 | Etapa 5: Seguimiento. Mostrar estados de cuenta y dashboards del saldo, sin entregar dinero y sin contabilizar. El detalle incluido está en la descripción del ítem 5. | A completar | A completar | A completar | A completar |
-| 6 | Etapa 6: Flujo de pagos. Reunir lo que tesorería paga y dejar el pago en proceso o la planilla banco emitida. El detalle incluido está en la descripción del ítem 6. | A completar | A completar | A completar | A completar |
-| 7 | Etapa 7: Cierre de mes y asientos. Cerrar el período, armar los asientos y dejarlos disponibles por API. El detalle incluido está en la descripción del ítem 7. | A completar | A completar | A completar | A completar |
+| 1 | Etapa 1: Parametrización. Dejar vigentes las reglas, cuentas, tarjetas, documentos y conexiones que consultan el resto de las etapas. El detalle incluido está en la descripción del ítem 1. | 8,00 UF | 41.226,39 | 0 | 329.811 |
+| 2 | Etapa 2: Inicio de la rendición (siete caminos). Abrir lo que se rinde o se paga y dejar el objeto que sigue a la carga o a tesorería. El detalle incluido está en la descripción del ítem 2. | 14,00 UF | 41.226,39 | 0 | 577.169 |
+| 3 | Etapa 3: Carga. Registrar gastos con foto, lectura y clasificación, y dejar el gasto confirmado con su saldo y su pre-asiento. El detalle incluido está en la descripción del ítem 3. | 10,00 UF | 41.226,39 | 0 | 412.264 |
+| 4 | Etapa 4: Saldos. Resolver el faltante, el sobrante y la rendición cuadrada. El detalle incluido está en la descripción del ítem 4. | 5,00 UF | 41.226,39 | 0 | 206.132 |
+| 5 | Etapa 5: Seguimiento. Mostrar estados de cuenta y dashboards del saldo, sin entregar dinero y sin contabilizar. El detalle incluido está en la descripción del ítem 5. | 9,00 UF | 41.226,39 | 0 | 371.038 |
+| 6 | Etapa 6: Flujo de pagos. Reunir lo que tesorería paga y dejar el pago en proceso o la planilla banco emitida. El detalle incluido está en la descripción del ítem 6. | 6,00 UF | 41.226,39 | 0 | 247.358 |
+| 7 | Etapa 7: Cierre de mes y asientos. Cerrar el período, armar los asientos y dejarlos disponibles por API. El detalle incluido está en la descripción del ítem 7. | 8,00 UF | 41.226,39 | 0 | 329.811 |
 
 ### Ítem 1. Etapa 1: Parametrización
 
@@ -84,7 +85,7 @@ Dejar vigentes las reglas, cuentas, tarjetas, documentos y conexiones que consul
 
 | CANTIDAD | PRECIO UNIT. | DCTO. | TOTAL |
 | --- | --- | --- | --- |
-| A completar | A completar | A completar | A completar |
+| 8,00 UF | 41.226,39 | 0 | 329.811 |
 
 ### Ítem 2. Etapa 2: Inicio de la rendición (siete caminos)
 
@@ -143,7 +144,7 @@ Abrir lo que se va a rendir o a pagar y dejar el objeto que sigue hacia la carga
 
 | CANTIDAD | PRECIO UNIT. | DCTO. | TOTAL |
 | --- | --- | --- | --- |
-| A completar | A completar | A completar | A completar |
+| 14,00 UF | 41.226,39 | 0 | 577.169 |
 
 ### Ítem 3. Etapa 3: Carga
 
@@ -159,7 +160,7 @@ Registrar los gastos de quien rinde, sobre el fondo, la rendición autorizada, e
 
 | CANTIDAD | PRECIO UNIT. | DCTO. | TOTAL |
 | --- | --- | --- | --- |
-| A completar | A completar | A completar | A completar |
+| 10,00 UF | 41.226,39 | 0 | 412.264 |
 
 ### Ítem 4. Etapa 4: Saldos
 
@@ -172,7 +173,7 @@ Resolver el saldo, que es el monto por rendir menos los gastos confirmados, y de
 
 | CANTIDAD | PRECIO UNIT. | DCTO. | TOTAL |
 | --- | --- | --- | --- |
-| A completar | A completar | A completar | A completar |
+| 5,00 UF | 41.226,39 | 0 | 206.132 |
 
 ### Ítem 5. Etapa 5: Seguimiento
 
@@ -192,7 +193,7 @@ Leer el saldo para el usuario, la caja, la tarjeta y los socios. Esta etapa mues
 
 | CANTIDAD | PRECIO UNIT. | DCTO. | TOTAL |
 | --- | --- | --- | --- |
-| A completar | A completar | A completar | A completar |
+| 9,00 UF | 41.226,39 | 0 | 371.038 |
 
 ### Ítem 6. Etapa 6: Flujo de pagos
 
@@ -207,7 +208,7 @@ Reunir lo que tesorería tiene que pagar y dejar el pago en proceso o la planill
 
 | CANTIDAD | PRECIO UNIT. | DCTO. | TOTAL |
 | --- | --- | --- | --- |
-| A completar | A completar | A completar | A completar |
+| 6,00 UF | 41.226,39 | 0 | 247.358 |
 
 ### Ítem 7. Etapa 7: Cierre de mes y asientos
 
@@ -223,15 +224,15 @@ Tomar las rendiciones del mes y sus pre-asientos, cerrar el período y dejar los
 
 | CANTIDAD | PRECIO UNIT. | DCTO. | TOTAL |
 | --- | --- | --- | --- |
-| A completar | A completar | A completar | A completar |
+| 8,00 UF | 41.226,39 | 0 | 329.811 |
 
 ## Observaciones
 
 Corresponde a la implementación del sistema de gestión de rendiciones de gastos (Rindete), según el alcance de siete etapas de esta cotización, desde la parametrización hasta el cierre de mes y los asientos.
 
-Honorarios netos: A completar. El IVA se calcula sobre el equivalente en pesos al valor UF del día de facturación.
+Honorarios netos: 60,00 UF, iguales al total de la cotización de referencia. El IVA se calcula sobre el equivalente en pesos al valor UF del día de facturación.
 
-El valor UF del día y los montos en pesos quedan a completar. Los montos en pesos se reajustarán a la UF vigente en cada factura.
+Equivalencia referencial (UF $41.226,39). Los montos en pesos se reajustarán a la UF vigente en cada factura. El reparto es 8, 14, 10, 5, 9, 6 y 8 UF.
 
 No incluye licenciamiento de sistemas externos, hardware, digitalización masiva histórica ni trabajos fuera de este alcance.
 
@@ -253,14 +254,14 @@ Cheques nominativos y cruzados a: SOFTNET SpA
 
 | Concepto | Monto |
 | --- | --- |
-| EXENTO | A completar |
-| MONTO NETO | A completar |
-| DESCUENTO | A completar |
-| 19% IVA | A completar |
-| RECARGO TOTAL | A completar |
-| TOTAL | A completar |
+| EXENTO | 0 |
+| MONTO NETO (60 UF) | 2.473.583 |
+| DESCUENTO | 0 |
+| 19% IVA | 469.981 |
+| RECARGO TOTAL | 0 |
+| TOTAL | $ 2.943.564 |
 
-**SON:** A completar
+**SON:** Dos millones novecientos cuarenta y tres mil quinientos sesenta y cuatro pesos.
 
 Giro: Desarrollo de Software, Consultoría Informática, Venta de Productos y Alimentos.
 
