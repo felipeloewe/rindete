@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\CategoriaModel;
 use App\Models\EmpresaModel;
 use App\Models\UsuarioModel;
 use CodeIgniter\Test\CIUnitTestCase;
@@ -30,6 +31,7 @@ final class RegistroTest extends CIUnitTestCase
         $usuario = model(UsuarioModel::class)->where('email', 'ana@acme.test')->first();
         $this->assertIsArray($usuario);
         $this->assertSame('administrador', $usuario['rol']);
+        $this->assertSame(6, model(CategoriaModel::class)->where('empresa_id', $usuario['empresa_id'])->countAllResults());
         $this->assertTrue(password_verify('clave-segura', $usuario['password']));
     }
 

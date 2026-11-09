@@ -266,8 +266,24 @@ def migrate(api: Cpanel) -> None:
         text = current or ""
     if linekey:
         api.api2("Cron", "remove_line", {"linekey": linekey})
+    limpiar_cron_vacio(api)
     api.fileop(op="trash", sourcefiles="tmp/rindete-migrate.txt")
     print("migrate ok" if "Migrations complete" in text else "migrate pending")
+
+
+def limpiar_cron_vacio(api: Cpanel) -> None:
+    """cPanel inserts MAILTO when a crontab is installed. Drop it if no jobs remain."""
+    listed = api.api2("Cron", "fetchcron")
+    try:
+        rows = listed["cpanelresult"]["data"]
+    except (KeyError, TypeError):
+        return
+    if any(row.get("type") == "command" for row in rows):
+        return
+    for row in rows:
+        key = str(row.get("linekey", ""))
+        if key:
+            api.api2("Cron", "remove_line", {"linekey": key})
 
 
 def check_site() -> None:
