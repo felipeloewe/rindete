@@ -1,5 +1,7 @@
 <?= $this->extend('layout') ?>
 
+<?= $this->section('etapa') ?>trabajo<?= $this->endSection() ?>
+
 <?= $this->section('content') ?>
 <section class="bloque">
     <h1><?= $gasto ? 'Editar gasto' : 'Nuevo gasto' ?></h1>

@@ -1,5 +1,7 @@
 <?= $this->extend('layout') ?>
 
+<?= $this->section('etapa') ?>trabajo<?= $this->endSection() ?>
+
 <?= $this->section('content') ?>
 <section class="bloque">
     <div class="cabeza">
@@ -45,7 +47,7 @@
                     </td>
                     <td><?= esc(date('d/m/Y', strtotime((string) $gasto['fecha']))) ?></td>
                     <td><?= esc(\App\Libraries\Montos::formato((float) $gasto['monto'], (string) $gasto['moneda'])) ?></td>
-                    <td><span class="chip <?= $gasto['estado'] === 'observado' ? 'chip-warn' : 'chip-ok' ?>"><?= esc(\App\Libraries\Estados::gasto((string) $gasto['estado'])) ?></span></td>
+                    <td><span class="<?= esc(\App\Libraries\Estados::clase((string) $gasto['estado']), 'attr') ?>"><?= esc(\App\Libraries\Estados::gasto((string) $gasto['estado'])) ?></span></td>
                 </tr>
             <?php endforeach ?>
         </tbody>

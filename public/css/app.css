@@ -3,11 +3,20 @@
     --ink: #243044;
     --sand: #cceeff;
     --line: #9cd7e7;
-    --accent: #3370ff;
+    --accent: #066bf1;
+    --accent-hover: #0558c9;
     --bad: #9b2c2c;
-    --header: #ffffff;
-    --ok: #d8f0d2;
-    --ok-ink: #178a12;
+    --header: #03285b;
+    --header-ink: #f4f8fc;
+    --tapa: #3370ff;
+    --sombra: 0 10px 28px rgba(51, 112, 255, 0.08);
+}
+
+body.etapa-politica {
+    --sand: #eef3f7;
+    --line: #c5d4e2;
+    --tapa: #03285b;
+    --sombra: 0 1px 2px rgba(3, 40, 91, 0.06);
 }
 
 * { box-sizing: border-box; }
@@ -28,16 +37,18 @@ a { color: var(--accent); }
     gap: 1rem;
     padding: 1rem 1.25rem;
     background: var(--header);
-    border-bottom: 1px solid var(--line);
 }
 
-.marca { font-weight: 700; text-decoration: none; color: var(--accent); }
+.marca { font-weight: 700; text-decoration: none; color: white; }
 
-nav { display: flex; flex-wrap: wrap; gap: 1rem; }
+nav { display: flex; flex-wrap: wrap; gap: 0.35rem 1rem; }
 
-.top a { color: var(--accent); text-decoration: none; }
+.top a { color: var(--header-ink); text-decoration: none; }
 
-.top a:hover { color: #275ddc; }
+.top a:hover,
+.top a.activa { color: white; }
+
+.top a.activa { box-shadow: inset 0 -2px 0 #c1ff7f; }
 
 main { max-width: 56rem; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
 
@@ -48,9 +59,13 @@ main { max-width: 56rem; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
     padding: 1.25rem;
 }
 
-.bloque, .tabla { box-shadow: 0 10px 28px rgba(51, 112, 255, 0.08); }
+.bloque { border-top: 3px solid var(--tapa); }
+
+.bloque, .tabla { box-shadow: var(--sombra); }
 
 h1 { margin-top: 0; font-size: 1.6rem; color: var(--ink); }
+
+body.etapa-politica h1 { color: var(--accent); }
 
 label { display: block; margin: 0 0 0.9rem; font-size: 0.92rem; }
 
@@ -89,8 +104,11 @@ form.plano { background: none; border: 0; padding: 0; margin: 0; }
 .tabla small { display: block; color: #5d6f86; }
 
 .chip { display: inline-block; border-radius: 999px; padding: 0.15rem 0.6rem; font-size: 0.82rem; }
-.chip-ok { background: var(--ok); color: var(--ok-ink); }
-.chip-warn { background: #fff4d6; color: #6a4b12; }
+.chip-legalizado { background: #d8f0d2; color: #178a12; }
+.chip-observado { background: #fff4d6; color: #6a4b12; }
+.chip-en_rendicion { background: #dbe7ff; color: #1d4ed8; }
+.chip-aprobado { background: #c1ff7f; color: #03285b; }
+.chip-devuelto { background: #fde8e8; color: var(--bad); }
 
 .check input { display: inline; width: auto; margin-right: 0.4rem; }
 
@@ -112,12 +130,12 @@ fieldset { border: 1px solid var(--line); border-radius: 10px; margin: 0 0 0.9re
     cursor: pointer;
 }
 
-.boton:hover { background: #275ddc; color: white; }
+.boton:hover { background: var(--accent-hover); color: white; }
 
-.boton.claro:hover { background: #eef3ff; color: var(--accent); }
+.boton.claro:hover { background: #eef5ff; color: var(--accent); }
 
 .aviso { padding: 0.7rem 0.85rem; border-radius: 8px; }
-.aviso.ok { background: var(--ok); color: var(--ok-ink); }
+.aviso.ok { background: #d8f0d2; color: #178a12; }
 .aviso.mal { background: #fde8e8; color: var(--bad); }
 
 .ficha { display: grid; gap: 0.75rem; margin: 0; }

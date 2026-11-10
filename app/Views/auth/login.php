@@ -1,5 +1,7 @@
 <?= $this->extend('layout') ?>
 
+<?= $this->section('etapa') ?>entrada<?= $this->endSection() ?>
+
 <?= $this->section('content') ?>
 <section class="bloque">
     <h1>Entrar</h1>

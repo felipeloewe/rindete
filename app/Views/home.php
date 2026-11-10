@@ -1,5 +1,7 @@
 <?= $this->extend('layout') ?>
 
+<?= $this->section('etapa') ?>entrada<?= $this->endSection() ?>
+
 <?= $this->section('content') ?>
 <section class="bloque">
     <h1>Rendición de gastos para la empresa</h1>

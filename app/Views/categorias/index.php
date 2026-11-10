@@ -1,5 +1,7 @@
 <?= $this->extend('layout') ?>
 
+<?= $this->section('etapa') ?>politica<?= $this->endSection() ?>
+
 <?= $this->section('content') ?>
 <section class="bloque">
     <h1>Categorías</h1>

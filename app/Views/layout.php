@@ -6,16 +6,27 @@
     <title><?= esc($titulo ?? 'Rindete') ?></title>
     <link rel="stylesheet" href="<?= base_url('css/app.css') ?>">
 </head>
-<body>
+<?php
+    $etapa = trim($this->renderSection('etapa'));
+    $ruta  = trim(uri_string(), '/');
+    $marca = static function (string $prefijo) use ($ruta): string {
+        $activa = $prefijo === 'panel'
+            ? $ruta === 'panel'
+            : ($ruta === $prefijo || str_starts_with($ruta, $prefijo . '/'));
+
+        return $activa ? ' class="activa"' : '';
+    };
+?>
+<body class="etapa-<?= esc($etapa !== '' ? $etapa : 'trabajo') ?>">
     <header class="top">
         <a class="marca" href="<?= base_url(session('usuario_id') ? 'panel' : '/') ?>">Rindete</a>
         <nav>
             <?php if (session('usuario_id')) : ?>
-                <a href="<?= base_url('panel') ?>">Inicio</a>
-                <a href="<?= base_url('gastos') ?>">Gastos</a>
-                <a href="<?= base_url('categorias') ?>">Categorías</a>
-                <a href="<?= base_url('empresa') ?>">Empresa</a>
-                <a href="<?= base_url('cuenta') ?>">Cuenta</a>
+                <a<?= $marca('panel') ?> href="<?= base_url('panel') ?>">Inicio</a>
+                <a<?= $marca('gastos') ?> href="<?= base_url('gastos') ?>">Gastos</a>
+                <a<?= $marca('categorias') ?> href="<?= base_url('categorias') ?>">Categorías</a>
+                <a<?= $marca('empresa') ?> href="<?= base_url('empresa') ?>">Empresa</a>
+                <a<?= $marca('cuenta') ?> href="<?= base_url('cuenta') ?>">Cuenta</a>
                 <a href="<?= base_url('logout') ?>">Salir</a>
             <?php else : ?>
                 <a href="<?= base_url('login') ?>">Entrar</a>
