@@ -3,11 +3,11 @@
 <?= $this->section('etapa') ?>trabajo<?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
+<header class="pagina">
+    <h1>Gastos</h1>
+    <a class="boton" href="<?= base_url('gastos/nuevo') ?>">Nuevo gasto</a>
+</header>
 <section class="bloque">
-    <div class="cabeza">
-        <h1>Gastos</h1>
-        <a class="boton" href="<?= base_url('gastos/nuevo') ?>">Nuevo gasto</a>
-    </div>
     <form class="filtros" method="get" action="<?= base_url('gastos') ?>">
         <label>Buscar
             <input name="q" value="<?= esc($q) ?>" placeholder="Concepto, proveedor o documento">

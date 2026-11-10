@@ -25,8 +25,18 @@ body {
     margin: 0;
     font-family: var(--font);
     color: var(--ink);
-    background: white;
+    background: #f6f5f1;
+    --titulo: #015258;
+    --wash: #e7f6f3;
+    --boton: #06dfc7;
+    --boton-ink: #014149;
+    --boton-hover: #04dcc4;
 }
+
+body.sec-gastos { --titulo: #0a565c; --wash: #d8f3ee; --boton: #7dcec6; --boton-ink: #014149; --boton-hover: #68c4ba; }
+body.sec-categorias { --titulo: #6a5432; --wash: #f8ead4; --boton: #f3ddb8; --boton-ink: #4a3b22; --boton-hover: #e8cfa4; }
+body.sec-empresa { --titulo: #9a4030; --wash: #ffe4d8; --boton: #ff8a62; --boton-ink: #3d2418; --boton-hover: #f07850; }
+body.sec-cuenta { --titulo: #0e5c62; --wash: #d7ebe8; --boton: #0e5c62; --boton-ink: #f7fffe; --boton-hover: #0a4a4f; }
 
 a { color: var(--teal); }
 
@@ -73,37 +83,15 @@ nav {
 .top nav a {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
-    padding: 0.4rem 0.75rem;
-    border-radius: 999px;
+    padding: 0.35rem 0.15rem;
     color: var(--ink);
     font-weight: 500;
     text-decoration: none;
 }
 
-.top nav a::before {
-    content: "";
-    width: 0.6rem;
-    height: 0.6rem;
-    border-radius: 4px;
-    background: var(--tono, var(--mint));
-    box-shadow: 0 4px 10px rgba(1, 65, 73, 0.12);
-}
+.top nav a:hover { color: var(--teal); }
 
-.tono-panel { --tono: var(--mint); }
-.tono-gastos { --tono: var(--sage); }
-.tono-categorias { --tono: var(--cream-card); }
-.tono-empresa { --tono: var(--coral); }
-.tono-cuenta { --tono: var(--teal); }
-
-.top nav a:hover,
-.top nav a.activa { background: var(--tono); }
-
-.tono-cuenta:hover,
-.tono-cuenta.activa { color: #f7fffe; }
-
-.tono-cuenta:hover::before,
-.tono-cuenta.activa::before { background: var(--mint); }
+.top nav a.activa { box-shadow: inset 0 -2px 0 var(--accent); }
 
 .lado {
     justify-self: end;
@@ -130,14 +118,75 @@ main { max-width: 68rem; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
 
 .hero p { color: var(--muted); font-size: 1.08rem; line-height: 1.5; }
 
-.bloque, form {
-    background: white;
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    padding: 1.35rem;
+.pagina {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 1rem;
+    margin: 0.25rem 0 1.15rem;
 }
 
-.bloque, .tabla { box-shadow: var(--sombra); }
+.pagina h1 { margin: 0; }
+.pagina p { margin: 0.35rem 0 0; color: var(--muted); }
+
+.bloque, form {
+    background: white;
+    border: 0;
+    border-radius: 22px;
+    padding: 1.4rem;
+}
+
+.bloque {
+    background: linear-gradient(180deg, var(--wash) 0%, #fff 6.5rem);
+    box-shadow: 0 22px 48px rgba(10, 86, 92, 0.12);
+}
+
+.bloque form,
+.bloque .filtros {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    padding: 0;
+    border-radius: 0;
+}
+
+.mosaico {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin: 0 0 1.25rem;
+}
+
+.losa {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: 11rem;
+    padding: 1.3rem;
+    border-radius: 22px;
+    color: var(--ink);
+    text-decoration: none;
+    box-shadow: 0 18px 40px rgba(10, 86, 92, 0.14);
+}
+
+a.losa:hover { transform: translateY(-4px); color: var(--ink); }
+
+.losa strong, .losa h2 {
+    font-family: var(--display);
+    font-size: 1.55rem;
+    letter-spacing: -0.03em;
+    margin: 0;
+}
+
+.losa span { color: var(--muted); margin-top: 0.35rem; }
+
+.losa-gastos { background: linear-gradient(165deg, #9fe0da 0%, #e7f7f4 68%); }
+.losa-categorias { background: linear-gradient(165deg, #f8ead4 0%, #fff8ee 70%); }
+.losa-categorias h2, .losa-categorias strong { color: #6a5432; }
+.losa-empresa { background: linear-gradient(165deg, #ffb089 0%, #ffe8df 72%); }
+.losa-empresa h2, .losa-empresa strong, .losa-empresa span { color: #6b3224; }
+
+.hero + .mosaico { margin-top: 2.4rem; }
 
 h1 {
     margin: 0 0 0.6rem;
@@ -182,7 +231,7 @@ form.plano { background: none; border: 0; padding: 0; margin: 0; box-shadow: non
 
 .filtros { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 0.7rem; align-items: end; }
 
-.tabla { width: 100%; border-collapse: collapse; background: white; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+.tabla { width: 100%; margin-top: 1rem; border-collapse: collapse; background: white; border: 0; border-radius: 22px; overflow: hidden; box-shadow: 0 22px 48px rgba(10, 86, 92, 0.12); }
 .tabla th, .tabla td { text-align: left; padding: 0.7rem 0.8rem; border-bottom: 1px solid var(--line); vertical-align: top; }
 .tabla th { color: var(--ink); font-size: 0.82rem; font-weight: 600; }
 .tabla small { display: block; color: var(--muted); }
@@ -203,15 +252,22 @@ fieldset { border: 1px solid var(--line); border-radius: 10px; margin: 0 0 0.9re
     border: 0;
     border-radius: 999px;
     padding: 0.72rem 1.15rem;
-    background: var(--accent);
-    color: var(--accent-ink);
+    background: var(--boton);
+    color: var(--boton-ink);
     text-decoration: none;
     font: inherit;
     font-weight: 600;
     cursor: pointer;
+    box-shadow: 0 8px 18px rgba(10, 86, 92, 0.12);
 }
 
-.boton:hover { background: var(--accent-hover); color: var(--accent-ink); }
+.boton:hover { background: var(--boton-hover); color: var(--boton-ink); }
+
+.lado .boton { background: var(--accent); color: var(--accent-ink); }
+.lado .boton:hover { background: var(--accent-hover); color: var(--accent-ink); }
+
+.boton.claro { background: white; color: var(--titulo); border: 1px solid var(--titulo); box-shadow: none; }
+.boton.claro:hover { background: white; color: var(--titulo); }
 
 .boton.claro:hover { background: #f3fffd; color: var(--teal); }
 
@@ -226,6 +282,7 @@ dd { margin: 0; font-weight: 600; }
 
 @media (max-width: 860px) {
     .top { grid-template-columns: 1fr auto; padding: 0.85rem 1rem; }
-    nav { grid-column: 1 / -1; justify-content: flex-start; }
-    .grid-2, .filtros { grid-template-columns: 1fr; }
+    nav { grid-column: 1 / -1; justify-content: flex-start; gap: 0.8rem; }
+    .grid-2, .filtros, .mosaico { grid-template-columns: 1fr; }
+    .pagina { align-items: flex-start; flex-direction: column; }
 }

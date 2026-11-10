@@ -12,15 +12,27 @@
 <?php
     $etapa = trim($this->renderSection('etapa'));
     $ruta  = trim(uri_string(), '/');
+    $seccion = 'entrada';
+    if ($ruta === 'panel') {
+        $seccion = 'panel';
+    } elseif ($ruta === 'gastos' || str_starts_with($ruta, 'gastos/')) {
+        $seccion = 'gastos';
+    } elseif ($ruta === 'categorias' || str_starts_with($ruta, 'categorias/')) {
+        $seccion = 'categorias';
+    } elseif ($ruta === 'empresa' || str_starts_with($ruta, 'empresa/')) {
+        $seccion = 'empresa';
+    } elseif ($ruta === 'cuenta' || str_starts_with($ruta, 'cuenta/')) {
+        $seccion = 'cuenta';
+    }
     $marca = static function (string $prefijo) use ($ruta): string {
         $activa = $prefijo === 'panel'
             ? $ruta === 'panel'
             : ($ruta === $prefijo || str_starts_with($ruta, $prefijo . '/'));
 
-        return ' class="tono-' . $prefijo . ($activa ? ' activa' : '') . '"';
+        return $activa ? ' class="activa"' : '';
     };
 ?>
-<body class="etapa-<?= esc($etapa !== '' ? $etapa : 'trabajo') ?>">
+<body class="etapa-<?= esc($etapa !== '' ? $etapa : 'trabajo') ?> sec-<?= esc($seccion) ?>">
     <div class="franja"></div>
     <header class="top">
         <a class="marca" href="<?= base_url(session('usuario_id') ? 'panel' : '/') ?>">

@@ -3,9 +3,13 @@
 <?= $this->section('etapa') ?>politica<?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
+<header class="pagina">
+    <div>
+        <h1>Categorías</h1>
+        <p>El tope está en <?= esc($moneda) ?>. Usa 0 si la categoría no tiene límite.</p>
+    </div>
+</header>
 <section class="bloque">
-    <h1>Categorías</h1>
-    <p>El tope está en <?= esc($moneda) ?>. Usa 0 si la categoría no tiene límite.</p>
     <?php if ($edit) : ?>
         <form method="post" action="<?= base_url('categorias/' . $edit['id']) ?>">
             <?= csrf_field() ?>

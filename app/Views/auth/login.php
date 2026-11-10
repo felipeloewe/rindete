@@ -3,8 +3,10 @@
 <?= $this->section('etapa') ?>entrada<?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
-<section class="bloque">
+<header class="pagina">
     <h1>Entrar</h1>
+</header>
+<section class="bloque">
     <form method="post" action="<?= base_url('login') ?>">
         <?= csrf_field() ?>
         <label>Correo

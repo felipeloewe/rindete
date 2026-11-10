@@ -3,9 +3,13 @@
 <?= $this->section('etapa') ?>trabajo<?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
+<header class="pagina">
+    <div>
+        <h1><?= $gasto ? 'Editar gasto' : 'Nuevo gasto' ?></h1>
+        <p>Datos para quien aprueba y para <?= esc($pais['autoridad'] ?? '') ?>.</p>
+    </div>
+</header>
 <section class="bloque">
-    <h1><?= $gasto ? 'Editar gasto' : 'Nuevo gasto' ?></h1>
-    <p>Datos para quien aprueba y para <?= esc($pais['autoridad'] ?? '') ?>.</p>
     <form method="post" enctype="multipart/form-data" action="<?= base_url($gasto ? 'gastos/' . $gasto['id'] : 'gastos') ?>">
         <?= csrf_field() ?>
         <label>Concepto

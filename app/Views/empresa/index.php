@@ -3,8 +3,10 @@
 <?= $this->section('etapa') ?>politica<?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
-<section class="bloque">
+<header class="pagina">
     <h1>Empresa</h1>
+</header>
+<section class="bloque">
     <?php $paisActual = old('pais', $empresa['pais'] ?? 'CL'); ?>
     <form method="post" action="<?= base_url('empresa') ?>">
         <?= csrf_field() ?>
