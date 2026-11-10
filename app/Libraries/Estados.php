@@ -17,6 +17,13 @@ class Estados
         ][$estado] ?? $estado;
     }
 
+    public static function clase(string $estado): string
+    {
+        $conocidos = ['observado', 'legalizado', 'en_rendicion', 'aprobado', 'devuelto'];
+
+        return 'chip chip-' . (in_array($estado, $conocidos, true) ? $estado : 'legalizado');
+    }
+
     /**
      * @param array<string, mixed> $gasto
      *

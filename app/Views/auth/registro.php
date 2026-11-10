@@ -1,8 +1,12 @@
 <?= $this->extend('layout') ?>
 
+<?= $this->section('etapa') ?>entrada<?= $this->endSection() ?>
+
 <?= $this->section('content') ?>
-<section class="bloque">
+<header class="pagina">
     <h1>Crear empresa</h1>
+</header>
+<section class="bloque">
     <?php $ejemplo = $paises[$old['pais']]['ejemplo'] ?? ''; ?>
     <form method="post" action="<?= base_url('registro') ?>">
         <?= csrf_field() ?>

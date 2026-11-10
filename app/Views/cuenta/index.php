@@ -1,8 +1,12 @@
 <?= $this->extend('layout') ?>
 
+<?= $this->section('etapa') ?>politica<?= $this->endSection() ?>
+
 <?= $this->section('content') ?>
-<section class="bloque">
+<header class="pagina">
     <h1>Tu cuenta</h1>
+</header>
+<section class="bloque">
     <form method="post" action="<?= base_url('cuenta') ?>">
         <?= csrf_field() ?>
         <label>Nombre

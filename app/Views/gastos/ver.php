@@ -1,10 +1,12 @@
 <?= $this->extend('layout') ?>
 
+<?= $this->section('etapa') ?>trabajo<?= $this->endSection() ?>
+
 <?= $this->section('content') ?>
 <section class="bloque">
     <div class="cabeza">
         <h1><?= esc($gasto['concepto']) ?></h1>
-        <span class="chip <?= $gasto['estado'] === 'observado' ? 'chip-warn' : 'chip-ok' ?>"><?= esc(\App\Libraries\Estados::gasto((string) $gasto['estado'])) ?></span>
+        <span class="<?= esc(\App\Libraries\Estados::clase((string) $gasto['estado']), 'attr') ?>"><?= esc(\App\Libraries\Estados::gasto((string) $gasto['estado'])) ?></span>
     </div>
     <dl class="ficha">
         <div><dt>Proveedor</dt><dd><?= esc($gasto['proveedor']) ?></dd></div>
