@@ -99,7 +99,15 @@ final class ParametrosTest extends CIUnitTestCase
         $pagina = $this->withSession(['usuario_id' => $cuenta['usuario_id']])->get('parametros');
         $pagina->assertOK();
         $pagina->assertSee('Parametrización');
-        $pagina->assertSee('Boleta');
+        $pagina->assertSee('Cuentas');
+        $pagina->assertSee('Clasificación');
+        $pagina->assertSee('Conexiones');
+        $pagina->assertSee('Tipos de documento');
+        $pagina->assertDontSee('Guardar cuenta');
+
+        $tipos = $this->withSession(['usuario_id' => $cuenta['usuario_id']])->get('parametros/tipos');
+        $tipos->assertOK();
+        $tipos->assertSee('Boleta');
 
         $rendidor = model(UsuarioModel::class)->insert([
             'empresa_id' => model(UsuarioModel::class)->find($cuenta['usuario_id'])['empresa_id'],

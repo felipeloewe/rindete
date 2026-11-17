@@ -22,7 +22,14 @@
     } elseif ($ruta === 'categorias' || str_starts_with($ruta, 'categorias/')) {
         $seccion = 'categorias';
     } elseif ($ruta === 'parametros' || str_starts_with($ruta, 'parametros/')) {
-        $seccion = 'parametros';
+        $seccion = [
+            'parametros/cuentas'       => 'gastos',
+            'parametros/clasificacion' => 'rendiciones',
+            'parametros/conexiones'    => 'categorias',
+            'parametros/tarjetas'      => 'empresa',
+            'parametros/aceptados'     => 'cuenta',
+            'parametros/tipos'         => 'param-tipos',
+        ][$ruta] ?? 'parametros';
     } elseif ($ruta === 'empresa' || str_starts_with($ruta, 'empresa/')) {
         $seccion = 'empresa';
     } elseif ($ruta === 'cuenta' || str_starts_with($ruta, 'cuenta/')) {

@@ -36,6 +36,13 @@ $routes->group('', ['filter' => 'auth'], static function (RouteCollection $route
     $routes->get('rendiciones/(:num)', 'Rendiciones::ver/$1');
 
     $routes->get('parametros', 'Parametros::index');
+    $routes->get('parametros/cuentas', 'Parametros::ver/cuentas');
+    $routes->get('parametros/clasificacion', 'Parametros::ver/clasificacion');
+    $routes->get('parametros/conexiones', 'Parametros::ver/conexiones');
+    $routes->get('parametros/flujo', 'Parametros::ver/flujo');
+    $routes->get('parametros/tarjetas', 'Parametros::ver/tarjetas');
+    $routes->get('parametros/aceptados', 'Parametros::ver/aceptados');
+    $routes->get('parametros/tipos', 'Parametros::ver/tipos');
     $routes->post('parametros/cuentas', 'Parametros::cuenta');
     $routes->post('parametros/cuentas/(:num)/eliminar', 'Parametros::eliminarCuenta/$1');
     $routes->post('parametros/clasificacion', 'Parametros::clasificacion');
