@@ -42,8 +42,8 @@
             <label>Tipo de documento
                 <select name="tipo_doc">
                     <option value="">Selecciona</option>
-                    <?php foreach ($pais['docs'] ?? [] as $doc) : ?>
-                        <option value="<?= esc($doc) ?>" <?= $valor('tipo_doc') === $doc ? 'selected' : '' ?>><?= esc($doc) ?></option>
+                    <?php foreach ($tipos as $doc) : ?>
+                        <option value="<?= esc($doc['nombre']) ?>" <?= $valor('tipo_doc') === $doc['nombre'] ? 'selected' : '' ?>><?= esc($doc['nombre']) ?><?php if ((float) $doc['monto_aceptado'] > 0) : ?> · hasta <?= esc(\App\Libraries\Montos::formato((float) $doc['monto_aceptado'], $moneda)) ?><?php endif ?></option>
                     <?php endforeach ?>
                 </select>
             </label>

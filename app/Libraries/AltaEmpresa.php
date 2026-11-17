@@ -76,6 +76,7 @@ class AltaEmpresa
             'creado'     => $ahora,
         ], true);
         CategoriasBase::sembrar((int) $empresaId, Paises::pais($pais)['moneda']);
+        ParametrosBase::sembrar(['id' => (int) $empresaId, 'pais' => $pais]);
         $db->transComplete();
 
         $usuario = $usuarios->find($usuarioId);

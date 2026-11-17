@@ -21,10 +21,17 @@
         $seccion = 'rendiciones';
     } elseif ($ruta === 'categorias' || str_starts_with($ruta, 'categorias/')) {
         $seccion = 'categorias';
+    } elseif ($ruta === 'parametros' || str_starts_with($ruta, 'parametros/')) {
+        $seccion = 'parametros';
     } elseif ($ruta === 'empresa' || str_starts_with($ruta, 'empresa/')) {
         $seccion = 'empresa';
     } elseif ($ruta === 'cuenta' || str_starts_with($ruta, 'cuenta/')) {
         $seccion = 'cuenta';
+    }
+    $esAdmin = false;
+    if (session('usuario_id')) {
+        $personaNav = (new \App\Libraries\Sesion())->usuario();
+        $esAdmin = is_array($personaNav) && ($personaNav['rol'] ?? '') === 'administrador';
     }
     $marca = static function (string $prefijo) use ($ruta): string {
         $activa = $prefijo === 'panel'
@@ -50,6 +57,9 @@
                 <a<?= $marca('gastos') ?> href="<?= base_url('gastos') ?>">Gastos</a>
                 <a<?= $marca('rendiciones') ?> href="<?= base_url('rendiciones') ?>">Rendiciones</a>
                 <a<?= $marca('categorias') ?> href="<?= base_url('categorias') ?>">Categorías</a>
+                <?php if ($esAdmin) : ?>
+                    <a<?= $marca('parametros') ?> href="<?= base_url('parametros') ?>">Parámetros</a>
+                <?php endif ?>
                 <a<?= $marca('empresa') ?> href="<?= base_url('empresa') ?>">Empresa</a>
                 <a<?= $marca('cuenta') ?> href="<?= base_url('cuenta') ?>">Cuenta</a>
             <?php endif ?>
