@@ -38,6 +38,9 @@
             <?php endforeach ?>
         </ul>
     <?php endif ?>
+    <?php if ((int) ($gasto['rendicion_id'] ?? 0) > 0) : ?>
+        <p><a href="<?= base_url('rendiciones/' . $gasto['rendicion_id']) ?>">Ver rendición</a></p>
+    <?php endif ?>
     <?php if ($gasto['comprobante'] !== '') : ?>
         <p><a href="<?= base_url('gastos/' . $gasto['id'] . '/comprobante') ?>">Ver comprobante</a></p>
     <?php endif ?>

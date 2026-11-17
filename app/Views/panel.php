@@ -15,6 +15,10 @@
         <strong>Gastos</strong>
         <span>Comprobantes, topes y estados.</span>
     </a>
+    <a class="losa losa-rendiciones" href="<?= base_url('rendiciones') ?>">
+        <strong>Rendiciones</strong>
+        <span>Junta los gastos legalizados.</span>
+    </a>
     <a class="losa losa-categorias" href="<?= base_url('categorias') ?>">
         <strong>Categorías</strong>
         <span>Los límites de la política.</span>

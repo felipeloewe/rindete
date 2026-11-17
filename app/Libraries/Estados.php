@@ -24,6 +24,19 @@ class Estados
         return 'chip chip-' . (in_array($estado, $conocidos, true) ? $estado : 'legalizado');
     }
 
+    public static function rendicion(string $estado): string
+    {
+        return [
+            'abierta' => 'Abierta',
+            'enviada' => 'Enviada',
+        ][$estado] ?? $estado;
+    }
+
+    public static function claseRendicion(string $estado): string
+    {
+        return $estado === 'enviada' ? 'chip chip-en_rendicion' : 'chip chip-legalizado';
+    }
+
     /**
      * @param array<string, mixed> $gasto
      *
