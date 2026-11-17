@@ -64,6 +64,7 @@ class GastoServicio
         }
 
         (new Comprobante())->borrar((string) $gasto['comprobante']);
+        db_connect()->table('pre_asientos')->where('gasto_id', $gasto['id'])->delete();
         model(GastoModel::class)->delete($gasto['id']);
         $this->reevaluar((int) $gasto['empresa_id']);
 
@@ -76,19 +77,28 @@ class GastoServicio
         if (! is_array($empresa)) {
             return;
         }
+        ParametrosBase::sembrar($empresa);
         $gastos     = model(GastoModel::class)->where('empresa_id', $empresaId)->findAll();
         $categorias = $this->indiceCategorias($empresaId);
         $evaluador  = new GastoEvaluador();
         foreach ($gastos as $gasto) {
             $categoria = $categorias[(int) $gasto['categoria_id']] ?? null;
-            $nuevo     = $evaluador->evaluar($gasto, $empresa, $categoria, $gastos, (int) $gasto['id']);
+            [$aceptado, $topeTipo, $permiteSin] = $this->reglas($empresaId, $gasto);
+            $nuevo     = $evaluador->evaluar($gasto, $empresa, $categoria, $gastos, (int) $gasto['id'], $aceptado, $topeTipo, $permiteSin);
             model(GastoModel::class)->update($gasto['id'], [
                 'estado'            => $nuevo['estado'],
                 'duplicado'         => $nuevo['duplicado'],
                 'fuera_politica'    => $nuevo['fuera_politica'],
                 'sin_comprobante'   => $nuevo['sin_comprobante'],
                 'fiscal_incompleto' => $nuevo['fiscal_incompleto'],
+                'no_aceptado'       => $nuevo['no_aceptado'],
+                'fuera_tipo'        => $nuevo['fuera_tipo'],
             ]);
+            PreAsiento::sincronizar(array_merge($gasto, [
+                'estado' => $nuevo['estado'],
+                'monto'  => $nuevo['monto'],
+                'moneda' => $nuevo['moneda'] ?? $gasto['moneda'],
+            ]));
         }
     }
 
@@ -111,6 +121,7 @@ class GastoServicio
         $proveedor = trim((string) ($input['proveedor'] ?? ''));
         $fecha     = Montos::fecha((string) ($input['fecha'] ?? ''));
         $monto     = Montos::parse((string) ($input['monto'] ?? ''));
+        ParametrosBase::sembrar($empresa);
         $pais      = Paises::pais((string) $empresa['pais']);
         $tipo      = trim((string) ($input['tipo_doc'] ?? ''));
         $categoria = $this->categoriaValida((int) ($input['categoria_id'] ?? 0), (int) $empresa['id'], $actual);
@@ -128,8 +139,8 @@ class GastoServicio
         if ($categoria === null) {
             $errores[] = 'Elige una categoría activa.';
         }
-        if ($tipo !== '' && ($pais === null || ! in_array($tipo, $pais['docs'], true))) {
-            $errores[] = 'El tipo de documento no corresponde al país.';
+        if (! $this->tipoVigente((int) $empresa['id'], $tipo, $actual, $pais)) {
+            $errores[] = 'Ese tipo de documento no está vigente.';
         }
         if ($errores !== []) {
             return ['ok' => false, 'errores' => $errores];
@@ -180,7 +191,17 @@ class GastoServicio
             'creado'        => (string) ($actual['creado'] ?? date('Y-m-d H:i:s')),
         ];
         $otros = model(GastoModel::class)->where('empresa_id', $empresa['id'])->findAll();
-        $gasto = (new GastoEvaluador())->evaluar($gasto, $empresa, $categoria, $otros, $actual === null ? null : (int) $actual['id']);
+        [$aceptado, $topeTipo, $permiteSin] = $this->reglas((int) $empresa['id'], $gasto);
+        $gasto = (new GastoEvaluador())->evaluar(
+            $gasto,
+            $empresa,
+            $categoria,
+            $otros,
+            $actual === null ? null : (int) $actual['id'],
+            $aceptado,
+            $topeTipo,
+            $permiteSin,
+        );
 
         $model = model(GastoModel::class);
         if ($actual === null) {
@@ -249,6 +270,43 @@ class GastoServicio
             ->where('empresa_id', $empresaId)
             ->where('creado >=', date('Y-m-01 00:00:00'))
             ->countAllResults();
+    }
+
+    /**
+     * @param array<string, mixed>|null $actual
+     * @param array<string, mixed>|null $pais
+     */
+    private function tipoVigente(int $empresaId, string $tipo, ?array $actual, ?array $pais): bool
+    {
+        if ($tipo === '') {
+            return true;
+        }
+        $catalogo = ParametrosBase::tipos($empresaId);
+        if ($catalogo === []) {
+            return $pais !== null && in_array($tipo, $pais['docs'], true);
+        }
+        if ($actual !== null && (string) $actual['tipo_doc'] === $tipo) {
+            return true;
+        }
+        $fila = ParametrosBase::tipo($empresaId, $tipo);
+
+        return is_array($fila) && (int) $fila['activo'] === 1;
+    }
+
+    /**
+     * @param array<string, mixed> $gasto
+     *
+     * @return array{0: bool, 1: float, 2: bool}
+     */
+    private function reglas(int $empresaId, array $gasto): array
+    {
+        $tipo = ParametrosBase::tipo($empresaId, (string) ($gasto['tipo_doc'] ?? ''));
+
+        return [
+            ParametrosBase::aceptado($empresaId, (int) $gasto['usuario_id'], (int) $gasto['categoria_id']),
+            is_array($tipo) ? (float) $tipo['monto_aceptado'] : 0.0,
+            is_array($tipo) && (int) $tipo['sin_comprobante'] === 1,
+        ];
     }
 
     /**

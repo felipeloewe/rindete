@@ -27,6 +27,9 @@
             <div><dt><?= esc($pais['codigo'] ?? 'Código') ?></dt><dd><?= esc($gasto['codigo_fiscal']) ?></dd></div>
         <?php endif ?>
     </dl>
+    <?php if (! empty($preasiento)) : ?>
+        <p>Asiento propuesto: <?= esc($preasiento['codigo']) ?> <?= esc($preasiento['nombre']) ?> · <?= esc(\App\Libraries\Montos::formato((float) $preasiento['monto'], (string) $preasiento['moneda'])) ?></p>
+    <?php endif ?>
     <?php if ($gasto['nota'] !== '') : ?>
         <p><?= esc($gasto['nota']) ?></p>
     <?php endif ?>

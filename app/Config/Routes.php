@@ -35,6 +35,28 @@ $routes->group('', ['filter' => 'auth'], static function (RouteCollection $route
     $routes->post('rendiciones/(:num)/eliminar', 'Rendiciones::eliminar/$1');
     $routes->get('rendiciones/(:num)', 'Rendiciones::ver/$1');
 
+    $routes->get('parametros', 'Parametros::index');
+    $routes->get('parametros/cuentas', 'Parametros::ver/cuentas');
+    $routes->get('parametros/clasificacion', 'Parametros::ver/clasificacion');
+    $routes->get('parametros/conexiones', 'Parametros::ver/conexiones');
+    $routes->get('parametros/flujo', 'Parametros::ver/flujo');
+    $routes->get('parametros/tarjetas', 'Parametros::ver/tarjetas');
+    $routes->get('parametros/aceptados', 'Parametros::ver/aceptados');
+    $routes->get('parametros/tipos', 'Parametros::ver/tipos');
+    $routes->post('parametros/cuentas', 'Parametros::cuenta');
+    $routes->post('parametros/cuentas/(:num)/eliminar', 'Parametros::eliminarCuenta/$1');
+    $routes->post('parametros/clasificacion', 'Parametros::clasificacion');
+    $routes->post('parametros/conexiones', 'Parametros::conexion');
+    $routes->post('parametros/conexiones/(:num)/eliminar', 'Parametros::eliminarConexion/$1');
+    $routes->post('parametros/flujo', 'Parametros::flujo');
+    $routes->post('parametros/aceptadores', 'Parametros::aceptador');
+    $routes->post('parametros/aceptadores/(:num)/eliminar', 'Parametros::eliminarAceptador/$1');
+    $routes->post('parametros/tarjetas', 'Parametros::tarjeta');
+    $routes->post('parametros/tarjetas/(:num)/eliminar', 'Parametros::eliminarTarjeta/$1');
+    $routes->post('parametros/aceptados', 'Parametros::aceptados');
+    $routes->post('parametros/tipos', 'Parametros::tipo');
+    $routes->post('parametros/tipos/(:num)', 'Parametros::actualizarTipo/$1');
+
     $routes->get('categorias', 'Categorias::index');
     $routes->post('categorias', 'Categorias::crear');
     $routes->post('categorias/(:num)/eliminar', 'Categorias::eliminar/$1');

@@ -14,7 +14,16 @@ class GastoEvaluador
      *
      * @return array<string, mixed>
      */
-    public function evaluar(array $gasto, array $empresa, ?array $categoria, array $otros, ?int $exceptoId = null): array
+    public function evaluar(
+        array $gasto,
+        array $empresa,
+        ?array $categoria,
+        array $otros,
+        ?int $exceptoId = null,
+        bool $aceptado = true,
+        float $topeTipo = 0,
+        bool $permiteSin = false,
+    ): array
     {
         $duplicado = false;
         if ((int) ($empresa['detectar_duplicados'] ?? 1) === 1) {
@@ -37,21 +46,28 @@ class GastoEvaluador
             }
         }
 
-        $fuera  = $categoria !== null && (float) $categoria['tope'] > 0 && (float) $gasto['monto'] > (float) $categoria['tope'];
+        $monto  = (float) $gasto['monto'];
+        $fuera  = $categoria !== null && (float) $categoria['tope'] > 0 && $monto > (float) $categoria['tope'];
         $desde  = (float) ($empresa['comprobante_desde'] ?? 1);
-        $sin    = ((string) ($gasto['comprobante'] ?? '')) === '' && (float) $gasto['monto'] >= $desde;
+        $sin    = ((string) ($gasto['comprobante'] ?? '')) === '' && $monto >= $desde;
+        if ($permiteSin && ($topeTipo <= 0 || $monto <= $topeTipo)) {
+            $sin = false;
+        }
+        $fueraTipo = $topeTipo > 0 && $monto > $topeTipo;
         $fiscal = trim((string) ($gasto['id_fiscal'] ?? '')) === ''
             || trim((string) ($gasto['num_doc'] ?? '')) === ''
             || trim((string) ($gasto['tipo_doc'] ?? '')) === '';
         $estado = (string) ($gasto['estado'] ?? 'legalizado');
         if (! in_array($estado, ['en_rendicion', 'aprobado'], true)) {
-            $estado = ($duplicado || $fuera || $sin) ? 'observado' : 'legalizado';
+            $estado = ($duplicado || $fuera || $sin || $fueraTipo || ! $aceptado) ? 'observado' : 'legalizado';
         }
 
         $gasto['duplicado']          = $duplicado ? 1 : 0;
         $gasto['fuera_politica']     = $fuera ? 1 : 0;
         $gasto['sin_comprobante']    = $sin ? 1 : 0;
         $gasto['fiscal_incompleto']  = $fiscal ? 1 : 0;
+        $gasto['no_aceptado']        = $aceptado ? 0 : 1;
+        $gasto['fuera_tipo']         = $fueraTipo ? 1 : 0;
         $gasto['estado']             = $estado;
 
         return $gasto;

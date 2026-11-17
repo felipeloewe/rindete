@@ -54,6 +54,12 @@ class Estados
         if ((int) ($gasto['sin_comprobante'] ?? 0) === 1) {
             $lista[] = 'Falta el comprobante.';
         }
+        if ((int) ($gasto['fuera_tipo'] ?? 0) === 1) {
+            $lista[] = 'Supera el monto del tipo de documento.';
+        }
+        if ((int) ($gasto['no_aceptado'] ?? 0) === 1) {
+            $lista[] = 'Esa categoría no está aceptada para esta persona.';
+        }
         if ((int) ($gasto['fiscal_incompleto'] ?? 0) === 1) {
             $lista[] = 'Faltan datos del documento.';
         }

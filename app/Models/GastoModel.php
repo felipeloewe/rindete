@@ -15,6 +15,6 @@ class GastoModel extends Model
     protected $allowedFields    = [
         'empresa_id', 'usuario_id', 'rendicion_id', 'categoria_id', 'concepto', 'proveedor', 'fecha', 'monto', 'moneda',
         'tipo_doc', 'id_fiscal', 'num_doc', 'codigo_fiscal', 'nota', 'comprobante', 'estado',
-        'duplicado', 'fuera_politica', 'sin_comprobante', 'fiscal_incompleto', 'creado',
+        'duplicado', 'fuera_politica', 'sin_comprobante', 'fiscal_incompleto', 'no_aceptado', 'fuera_tipo', 'creado',
     ];
 }

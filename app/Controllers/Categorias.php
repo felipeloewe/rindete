@@ -48,13 +48,14 @@ class Categorias extends BaseController
         if ($datos === null) {
             return redirect()->to('/categorias')->with('error', 'Escribe el nombre y un tope válido. Usa 0 si no hay límite.');
         }
-        model(CategoriaModel::class)->insert([
+        $id = model(CategoriaModel::class)->insert([
             'empresa_id' => $empresa['id'],
             'nombre'     => $datos['nombre'],
             'detalle'    => $datos['detalle'],
             'tope'       => $datos['tope'],
             'activa'     => 1,
-        ]);
+        ], true);
+        \App\Libraries\ParametrosBase::sumarCategoria((int) $empresa['id'], (int) $id);
 
         return redirect()->to('/categorias')->with('ok', 'Categoría creada.');
     }
@@ -95,6 +96,7 @@ class Categorias extends BaseController
         if ($usada) {
             return redirect()->to('/categorias')->with('error', 'Esa categoría ya tiene gastos. Cámbiale el nombre o el tope, no la borres.');
         }
+        \App\Libraries\ParametrosBase::limpiarCategoria($id);
         model(CategoriaModel::class)->delete($id);
 
         return redirect()->to('/categorias')->with('ok', 'Categoría eliminada.');

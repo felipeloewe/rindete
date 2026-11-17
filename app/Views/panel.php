@@ -23,6 +23,12 @@
         <strong>Categorías</strong>
         <span>Los límites de la política.</span>
     </a>
+    <?php if (($usuario['rol'] ?? '') === 'administrador') : ?>
+        <a class="losa losa-parametros" href="<?= base_url('parametros') ?>">
+            <strong>Parámetros</strong>
+            <span>Cuentas, documentos y quién puede cargar.</span>
+        </a>
+    <?php endif ?>
     <a class="losa losa-empresa" href="<?= base_url('empresa') ?>">
         <strong>Empresa</strong>
         <span>País, moneda e identificación.</span>

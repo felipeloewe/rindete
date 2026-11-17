@@ -12,5 +12,8 @@ class EmpresaModel extends Model
     protected $primaryKey       = 'id';
     protected $useAutoIncrement = true;
     protected $returnType       = 'array';
-    protected $allowedFields    = ['nombre', 'pais', 'id_fiscal', 'plan', 'cupo_usuarios', 'cupo_bytes', 'creado'];
+    protected $allowedFields    = [
+        'nombre', 'pais', 'id_fiscal', 'plan', 'cupo_usuarios', 'cupo_bytes', 'creado',
+        'parametros_sembrados', 'monto_maximo_rendicion', 'detener_monto', 'detener_tipo', 'detener_habilitacion',
+    ];
 }

@@ -67,7 +67,7 @@ class Gastos extends BaseController
         }
         (new GastoServicio())->asegurarCategorias($empresa);
 
-        return view('gastos/form', $this->formulario($empresa, null));
+        return view('gastos/form', $this->formulario($empresa, $usuario, null));
     }
 
     public function crear()
@@ -96,11 +96,12 @@ class Gastos extends BaseController
         $persona   = model(UsuarioModel::class)->find($gasto['usuario_id']);
 
         return view('gastos/ver', [
-            'gasto'      => $gasto,
-            'pais'       => $pais,
-            'categoria'  => $categoria,
-            'persona'    => $persona,
-            'puedeEditar'=> ! (new GastoServicio())->bloqueado($gasto) && ($usuario['rol'] !== 'rendidor' || (int) $gasto['usuario_id'] === (int) $usuario['id']),
+            'gasto'       => $gasto,
+            'pais'        => $pais,
+            'categoria'   => $categoria,
+            'persona'     => $persona,
+            'preasiento'  => \App\Libraries\PreAsiento::deGasto((int) $gasto['id']),
+            'puedeEditar' => ! (new GastoServicio())->bloqueado($gasto) && ($usuario['rol'] !== 'rendidor' || (int) $gasto['usuario_id'] === (int) $usuario['id']),
         ]);
     }
 
@@ -114,7 +115,7 @@ class Gastos extends BaseController
             return redirect()->to('/gastos/' . $id)->with('error', 'Este gasto está en una rendición y no se puede editar.');
         }
 
-        return view('gastos/form', $this->formulario($empresa, $gasto));
+        return view('gastos/form', $this->formulario($empresa, $usuario, $gasto));
     }
 
     public function actualizar(int $id)
@@ -195,13 +196,16 @@ class Gastos extends BaseController
 
     /**
      * @param array<string, mixed>      $empresa
+     * @param array<string, mixed>      $usuario
      * @param array<string, mixed>|null $gasto
      *
      * @return array<string, mixed>
      */
-    private function formulario(array $empresa, ?array $gasto): array
+    private function formulario(array $empresa, array $usuario, ?array $gasto): array
     {
-        $pais = Paises::pais((string) $empresa['pais']);
+        \App\Libraries\ParametrosBase::sembrar($empresa);
+        $pais  = Paises::pais((string) $empresa['pais']);
+        $dueno = $gasto === null ? (int) $usuario['id'] : (int) $gasto['usuario_id'];
         $valor = static function (string $campo, string $defecto = '') use ($gasto): string {
             $previo = old($campo);
             if ($previo !== null) {
@@ -213,13 +217,32 @@ class Gastos extends BaseController
 
             return $defecto;
         };
+        $categorias = [];
+        foreach (model(CategoriaModel::class)->where('empresa_id', $empresa['id'])->orderBy('nombre', 'ASC')->findAll() as $categoria) {
+            $esActual = $gasto !== null && (int) $gasto['categoria_id'] === (int) $categoria['id'];
+            if ($esActual || \App\Libraries\ParametrosBase::aceptado((int) $empresa['id'], $dueno, (int) $categoria['id'])) {
+                $categorias[] = $categoria;
+            }
+        }
+        $tipos = [];
+        foreach (\App\Libraries\ParametrosBase::tipos((int) $empresa['id']) as $tipo) {
+            if ((int) $tipo['activo'] === 1 || ($gasto !== null && (string) $gasto['tipo_doc'] === (string) $tipo['nombre'])) {
+                $tipos[] = $tipo;
+            }
+        }
+        if ($tipos === []) {
+            foreach ($pais['docs'] ?? [] as $nombre) {
+                $tipos[] = ['nombre' => $nombre, 'monto_aceptado' => 0, 'sin_comprobante' => 0, 'activo' => 1];
+            }
+        }
 
         return [
             'gasto'      => $gasto,
             'pais'       => $pais,
             'moneda'     => (string) ($gasto['moneda'] ?? ($pais['moneda'] ?? 'USD')),
             'valor'      => $valor,
-            'categorias' => model(CategoriaModel::class)->where('empresa_id', $empresa['id'])->orderBy('nombre', 'ASC')->findAll(),
+            'categorias' => $categorias,
+            'tipos'      => $tipos,
         ];
     }
 

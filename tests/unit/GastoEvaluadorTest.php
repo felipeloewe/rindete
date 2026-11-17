@@ -45,6 +45,20 @@ final class GastoEvaluadorTest extends CIUnitTestCase
         $this->assertSame('observado', $gasto['estado']);
     }
 
+    public function testAplicaElTipoYLaCategoriaAceptada(): void
+    {
+        $sobre = (new GastoEvaluador())->evaluar($this->gasto(), $this->empresa(), $this->categoria(0), [], null, true, 5000);
+        $libre = (new GastoEvaluador())->evaluar($this->gasto(['comprobante' => '']), $this->empresa(), $this->categoria(0), [], null, true, 0, true);
+        $ajeno = (new GastoEvaluador())->evaluar($this->gasto(), $this->empresa(), $this->categoria(0), [], null, false);
+
+        $this->assertSame(1, $sobre['fuera_tipo']);
+        $this->assertSame('observado', $sobre['estado']);
+        $this->assertSame(0, $libre['sin_comprobante']);
+        $this->assertSame('legalizado', $libre['estado']);
+        $this->assertSame(1, $ajeno['no_aceptado']);
+        $this->assertSame('observado', $ajeno['estado']);
+    }
+
     public function testNoCambiaUnGastoYaAprobado(): void
     {
         $gasto = (new GastoEvaluador())->evaluar(
