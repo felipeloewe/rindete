@@ -18,5 +18,7 @@ final class EstadosTest extends CIUnitTestCase
         $this->assertSame('chip chip-aprobado', Estados::clase('aprobado'));
         $this->assertSame('chip chip-devuelto', Estados::clase('devuelto'));
         $this->assertSame('chip chip-legalizado', Estados::clase('otro'));
+        $this->assertSame('Abierta', Estados::rendicion('abierta'));
+        $this->assertSame('chip chip-en_rendicion', Estados::claseRendicion('enviada'));
     }
 }

@@ -26,6 +26,15 @@ $routes->group('', ['filter' => 'auth'], static function (RouteCollection $route
     $routes->get('gastos/(:num)', 'Gastos::ver/$1');
     $routes->post('gastos/(:num)', 'Gastos::actualizar/$1');
 
+    $routes->get('rendiciones', 'Rendiciones::index');
+    $routes->get('rendiciones/nueva', 'Rendiciones::nueva');
+    $routes->post('rendiciones', 'Rendiciones::crear');
+    $routes->post('rendiciones/(:num)/agregar', 'Rendiciones::agregar/$1');
+    $routes->post('rendiciones/(:num)/quitar/(:num)', 'Rendiciones::quitar/$1/$2');
+    $routes->post('rendiciones/(:num)/enviar', 'Rendiciones::enviar/$1');
+    $routes->post('rendiciones/(:num)/eliminar', 'Rendiciones::eliminar/$1');
+    $routes->get('rendiciones/(:num)', 'Rendiciones::ver/$1');
+
     $routes->get('categorias', 'Categorias::index');
     $routes->post('categorias', 'Categorias::crear');
     $routes->post('categorias/(:num)/eliminar', 'Categorias::eliminar/$1');
