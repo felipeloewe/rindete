@@ -65,7 +65,7 @@ class AltaEmpresa
             'pais'      => $pais,
             'id_fiscal' => $fiscal['valor'],
             'creado'    => $ahora,
-        ], true);
+        ] + Planes::alta(), true);
         $usuarioId = $usuarios->insert([
             'empresa_id' => $empresaId,
             'nombre'     => $nombre,

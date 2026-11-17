@@ -2,7 +2,7 @@
 
 Rendición de gastos. El aplicativo usa el mismo stack que Repositoria: CodeIgniter 4, PHP 8.2 y MySQL. Apache apunta a `public/`. `app/` y `writable/` quedan fuera de la web.
 
-Este corte cubre la cuenta, la empresa, los gastos y las rendiciones. El pedido de factura viene después.
+Este corte cubre la cuenta, la empresa, los gastos y las rendiciones. El pedido de factura viene después. El alta pública entra al plan Free: 4 usuarios y 2 GB. El landing de rindete.cl está en `landing/` y describe las siete etapas del alcance.
 
 ## Local
 

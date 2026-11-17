@@ -34,6 +34,7 @@
             <div><dt>País</dt><dd><?= esc($pais['nombre']) ?></dd></div>
             <div><dt><?= esc($pais['id_fiscal']) ?></dt><dd><?= esc($empresa['id_fiscal']) ?></dd></div>
             <div><dt>Moneda</dt><dd><?= esc($pais['moneda']) ?></dd></div>
+            <div><dt>Plan</dt><dd>Free · 4 usuarios · 2 GB</dd></div>
             <div><dt>Correo</dt><dd><?= esc($usuario['email'] ?? '') ?></dd></div>
         </dl>
     </section>

@@ -136,17 +136,27 @@ class GastoServicio
         }
 
         $comprobante = (string) ($actual['comprobante'] ?? '');
+        $archivos    = new Comprobante();
         if (! empty($input['quitar_comprobante'])) {
-            (new Comprobante())->borrar($comprobante);
+            $archivos->borrar($comprobante);
             $comprobante = '';
         }
-        $subida = (new Comprobante())->guardar($archivo, (int) $empresa['id']);
+        $entra = ($archivo !== null && $archivo->getError() === UPLOAD_ERR_OK) ? (int) $archivo->getSize() : 0;
+        if ($entra > 0) {
+            $cupo    = (int) ($empresa['cupo_bytes'] ?? Planes::BYTES);
+            $usado   = $archivos->usado((int) $empresa['id']);
+            $liberar = $comprobante !== '' ? $archivos->tamano($comprobante) : 0;
+            if (! Planes::cabe($usado - $liberar, $entra, $cupo)) {
+                return ['ok' => false, 'errores' => ['Ese comprobante supera el espacio del plan Free (2 GB).']];
+            }
+        }
+        $subida = $archivos->guardar($archivo, (int) $empresa['id']);
         if (! $subida['ok']) {
             return ['ok' => false, 'errores' => [$subida['error']]];
         }
         if ($subida['nombre'] !== '') {
             if ($comprobante !== '' && $comprobante !== $subida['nombre']) {
-                (new Comprobante())->borrar($comprobante);
+                $archivos->borrar($comprobante);
             }
             $comprobante = $subida['nombre'];
         }

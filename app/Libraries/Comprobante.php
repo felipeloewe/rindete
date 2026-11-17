@@ -44,7 +44,7 @@ class Comprobante
             return ['ok' => false, 'nombre' => '', 'error' => 'El archivo no coincide con su tipo.'];
         }
 
-        $dir = WRITEPATH . 'uploads';
+        $dir = $this->carpeta();
         if (! is_dir($dir) && ! mkdir($dir, 0775, true) && ! is_dir($dir)) {
             return ['ok' => false, 'nombre' => '', 'error' => 'No se pudo guardar el comprobante.'];
         }
@@ -61,6 +61,26 @@ class Comprobante
         return ['ok' => true, 'nombre' => $nombre, 'error' => ''];
     }
 
+    public function usado(int $empresaId): int
+    {
+        $total = 0;
+        $marca = '/^' . $empresaId . '_[a-f0-9]{16}\.(jpg|jpeg|png|webp|pdf)$/';
+        foreach (glob($this->carpeta() . $empresaId . '_*') ?: [] as $ruta) {
+            if (is_file($ruta) && preg_match($marca, basename($ruta)) === 1) {
+                $total += (int) filesize($ruta);
+            }
+        }
+
+        return $total;
+    }
+
+    public function tamano(string $nombre): int
+    {
+        $ruta = $this->ruta($nombre);
+
+        return $ruta === null ? 0 : (int) filesize($ruta);
+    }
+
     public function borrar(string $nombre): void
     {
         $ruta = $this->ruta($nombre);
@@ -74,9 +94,14 @@ class Comprobante
         if (preg_match('/^[0-9]+_[a-f0-9]{16}\.(jpg|jpeg|png|webp|pdf)$/', $nombre) !== 1) {
             return null;
         }
-        $ruta = WRITEPATH . 'uploads' . DIRECTORY_SEPARATOR . $nombre;
+        $ruta = $this->carpeta() . $nombre;
 
         return is_file($ruta) ? $ruta : null;
+    }
+
+    private function carpeta(): string
+    {
+        return WRITEPATH . 'uploads' . DIRECTORY_SEPARATOR;
     }
 
     public function mime(string $nombre): string
