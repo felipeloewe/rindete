@@ -86,6 +86,34 @@ final class GastosTest extends CIUnitTestCase
         @unlink($ruta);
     }
 
+    public function testUnComprobanteSobreElCupoSeRechaza(): void
+    {
+        $this->postForm('registro', $this->cuenta());
+        $usuario   = model(UsuarioModel::class)->where('email', 'ana@acme.test')->first();
+        $empresa   = model(EmpresaModel::class)->find($usuario['empresa_id']);
+        $categoria = model(CategoriaModel::class)->where('nombre', 'Alimentación')->first();
+        model(EmpresaModel::class)->update($empresa['id'], ['cupo_bytes' => 20]);
+        $empresa   = model(EmpresaModel::class)->find($empresa['id']);
+        $ruta      = WRITEPATH . 'nota-grande.pdf';
+        file_put_contents($ruta, "%PDF-1.4\n" . str_repeat('a', 40));
+        $archivo = new UploadedFile($ruta, 'grande.pdf', 'application/pdf', (int) filesize($ruta), UPLOAD_ERR_OK);
+
+        $resultado = (new GastoServicio())->crear($usuario, $empresa, [
+            'concepto'     => 'Taxi',
+            'proveedor'    => 'Transporte Sur',
+            'fecha'        => '2026-11-09',
+            'monto'        => '12000',
+            'categoria_id' => $categoria['id'],
+            'tipo_doc'     => 'Boleta',
+            'id_fiscal'    => '76.111.222-3',
+            'num_doc'      => '101',
+        ], $archivo);
+
+        $this->assertFalse($resultado['ok']);
+        $this->assertStringContainsString('plan Free', implode(' ', $resultado['errores']));
+        @unlink($ruta);
+    }
+
     /**
      * @param array<string, string> $data
      */

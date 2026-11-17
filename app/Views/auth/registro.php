@@ -4,7 +4,10 @@
 
 <?= $this->section('content') ?>
 <header class="pagina">
-    <h1>Crear empresa</h1>
+    <div>
+        <h1>Crear empresa</h1>
+        <p><?= esc($plan) ?></p>
+    </div>
 </header>
 <section class="bloque">
     <?php $ejemplo = $paises[$old['pais']]['ejemplo'] ?? ''; ?>

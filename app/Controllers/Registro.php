@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Libraries\AltaEmpresa;
 use App\Libraries\Paises;
+use App\Libraries\Planes;
 use App\Libraries\Sesion;
 
 class Registro extends BaseController
@@ -17,6 +18,7 @@ class Registro extends BaseController
         }
 
         return view('auth/registro', [
+            'plan'   => Planes::texto(),
             'paises' => Paises::catalogo(),
             'old'    => [
                 'pais'      => old('pais', 'CL'),
@@ -45,6 +47,6 @@ class Registro extends BaseController
 
         (new Sesion())->entrar($alta['usuario']);
 
-        return redirect()->to('/panel')->with('ok', 'Empresa lista. Ya puedes entrar con el correo y la clave que elegiste.');
+        return redirect()->to('/panel')->with('ok', 'Empresa creada en el plan Free (4 usuarios y 2 GB). Ya puedes entrar con el correo y la clave que elegiste.');
     }
 }

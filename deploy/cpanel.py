@@ -191,6 +191,7 @@ def publish(token: str, archive: Path) -> None:
     docroot = api.call("/execute/SubDomain/changedocroot", {"domain": "app.rindete.cl", "docroot": DOCROOT})
     print(f"docroot {docroot.get('status') if isinstance(docroot, dict) else 'error'}")
     migrate(api)
+    publish_landing(api)
     check_site()
 
 
@@ -286,9 +287,29 @@ def limpiar_cron_vacio(api: Cpanel) -> None:
             api.api2("Cron", "remove_line", {"linekey": key})
 
 
+def publish_landing(api: Cpanel) -> None:
+    """Publish the apex landing without touching app.rindete.cl or other vhosts."""
+    landing = ROOT / "landing"
+    with tempfile.TemporaryDirectory(prefix="rindete-landing-") as tmp:
+        archive = Path(tmp) / "landing.zip"
+        with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as bundle:
+            for path in landing.rglob("*"):
+                if path.is_file():
+                    bundle.write(path, path.relative_to(landing).as_posix())
+        api.upload(f"{HOME}/tmp", "rindete-landing.zip", archive.read_bytes())
+    extracted = api.fileop(
+        op="extract",
+        sourcefiles="tmp/rindete-landing.zip",
+        destfiles=f"{HOME}/public_html",
+    )
+    print(f"landing {fileop_ok(extracted)}")
+    api.fileop(op="trash", sourcefiles="tmp/rindete-landing.zip")
+
+
 def check_site() -> None:
     ctx = ssl._create_unverified_context()
     for url in (
+        "https://rindete.cl/",
         "https://app.rindete.cl/",
         "https://app.rindete.cl/registro",
         "https://app.rindete.cl/login",

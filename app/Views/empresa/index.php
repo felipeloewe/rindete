@@ -4,7 +4,10 @@
 
 <?= $this->section('content') ?>
 <header class="pagina">
-    <h1>Empresa</h1>
+    <div>
+        <h1>Empresa</h1>
+        <p><?= esc(\App\Libraries\Planes::texto()) ?></p>
+    </div>
 </header>
 <section class="bloque">
     <?php $paisActual = old('pais', $empresa['pais'] ?? 'CL'); ?>

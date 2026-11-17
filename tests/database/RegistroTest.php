@@ -26,7 +26,11 @@ final class RegistroTest extends CIUnitTestCase
         $resultado = $this->postForm('registro', $this->datos());
 
         $resultado->assertRedirectTo(site_url('panel'));
-        $this->assertSame(1, model(EmpresaModel::class)->where('id_fiscal', '12345678-5')->countAllResults());
+        $empresa = model(EmpresaModel::class)->where('id_fiscal', '12345678-5')->first();
+        $this->assertIsArray($empresa);
+        $this->assertSame('free', $empresa['plan']);
+        $this->assertSame(4, (int) $empresa['cupo_usuarios']);
+        $this->assertSame(2 * 1024 * 1024 * 1024, (int) $empresa['cupo_bytes']);
 
         $usuario = model(UsuarioModel::class)->where('email', 'ana@acme.test')->first();
         $this->assertIsArray($usuario);
