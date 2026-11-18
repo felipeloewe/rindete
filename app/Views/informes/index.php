@@ -24,7 +24,7 @@
     ?>
     <?php
         $losas['cuentas'] = 'losa-informes';
-        $dePago = ['asientos' => 'asientos', 'cuentas' => 'cuentas'];
+        $dePago = ['asientos' => 'preasientos', 'cuentas' => 'cuentas'];
     ?>
     <?php foreach ($piezas as $clave => $pieza) : ?>
         <?php $cerrado = isset($dePago[$clave]) && empty($incluidos[$dePago[$clave]]); ?>
@@ -35,8 +35,8 @@
     <?php endforeach ?>
     <?php if ($esAdmin) : ?>
         <a class="losa losa-informes" href="<?= base_url('informes/preasientos?anio=' . $anio . '&mes=' . $mes) ?>">
-            <strong>Preasientos</strong>
-            <span><?= empty($incluidos['preasientos']) ? 'Módulo sin contratar.' : 'Salida de fondos y traspaso al gasto.' ?></span>
+            <strong>Preasientos del mes</strong>
+            <span><?= empty($incluidos['preasientos']) ? 'Módulo sin contratar.' : 'El mes agrupado, antes de pasarlo al ERP.' ?></span>
         </a>
     <?php endif ?>
 </div>

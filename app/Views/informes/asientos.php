@@ -13,7 +13,7 @@
 <section class="bloque">
     <?= $this->include('informes/filtros') ?>
     <?php if ($sin_cuenta > 0) : ?>
-        <p>Hay gastos rendidos sin cuenta por <?= esc(\App\Libraries\Montos::formato((float) $sin_cuenta, $moneda)) ?>. Clasifica el tipo de gasto para que entren al asiento.</p>
+        <p>Hay gastos rendidos sin cuenta por <?= esc(\App\Libraries\Montos::formato((float) $sin_cuenta, $moneda)) ?>. Clasifica el tipo de gasto para que entren al preasiento.</p>
     <?php endif ?>
 </section>
 <?php if ($por_usuario !== []) : ?>
@@ -49,7 +49,7 @@
     </table>
 <?php endforeach ?>
 <?php if ($filas === []) : ?>
-    <p class="bloque">No hay asientos propuestos en este período.</p>
+    <p class="bloque">No hay preasientos en este período.</p>
 <?php else : ?>
     <h2 class="seccion">Detalle</h2>
     <table class="tabla">

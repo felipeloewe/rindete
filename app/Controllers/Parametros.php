@@ -21,9 +21,9 @@ use App\Models\UsuarioModel;
 class Parametros extends BaseController
 {
     private const DESTINOS = [
-        'asientos' => 'Asientos',
+        'asientos' => 'Preasientos',
         'pagos'    => 'Flujo de pagos',
-        'ambos'    => 'Asientos y pagos',
+        'ambos'    => 'Preasientos y pagos',
     ];
 
     private const CONCEPTOS = [
@@ -39,7 +39,7 @@ class Parametros extends BaseController
         ],
         'clasificacion' => [
             'titulo' => 'Clasificación',
-            'bajada' => 'Al confirmar un gasto, Rindete propone el asiento en la cuenta genérica de su categoría. Espera la centralización del mes.',
+            'bajada' => 'Al confirmar un gasto, Rindete propone el preasiento en la cuenta genérica de su categoría. Espera la centralización del mes.',
         ],
         'conexiones' => [
             'titulo' => 'Conexiones',
@@ -63,7 +63,7 @@ class Parametros extends BaseController
         ],
         'preasientos' => [
             'titulo' => 'Preasientos',
-            'bajada' => 'En Chile, al entregar un fondo sale el dinero y nace el fondo por rendir. Al rendir, ese fondo pasa al gasto. El mes queda por persona o en un solo comprobante.',
+            'bajada' => 'En Chile el preasiento del mes junta la salida del dinero y el paso al gasto. Queda por persona o en un solo comprobante, antes de ingresarlo al ERP.',
         ],
     ];
 
@@ -286,7 +286,7 @@ class Parametros extends BaseController
         }
         (new GastoServicio())->reevaluar((int) $empresa['id']);
 
-        return redirect()->to('/parametros/clasificacion')->with('ok', 'Clasificación guardada. Los gastos legalizados ya tienen su asiento propuesto.');
+        return redirect()->to('/parametros/clasificacion')->with('ok', 'Clasificación guardada. Los gastos legalizados ya tienen su preasiento.');
     }
 
     public function conexion()

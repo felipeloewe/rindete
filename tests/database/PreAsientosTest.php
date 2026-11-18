@@ -179,6 +179,11 @@ final class PreAsientosTest extends CIUnitTestCase
         $vista->assertOK();
         $vista->assertSee('Cuadra');
         $vista->assertSee('5101');
+        $movimientos = $this->withSession(['usuario_id' => $ana['id']])->get('informes/asientos?anio=2026&mes=11');
+        $movimientos->assertOK();
+        $movimientos->assertSee('Preasientos');
+        $movimientos->assertSee('antes de pasarlo al ERP');
+        $movimientos->assertDontSee('Asientos');
     }
 
     public function testLaSalidaNaceElFondoYLaRendicionLoPasaAlGasto(): void
@@ -250,10 +255,11 @@ final class PreAsientosTest extends CIUnitTestCase
             $seguridad->getTokenName() => $seguridad->getHash(),
         ]);
         $alta->assertRedirectTo(site_url('modulos'));
-        $this->assertTrue(Modulos::activo($empresa, 'asientos'));
+        $this->assertFalse(Modulos::activo($empresa, 'asientos'));
         $lista = $this->withSession(['usuario_id' => $ana['id']])->get('modulos');
         $lista->assertOK();
-        $lista->assertSee('Contratado');
+        $lista->assertSee('Preasientos');
+        $lista->assertDontSee('Asientos');
         $lista->assertSee('Incluidos');
     }
 

@@ -18,8 +18,9 @@ final class ModulosTest extends CIUnitTestCase
         $this->assertTrue(Modulos::activo($empresa, 'fondos'));
         $this->assertFalse(Modulos::activo($empresa, 'inexistente'));
         $this->assertArrayHasKey('preasientos', Modulos::CATALOGO);
-        $this->assertArrayHasKey('asientos', Modulos::CATALOGO);
+        $this->assertArrayNotHasKey('asientos', Modulos::CATALOGO);
         $this->assertArrayHasKey('cuentas', Modulos::CATALOGO);
+        $this->assertStringContainsString('ERP', Modulos::CATALOGO['preasientos']['detalle']);
         $this->assertStringContainsString('Free', Modulos::aviso('preasientos'));
         $this->assertStringContainsString('contratan', Modulos::resumen());
     }

@@ -20,7 +20,7 @@
     </a>
     <a class="losa losa-categorias" href="<?= base_url('parametros/conexiones') ?>">
         <strong>Conexiones</strong>
-        <span>Sistemas para asientos y pagos.</span>
+        <span>Sistemas para preasientos y pagos.</span>
     </a>
     <a class="losa losa-parametros" href="<?= base_url('parametros/flujo') ?>">
         <strong>Flujo</strong>
@@ -40,7 +40,7 @@
     </a>
     <a class="losa losa-informes" href="<?= base_url('parametros/preasientos') ?>">
         <strong>Preasientos</strong>
-        <span><?= ! empty($preasientos) ? 'Salida de fondos y traspaso al gasto.' : 'Módulo sin contratar.' ?></span>
+        <span><?= ! empty($preasientos) ? 'Del fondo o del gasto, antes del ERP.' : 'Módulo sin contratar.' ?></span>
     </a>
 </div>
 <?= $this->endSection() ?>
