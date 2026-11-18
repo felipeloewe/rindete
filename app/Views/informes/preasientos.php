@@ -6,7 +6,7 @@
 <header class="pagina">
     <div>
         <h1>Preasientos</h1>
-        <p>Comprobante de traspaso de Chile. Las rendiciones del mes se juntan por persona o en un solo comprobante. No hay uno por rendición.</p>
+        <p>Al entregar un fondo sale el dinero y nace el fondo por rendir. Al rendir, ese fondo pasa al gasto. El mes queda por persona o en un solo comprobante. No hay uno por rendición ni por fondo.</p>
     </div>
     <a class="boton" href="<?= base_url('informes?anio=' . $anio . '&mes=' . $mes) ?>">Volver</a>
 </header>
@@ -30,13 +30,14 @@
     </form>
     <?php if (! $chile) : ?>
         <p>El preasiento normativo está definido para Chile.</p>
-    <?php elseif ($cuenta === null) : ?>
-        <p>Elige la cuenta de contrapartida en <a href="<?= base_url('parametros/preasientos') ?>">Parámetros</a>.</p>
+    <?php elseif ($cuenta === null || $salida === null) : ?>
+        <p>Elige en <a href="<?= base_url('parametros/preasientos') ?>">Parámetros</a> la cuenta de donde sale el dinero y el fondo por rendir.</p>
     <?php else : ?>
         <p>
             <?= $agrupacion === 'usuario' ? 'Un preasiento por persona.' : 'Un preasiento del mes.' ?>
             <?= $auxiliar ? ' Con auxiliar del RUT.' : ' Sin auxiliar.' ?>
-            Haber en <?= esc($cuenta['codigo']) ?> <?= esc($cuenta['nombre']) ?>.
+            Sale de <?= esc($salida['codigo']) ?> <?= esc($salida['nombre']) ?>
+            y el fondo es <?= esc($cuenta['codigo']) ?> <?= esc($cuenta['nombre']) ?>.
         </p>
         <form method="post" action="<?= base_url('informes/preasientos') ?>">
             <?= csrf_field() ?>
@@ -53,7 +54,7 @@
     <section class="bloque">
         <div class="cabeza">
             <h2><?= esc($comprobante['glosa']) ?></h2>
-            <span>Traspaso · <?= esc(date('d/m/Y', strtotime((string) $comprobante['fecha']))) ?></span>
+            <span><?= ($comprobante['tipo'] ?? '') === 'salida' ? 'Salida' : 'Traspaso' ?> · <?= esc(date('d/m/Y', strtotime((string) $comprobante['fecha']))) ?></span>
         </div>
         <table class="tabla">
             <thead><tr><th>Cuenta</th><th>Glosa</th><th>Auxiliar</th><th>Debe</th><th>Haber</th></tr></thead>

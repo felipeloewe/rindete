@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Libraries\GastoServicio;
+use App\Libraries\Modulos;
 use App\Libraries\Montos;
 use App\Libraries\Paises;
 use App\Libraries\ParametrosBase;
@@ -62,7 +63,7 @@ class Parametros extends BaseController
         ],
         'preasientos' => [
             'titulo' => 'Preasientos',
-            'bajada' => 'En Chile el preasiento es un comprobante de traspaso. Junta las rendiciones del mes por persona o en uno solo del mes. El RUT del trabajador entra como auxiliar solo si lo pides. Nunca se arma uno por rendición.',
+            'bajada' => 'En Chile, al entregar un fondo sale el dinero y nace el fondo por rendir. Al rendir, ese fondo pasa al gasto. El mes queda por persona o en un solo comprobante.',
         ],
     ];
 
@@ -74,7 +75,9 @@ class Parametros extends BaseController
         }
         ParametrosBase::sembrar($empresa);
 
-        return view('parametros/index');
+        return view('parametros/index', [
+            'preasientos' => Modulos::activo($empresa, 'preasientos'),
+        ]);
     }
 
     public function ver(string $pieza)
@@ -85,6 +88,13 @@ class Parametros extends BaseController
         }
         if (! isset(self::PIEZAS[$pieza])) {
             return redirect()->to('/parametros');
+        }
+        if ($pieza === 'preasientos' && ! Modulos::activo($empresa, 'preasientos')) {
+            return view('plan/fuera', [
+                'aviso'   => Modulos::aviso('preasientos'),
+                'detalle' => Modulos::CATALOGO['preasientos']['detalle'],
+                'esAdmin' => true,
+            ]);
         }
         ParametrosBase::sembrar($empresa);
 
@@ -213,6 +223,7 @@ class Parametros extends BaseController
         $usada = $db->table('categoria_cuentas')->where('cuenta_id', $id)->countAllResults() > 0
             || $db->table('pre_asientos')->where('cuenta_id', $id)->countAllResults() > 0
             || (int) ($empresa['preasiento_cuenta_id'] ?? 0) === $id
+            || (int) ($empresa['preasiento_salida_id'] ?? 0) === $id
             || $db->table('preasiento_lineas')->where('cuenta_id', $id)->countAllResults() > 0;
         if ($usada) {
             return redirect()->to('/parametros/cuentas')->with('error', 'Esa cuenta ya clasifica gastos. Quítala de la clasificación primero.');
@@ -228,15 +239,26 @@ class Parametros extends BaseController
         if ($usuario === null || $empresa === null) {
             return $this->fuera($empresa);
         }
+        if (! Modulos::activo($empresa, 'preasientos')) {
+            return redirect()->to('/modulos')->with('error', Modulos::aviso('preasientos'));
+        }
         $agrupacion = (string) $this->request->getPost('agrupacion') === 'usuario' ? 'usuario' : 'mes';
         $cuentaId = (int) $this->request->getPost('cuenta_id');
+        $salidaId = (int) $this->request->getPost('salida_id');
         if ($cuentaId > 0 && $this->fila(CuentaModel::class, $cuentaId, (int) $empresa['id']) === null) {
             return redirect()->to('/parametros/preasientos')->with('error', 'Elige una cuenta de la empresa.');
+        }
+        if ($salidaId > 0 && $this->fila(CuentaModel::class, $salidaId, (int) $empresa['id']) === null) {
+            return redirect()->to('/parametros/preasientos')->with('error', 'Elige una cuenta de la empresa.');
+        }
+        if ($cuentaId > 0 && $cuentaId === $salidaId) {
+            return redirect()->to('/parametros/preasientos')->with('error', 'Elige otra cuenta para la salida. El fondo por rendir ya está en la contrapartida.');
         }
         model(\App\Models\EmpresaModel::class)->update($empresa['id'], [
             'preasiento_agrupacion' => $agrupacion,
             'preasiento_auxiliar'   => $this->request->getPost('auxiliar') ? 1 : 0,
             'preasiento_cuenta_id'  => $cuentaId > 0 ? $cuentaId : null,
+            'preasiento_salida_id'  => $salidaId > 0 ? $salidaId : null,
         ]);
 
         return redirect()->to('/parametros/preasientos')->with('ok', 'Preasiento guardado.');

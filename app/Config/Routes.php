@@ -37,6 +37,10 @@ $routes->group('', ['filter' => 'auth'], static function (RouteCollection $route
     $routes->post('fondos/(:num)/entregar', 'Fondos::entregar/$1');
     $routes->get('fondos/(:num)', 'Fondos::ver/$1');
 
+    $routes->get('modulos', 'Modulos::index');
+    $routes->post('modulos/contratar', 'Modulos::contratar');
+    $routes->post('modulos/dejar', 'Modulos::dejar');
+
     $routes->get('informes', 'Informes::index');
     $routes->get('informes/preasientos', 'Informes::preasientos');
     $routes->post('informes/preasientos', 'Informes::armarPreasientos');

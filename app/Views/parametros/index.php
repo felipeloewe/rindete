@@ -40,7 +40,7 @@
     </a>
     <a class="losa losa-informes" href="<?= base_url('parametros/preasientos') ?>">
         <strong>Preasientos</strong>
-        <span>Chile: por persona o por mes.</span>
+        <span><?= ! empty($preasientos) ? 'Salida de fondos y traspaso al gasto.' : 'Módulo sin contratar.' ?></span>
     </a>
 </div>
 <?= $this->endSection() ?>

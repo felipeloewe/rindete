@@ -25,7 +25,7 @@
     </a>
     <a class="losa losa-informes" href="<?= base_url('informes') ?>">
         <strong>Informes</strong>
-        <span>Cartola, rendiciones del mes y asientos.</span>
+        <span>Cartola y rendiciones del mes.</span>
     </a>
     <a class="losa losa-categorias" href="<?= base_url('categorias') ?>">
         <strong>Categorías</strong>
@@ -43,6 +43,12 @@
             <span>Quién entra y quién rinde sin solicitud.</span>
         </a>
     <?php endif ?>
+    <?php if (($usuario['rol'] ?? '') === 'administrador') : ?>
+        <a class="losa losa-parametros" href="<?= base_url('modulos') ?>">
+            <strong>Módulos</strong>
+            <span>Lo incluido y lo que se contrata.</span>
+        </a>
+    <?php endif ?>
     <a class="losa losa-empresa" href="<?= base_url('empresa') ?>">
         <strong>Empresa</strong>
         <span>País, moneda e identificación.</span>
@@ -54,7 +60,7 @@
             <div><dt>País</dt><dd><?= esc($pais['nombre']) ?></dd></div>
             <div><dt><?= esc($pais['id_fiscal']) ?></dt><dd><?= esc($empresa['id_fiscal']) ?></dd></div>
             <div><dt>Moneda</dt><dd><?= esc($pais['moneda']) ?></dd></div>
-            <div><dt>Plan</dt><dd>Free · 4 usuarios · 2 GB</dd></div>
+            <div><dt>Plan</dt><dd><?= esc(\App\Libraries\Modulos::resumen()) ?></dd></div>
             <div><dt>Correo</dt><dd><?= esc($usuario['email'] ?? '') ?></dd></div>
         </dl>
     </section>
