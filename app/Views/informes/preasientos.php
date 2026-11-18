@@ -6,7 +6,7 @@
 <header class="pagina">
     <div>
         <h1>Preasientos</h1>
-        <p>Al entregar un fondo sale el dinero y nace el fondo por rendir. Al rendir, ese fondo pasa al gasto. El mes queda por persona o en un solo comprobante. No hay uno por rendición ni por fondo.</p>
+        <p>Preasientos del mes, antes de ingresarlos al ERP. Al entregar un fondo sale el dinero y nace el fondo por rendir. Al rendir, ese fondo pasa al gasto. El mes queda por persona o en un solo comprobante. No hay uno por rendición ni por fondo.</p>
     </div>
     <a class="boton" href="<?= base_url('informes?anio=' . $anio . '&mes=' . $mes) ?>">Volver</a>
 </header>

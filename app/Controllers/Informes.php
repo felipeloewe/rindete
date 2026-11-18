@@ -25,11 +25,11 @@ class Informes extends BaseController
         ],
         'gastos' => [
             'titulo' => 'Gastos y cuentas',
-            'bajada' => 'Gastos rendidos del período, por persona y por la cuenta del asiento.',
+            'bajada' => 'Gastos rendidos del período, por persona y por la cuenta del preasiento.',
         ],
         'asientos' => [
-            'titulo' => 'Asientos',
-            'bajada' => 'El asiento propuesto de cada gasto, por persona y agrupado por mes.',
+            'titulo' => 'Preasientos',
+            'bajada' => 'Cada movimiento del período, del fondo o del gasto, antes de pasarlo al ERP.',
         ],
         'tipos' => [
             'titulo' => 'Tipo de gasto',
@@ -43,7 +43,7 @@ class Informes extends BaseController
 
     /** @var array<string, string> */
     private const DE_PAGO = [
-        'asientos' => 'asientos',
+        'asientos' => 'preasientos',
         'cuentas'  => 'cuentas',
     ];
 
@@ -130,7 +130,6 @@ class Informes extends BaseController
                 ? self::MESES[$filtro['mes']] . ' ' . $filtro['anio']
                 : 'Año ' . $filtro['anio'],
             'incluidos' => [
-                'asientos'    => Modulos::activo($empresa, 'asientos'),
                 'preasientos' => Modulos::activo($empresa, 'preasientos'),
                 'cuentas'     => Modulos::activo($empresa, 'cuentas'),
             ],

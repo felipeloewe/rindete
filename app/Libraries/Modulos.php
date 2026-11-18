@@ -23,13 +23,9 @@ final class Modulos
 
     /** @var array<string, array{nombre: string, detalle: string}> */
     public const CATALOGO = [
-        'asientos' => [
-            'nombre'  => 'Asientos',
-            'detalle' => 'El reporte de asientos del período, por persona y por mes.',
-        ],
         'preasientos' => [
             'nombre'  => 'Preasientos',
-            'detalle' => 'La salida de fondos y el traspaso al gasto, en comprobantes del mes.',
+            'detalle' => 'Los movimientos contables, vengan del fondo o del gasto, antes de ingresarlos al ERP.',
         ],
         'cuentas' => [
             'nombre'  => 'Seguimiento de cuentas',
