@@ -1,0 +1,115 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Libraries;
+
+use App\Models\UsuarioModel;
+
+class PersonaServicio
+{
+    /**
+     * @param array<string, mixed> $empresa
+     * @param array<string, mixed> $input
+     *
+     * @return array{ok: bool, errores: list<string>, id?: int}
+     */
+    public function crear(array $empresa, array $input): array
+    {
+        $nombre   = trim((string) ($input['nombre'] ?? ''));
+        $email    = strtolower(trim((string) ($input['email'] ?? '')));
+        $password = (string) ($input['password'] ?? '');
+        $errores  = [];
+        if ($nombre === '' || strlen($nombre) > 80) {
+            $errores[] = 'Escribe el nombre de la persona.';
+        }
+        if (! IdFiscal::emailValido($email)) {
+            $errores[] = 'El correo no es válido.';
+        } elseif (model(UsuarioModel::class)->where('email', $email)->first() !== null) {
+            $errores[] = 'Ese correo ya tiene una cuenta.';
+        }
+        if (strlen($password) < 8) {
+            $errores[] = 'La contraseña debe tener al menos 8 caracteres.';
+        }
+        $monto = $this->monto((string) ($input['monto_maximo'] ?? ''), $errores);
+        $cupo  = (int) ($empresa['cupo_usuarios'] ?? Planes::USUARIOS);
+        $actuales = model(UsuarioModel::class)->where('empresa_id', (int) $empresa['id'])->countAllResults();
+        if (! Planes::puedeSumarUsuario($actuales, $cupo)) {
+            $errores[] = 'El plan Free admite ' . $cupo . ' usuarios.';
+        }
+        if ($errores !== []) {
+            return ['ok' => false, 'errores' => $errores];
+        }
+
+        $id = model(UsuarioModel::class)->insert([
+            'empresa_id'                 => (int) $empresa['id'],
+            'nombre'                      => $nombre,
+            'email'                       => $email,
+            'password'                    => password_hash($password, PASSWORD_DEFAULT),
+            'rol'                         => 'rendidor',
+            'activo'                      => 1,
+            'puede_rendir_sin_solicitud' => ! empty($input['puede_rendir_sin_solicitud']) ? 1 : 0,
+            'monto_maximo_rendicion'     => $monto,
+            'creado'                      => date('Y-m-d H:i:s'),
+        ], true);
+        ParametrosBase::sumarUsuario((int) $empresa['id'], (int) $id);
+
+        return ['ok' => true, 'errores' => [], 'id' => (int) $id];
+    }
+
+    /**
+     * @param array<string, mixed> $actor
+     * @param array<string, mixed> $persona
+     * @param array<string, mixed> $input
+     *
+     * @return array{ok: bool, errores: list<string>}
+     */
+    public function guardar(array $actor, array $persona, array $input): array
+    {
+        if ((int) $actor['empresa_id'] !== (int) $persona['empresa_id']) {
+            return ['ok' => false, 'errores' => ['Esa persona no es de esta empresa.']];
+        }
+
+        $errores = [];
+        $monto   = $this->monto((string) ($input['monto_maximo'] ?? ''), $errores);
+        $datos   = [
+            'puede_rendir_sin_solicitud' => ! empty($input['puede_rendir_sin_solicitud']) ? 1 : 0,
+            'monto_maximo_rendicion'     => $monto,
+            'activo'                      => (int) $actor['id'] === (int) $persona['id'] ? 1 : (! empty($input['activo']) ? 1 : 0),
+        ];
+        $clave = (string) ($input['password'] ?? '');
+        if ($clave !== '') {
+            if (strlen($clave) < 8) {
+                $errores[] = 'La contraseña debe tener al menos 8 caracteres.';
+            } else {
+                $datos['password'] = password_hash($clave, PASSWORD_DEFAULT);
+            }
+        }
+        if ($errores !== []) {
+            return ['ok' => false, 'errores' => $errores];
+        }
+
+        model(UsuarioModel::class)->update($persona['id'], $datos);
+
+        return ['ok' => true, 'errores' => []];
+    }
+
+    /**
+     * @param list<string> $errores
+     */
+    private function monto(string $raw, array &$errores): ?float
+    {
+        $raw = trim($raw);
+        if ($raw === '') {
+            return null;
+        }
+        $valor = Montos::parse($raw);
+        if ($valor === null) {
+            $errores[] = 'El tope propio tiene que ser un monto.';
+
+            return null;
+        }
+
+        return $valor;
+    }
+}

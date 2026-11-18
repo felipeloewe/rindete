@@ -14,5 +14,6 @@ class RendicionModel extends Model
     protected $returnType       = 'array';
     protected $allowedFields    = [
         'empresa_id', 'usuario_id', 'titulo', 'nota', 'estado', 'creada', 'enviada',
+        'origen', 'monto_maximo', 'cuenta_viatico_id', 'cuenta_asignacion_id',
     ];
 }

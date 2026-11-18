@@ -16,6 +16,9 @@ $routes->group('', ['filter' => 'auth'], static function (RouteCollection $route
     $routes->post('cuenta', 'Cuenta::update');
     $routes->get('empresa', 'Empresa::index');
     $routes->post('empresa', 'Empresa::update');
+    $routes->get('personas', 'Personas::index');
+    $routes->post('personas', 'Personas::crear');
+    $routes->post('personas/(:num)', 'Personas::guardar/$1');
 
     $routes->get('gastos', 'Gastos::index');
     $routes->get('gastos/nuevo', 'Gastos::nuevo');
@@ -33,6 +36,9 @@ $routes->group('', ['filter' => 'auth'], static function (RouteCollection $route
     $routes->post('fondos/(:num)/rechazar', 'Fondos::rechazar/$1');
     $routes->post('fondos/(:num)/entregar', 'Fondos::entregar/$1');
     $routes->get('fondos/(:num)', 'Fondos::ver/$1');
+
+    $routes->get('informes', 'Informes::index');
+    $routes->get('informes/(:segment)', 'Informes::ver/$1');
 
     $routes->get('rendiciones', 'Rendiciones::index');
     $routes->get('rendiciones/nueva', 'Rendiciones::nueva');

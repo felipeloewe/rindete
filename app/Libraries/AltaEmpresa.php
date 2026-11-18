@@ -71,9 +71,10 @@ class AltaEmpresa
             'nombre'     => $nombre,
             'email'      => $email,
             'password'   => password_hash($password, PASSWORD_DEFAULT),
-            'rol'        => 'administrador',
-            'activo'     => 1,
-            'creado'     => $ahora,
+            'rol'                         => 'administrador',
+            'activo'                      => 1,
+            'puede_rendir_sin_solicitud' => 1,
+            'creado'                      => $ahora,
         ], true);
         CategoriasBase::sembrar((int) $empresaId, Paises::pais($pais)['moneda']);
         ParametrosBase::sembrar(['id' => (int) $empresaId, 'pais' => $pais]);

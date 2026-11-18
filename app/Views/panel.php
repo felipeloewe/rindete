@@ -23,6 +23,10 @@
         <strong>Fondos</strong>
         <span>Pide el dinero y sigue el saldo.</span>
     </a>
+    <a class="losa losa-informes" href="<?= base_url('informes') ?>">
+        <strong>Informes</strong>
+        <span>Cartola, rendiciones del mes y asientos.</span>
+    </a>
     <a class="losa losa-categorias" href="<?= base_url('categorias') ?>">
         <strong>Categorías</strong>
         <span>Los límites de la política.</span>
@@ -31,6 +35,12 @@
         <a class="losa losa-parametros" href="<?= base_url('parametros') ?>">
             <strong>Parámetros</strong>
             <span>Cuentas, documentos y quién puede cargar.</span>
+        </a>
+    <?php endif ?>
+    <?php if (($usuario['rol'] ?? '') === 'administrador') : ?>
+        <a class="losa losa-personas" href="<?= base_url('personas') ?>">
+            <strong>Personas</strong>
+            <span>Quién entra y quién rinde sin solicitud.</span>
         </a>
     <?php endif ?>
     <a class="losa losa-empresa" href="<?= base_url('empresa') ?>">

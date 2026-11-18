@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Libraries;
 
+use App\Models\EmpresaModel;
 use App\Models\GastoModel;
 use App\Models\RendicionModel;
 
@@ -24,15 +25,27 @@ class RendicionServicio
         if (strlen($nota) > 500) {
             return ['ok' => false, 'errores' => ['La nota es demasiado larga.']];
         }
+        if (! RendicionDirecta::autorizada($usuario)) {
+            return ['ok' => false, 'errores' => ['Esta persona no está autorizada a rendir sin solicitud.']];
+        }
+        $empresa = model(EmpresaModel::class)->find((int) $usuario['empresa_id']);
+        if (! is_array($empresa)) {
+            return ['ok' => false, 'errores' => ['No encontramos la empresa.']];
+        }
+        $reglas = RendicionDirecta::de($usuario, $empresa);
 
         $id = model(RendicionModel::class)->insert([
-            'empresa_id' => (int) $usuario['empresa_id'],
-            'usuario_id' => (int) $usuario['id'],
-            'titulo'     => $titulo,
-            'nota'       => $nota,
-            'estado'     => 'abierta',
-            'creada'     => date('Y-m-d H:i:s'),
-            'enviada'    => null,
+            'empresa_id'           => (int) $usuario['empresa_id'],
+            'usuario_id'           => (int) $usuario['id'],
+            'titulo'               => $titulo,
+            'nota'                 => $nota,
+            'estado'               => 'abierta',
+            'creada'               => date('Y-m-d H:i:s'),
+            'enviada'              => null,
+            'origen'               => 'directa',
+            'monto_maximo'         => $reglas['monto'],
+            'cuenta_viatico_id'    => isset($reglas['viatico']) ? (int) $reglas['viatico']['id'] : null,
+            'cuenta_asignacion_id' => isset($reglas['asignacion']) ? (int) $reglas['asignacion']['id'] : null,
         ], true);
 
         return ['ok' => true, 'errores' => [], 'id' => (int) $id];

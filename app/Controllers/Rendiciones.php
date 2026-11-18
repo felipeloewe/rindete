@@ -4,17 +4,21 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Libraries\Montos;
 use App\Libraries\Paises;
+use App\Libraries\RendicionDirecta;
 use App\Libraries\RendicionServicio;
 use App\Libraries\Sesion;
+use App\Models\CuentaModel;
 use App\Models\GastoModel;
 use App\Models\RendicionModel;
+use App\Models\UsuarioModel;
 
 class Rendiciones extends BaseController
 {
     public function index()
     {
-        [$usuario, $empresa] = $this->cuenta();
+        [$usuario, $empresa] = $this->cuentaSesion();
         if ($usuario === null || $empresa === null) {
             return redirect()->to('/login');
         }
@@ -34,25 +38,42 @@ class Rendiciones extends BaseController
             ];
         }
 
+        $nombres = [];
+        foreach (model(UsuarioModel::class)->where('empresa_id', $empresa['id'])->findAll() as $persona) {
+            $nombres[(int) $persona['id']] = (string) $persona['nombre'];
+        }
+
         return view('rendiciones/index', [
-            'items'   => $items,
-            'totales' => $totales,
+            'items'      => $items,
+            'totales'    => $totales,
+            'nombres'    => $nombres,
+            'autorizada' => RendicionDirecta::autorizada($usuario),
         ]);
     }
 
     public function nueva()
     {
-        [$usuario, $empresa] = $this->cuenta();
+        [$usuario, $empresa] = $this->cuentaSesion();
         if ($usuario === null || $empresa === null) {
             return redirect()->to('/login');
         }
 
-        return view('rendiciones/nueva');
+        if (! RendicionDirecta::autorizada($usuario)) {
+            return redirect()->to('/rendiciones')->with('error', 'Esta persona no está autorizada a rendir sin solicitud.');
+        }
+        $reglas = RendicionDirecta::de($usuario, $empresa);
+        $moneda = Paises::pais((string) $empresa['pais'])['moneda'] ?? 'CLP';
+
+        return view('rendiciones/nueva', [
+            'tope'       => $this->tope($reglas, $moneda),
+            'viatico'    => RendicionDirecta::etiqueta($reglas['viatico']),
+            'asignacion' => RendicionDirecta::etiqueta($reglas['asignacion']),
+        ]);
     }
 
     public function crear()
     {
-        [$usuario, $empresa] = $this->cuenta();
+        [$usuario, $empresa] = $this->cuentaSesion();
         if ($usuario === null || $empresa === null) {
             return redirect()->to('/login');
         }
@@ -88,6 +109,7 @@ class Rendiciones extends BaseController
                 ->findAll();
         }
         $moneda = $gastos[0]['moneda'] ?? (Paises::pais((string) $empresa['pais'])['moneda'] ?? 'CLP');
+        $directa = (string) ($rendicion['origen'] ?? '') === 'directa';
 
         return view('rendiciones/ver', [
             'rendicion'   => $rendicion,
@@ -96,6 +118,12 @@ class Rendiciones extends BaseController
             'total'       => array_sum(array_map(static fn (array $gasto): float => (float) $gasto['monto'], $gastos)),
             'moneda'      => $moneda,
             'abierta'     => (string) $rendicion['estado'] === 'abierta',
+            'directa'     => $directa,
+            'tope'        => (float) ($rendicion['monto_maximo'] ?? 0) > 0
+                ? Montos::formato((float) $rendicion['monto_maximo'], $moneda)
+                : 'Sin tope',
+            'viatico'     => RendicionDirecta::etiqueta($this->cuenta((int) ($rendicion['cuenta_viatico_id'] ?? 0))),
+            'asignacion'  => RendicionDirecta::etiqueta($this->cuenta((int) ($rendicion['cuenta_asignacion_id'] ?? 0))),
         ]);
     }
 
@@ -164,9 +192,34 @@ class Rendiciones extends BaseController
     }
 
     /**
+     * @param array{monto: float, propio: bool} $reglas
+     */
+    private function tope(array $reglas, string $moneda): string
+    {
+        if ($reglas['monto'] <= 0) {
+            return 'Sin tope';
+        }
+
+        return Montos::formato($reglas['monto'], $moneda) . ($reglas['propio'] ? ' · propio' : ' · de la empresa');
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function cuenta(int $id): ?array
+    {
+        if ($id <= 0) {
+            return null;
+        }
+        $cuenta = model(CuentaModel::class)->find($id);
+
+        return is_array($cuenta) ? $cuenta : null;
+    }
+
+    /**
      * @return array{0: array<string, mixed>|null, 1: array<string, mixed>|null}
      */
-    private function cuenta(): array
+    private function cuentaSesion(): array
     {
         $sesion  = new Sesion();
         $usuario = $sesion->usuario();
@@ -180,7 +233,7 @@ class Rendiciones extends BaseController
      */
     private function visible(int $id): array
     {
-        [$usuario, $empresa] = $this->cuenta();
+        [$usuario, $empresa] = $this->cuentaSesion();
         if ($usuario === null || $empresa === null) {
             return [null, null, null];
         }

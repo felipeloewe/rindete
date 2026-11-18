@@ -71,6 +71,27 @@ class ParametrosBase
         }
     }
 
+    public static function sumarUsuario(int $empresaId, int $usuarioId): void
+    {
+        $empresa = model(\App\Models\EmpresaModel::class)->find($empresaId);
+        if (is_array($empresa)) {
+            self::sembrar($empresa);
+        }
+        $db = db_connect();
+        foreach (model(CategoriaModel::class)->where('empresa_id', $empresaId)->findAll() as $categoria) {
+            $existe = $db->table('gastos_aceptados')
+                ->where('usuario_id', $usuarioId)
+                ->where('categoria_id', $categoria['id'])
+                ->countAllResults();
+            if ($existe === 0) {
+                $db->table('gastos_aceptados')->insert([
+                    'usuario_id'   => $usuarioId,
+                    'categoria_id' => $categoria['id'],
+                ]);
+            }
+        }
+    }
+
     public static function limpiarCategoria(int $categoriaId): void
     {
         $db = db_connect();

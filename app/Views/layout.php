@@ -21,6 +21,8 @@
         $seccion = 'rendiciones';
     } elseif ($ruta === 'fondos' || str_starts_with($ruta, 'fondos/')) {
         $seccion = 'fondos';
+    } elseif ($ruta === 'informes' || str_starts_with($ruta, 'informes/')) {
+        $seccion = 'informes';
     } elseif ($ruta === 'categorias' || str_starts_with($ruta, 'categorias/')) {
         $seccion = 'categorias';
     } elseif ($ruta === 'parametros' || str_starts_with($ruta, 'parametros/')) {
@@ -32,6 +34,8 @@
             'parametros/aceptados'     => 'cuenta',
             'parametros/tipos'         => 'param-tipos',
         ][$ruta] ?? 'parametros';
+    } elseif ($ruta === 'personas' || str_starts_with($ruta, 'personas/')) {
+        $seccion = 'personas';
     } elseif ($ruta === 'empresa' || str_starts_with($ruta, 'empresa/')) {
         $seccion = 'empresa';
     } elseif ($ruta === 'cuenta' || str_starts_with($ruta, 'cuenta/')) {
@@ -66,9 +70,11 @@
                 <a<?= $marca('gastos') ?> href="<?= base_url('gastos') ?>">Gastos</a>
                 <a<?= $marca('rendiciones') ?> href="<?= base_url('rendiciones') ?>">Rendiciones</a>
                 <a<?= $marca('fondos') ?> href="<?= base_url('fondos') ?>">Fondos</a>
+                <a<?= $marca('informes') ?> href="<?= base_url('informes') ?>">Informes</a>
                 <a<?= $marca('categorias') ?> href="<?= base_url('categorias') ?>">Categorías</a>
                 <?php if ($esAdmin) : ?>
                     <a<?= $marca('parametros') ?> href="<?= base_url('parametros') ?>">Parámetros</a>
+                    <a<?= $marca('personas') ?> href="<?= base_url('personas') ?>">Personas</a>
                 <?php endif ?>
                 <a<?= $marca('empresa') ?> href="<?= base_url('empresa') ?>">Empresa</a>
                 <a<?= $marca('cuenta') ?> href="<?= base_url('cuenta') ?>">Cuenta</a>
