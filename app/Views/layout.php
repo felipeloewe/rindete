@@ -19,6 +19,8 @@
         $seccion = 'gastos';
     } elseif ($ruta === 'rendiciones' || str_starts_with($ruta, 'rendiciones/')) {
         $seccion = 'rendiciones';
+    } elseif ($ruta === 'fondos' || str_starts_with($ruta, 'fondos/')) {
+        $seccion = 'fondos';
     } elseif ($ruta === 'categorias' || str_starts_with($ruta, 'categorias/')) {
         $seccion = 'categorias';
     } elseif ($ruta === 'parametros' || str_starts_with($ruta, 'parametros/')) {
@@ -63,6 +65,7 @@
                 <a<?= $marca('panel') ?> href="<?= base_url('panel') ?>">Inicio</a>
                 <a<?= $marca('gastos') ?> href="<?= base_url('gastos') ?>">Gastos</a>
                 <a<?= $marca('rendiciones') ?> href="<?= base_url('rendiciones') ?>">Rendiciones</a>
+                <a<?= $marca('fondos') ?> href="<?= base_url('fondos') ?>">Fondos</a>
                 <a<?= $marca('categorias') ?> href="<?= base_url('categorias') ?>">Categorías</a>
                 <?php if ($esAdmin) : ?>
                     <a<?= $marca('parametros') ?> href="<?= base_url('parametros') ?>">Parámetros</a>

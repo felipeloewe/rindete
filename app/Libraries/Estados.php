@@ -37,6 +37,28 @@ class Estados
         return $estado === 'enviada' ? 'chip chip-en_rendicion' : 'chip chip-legalizado';
     }
 
+    public static function solicitud(string $estado): string
+    {
+        return [
+            'detenida'      => 'Detenida',
+            'en_aceptacion' => 'En aceptación',
+            'aceptada'      => 'Aceptada',
+            'rechazada'     => 'Rechazada',
+            'entregada'     => 'Entregada',
+        ][$estado] ?? $estado;
+    }
+
+    public static function claseSolicitud(string $estado): string
+    {
+        return [
+            'detenida'      => 'chip chip-observado',
+            'en_aceptacion' => 'chip chip-en_rendicion',
+            'aceptada'      => 'chip chip-legalizado',
+            'rechazada'     => 'chip chip-devuelto',
+            'entregada'     => 'chip chip-aprobado',
+        ][$estado] ?? 'chip chip-legalizado';
+    }
+
     /**
      * @param array<string, mixed> $gasto
      *

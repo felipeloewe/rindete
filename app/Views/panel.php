@@ -19,6 +19,10 @@
         <strong>Rendiciones</strong>
         <span>Junta los gastos legalizados.</span>
     </a>
+    <a class="losa losa-fondos" href="<?= base_url('fondos') ?>">
+        <strong>Fondos</strong>
+        <span>Pide el dinero y sigue el saldo.</span>
+    </a>
     <a class="losa losa-categorias" href="<?= base_url('categorias') ?>">
         <strong>Categorías</strong>
         <span>Los límites de la política.</span>

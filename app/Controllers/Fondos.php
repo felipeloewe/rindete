@@ -1,0 +1,209 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Controllers;
+
+use App\Libraries\Paises;
+use App\Libraries\Sesion;
+use App\Libraries\SolicitudServicio;
+use App\Models\CategoriaModel;
+use App\Models\FondoModel;
+use App\Models\SolicitudModel;
+use App\Models\UsuarioModel;
+
+class Fondos extends BaseController
+{
+    public function index()
+    {
+        [$usuario, $empresa] = $this->cuenta();
+        if ($usuario === null || $empresa === null) {
+            return redirect()->to('/login');
+        }
+        $solicitudes = $this->visibles($usuario, (int) $empresa['id']);
+        $fondos = model(FondoModel::class)->where('empresa_id', $empresa['id']);
+        if ($usuario['rol'] === 'rendidor') {
+            $fondos->where('usuario_id', $usuario['id']);
+        }
+
+        return view('fondos/index', [
+            'solicitudes' => $solicitudes,
+            'fondos'      => $fondos->orderBy('id', 'DESC')->findAll(),
+            'nombres'     => $this->nombres((int) $empresa['id']),
+            'esAdmin'     => $usuario['rol'] === 'administrador',
+        ]);
+    }
+
+    public function nueva()
+    {
+        [$usuario, $empresa] = $this->cuenta();
+        if ($usuario === null || $empresa === null) {
+            return redirect()->to('/login');
+        }
+        $pais = Paises::pais((string) $empresa['pais']);
+
+        return view('fondos/nueva', [
+            'categorias' => model(CategoriaModel::class)->where('empresa_id', $empresa['id'])->where('activa', 1)->orderBy('nombre', 'ASC')->findAll(),
+            'moneda'     => $pais['moneda'] ?? 'USD',
+            'maximo'     => (float) ($empresa['monto_maximo_rendicion'] ?? 0),
+        ]);
+    }
+
+    public function crear()
+    {
+        [$usuario, $empresa] = $this->cuenta();
+        if ($usuario === null || $empresa === null) {
+            return redirect()->to('/login');
+        }
+        $resultado = (new SolicitudServicio())->pedir(
+            $usuario,
+            $empresa,
+            (string) $this->request->getPost('motivo'),
+            (string) $this->request->getPost('monto'),
+            (int) $this->request->getPost('categoria_id'),
+        );
+        if (! $resultado['ok']) {
+            return redirect()->to('/fondos/nueva')->withInput()->with('errores', $resultado['errores']);
+        }
+        $solicitud = $resultado['solicitud'];
+
+        return redirect()->to('/fondos/' . $solicitud['id'])->with('ok', $this->aviso((string) $solicitud['estado']));
+    }
+
+    public function ver(int $id)
+    {
+        [$usuario, $empresa, $solicitud] = $this->visible($id);
+        if ($solicitud === null || $usuario === null) {
+            return redirect()->to('/fondos')->with('error', 'No encontramos esa solicitud.');
+        }
+        $categoria = model(CategoriaModel::class)->find($solicitud['categoria_id']);
+        $fondo = model(FondoModel::class)->where('solicitud_id', $solicitud['id'])->first();
+        $pasos = db_connect()->table('solicitud_pasos')->where('solicitud_id', $solicitud['id'])->orderBy('id', 'ASC')->get()->getResultArray();
+
+        return view('fondos/ver', [
+            'solicitud' => $solicitud,
+            'categoria' => is_array($categoria) ? $categoria : null,
+            'fondo'     => is_array($fondo) ? $fondo : null,
+            'pasos'     => $pasos,
+            'nombres'   => $this->nombres((int) $empresa['id']),
+            'turno'     => (int) ($solicitud['turno_usuario_id'] ?? 0) === (int) $usuario['id'],
+            'esAdmin'   => $usuario['rol'] === 'administrador',
+        ]);
+    }
+
+    public function aceptar(int $id)
+    {
+        [$usuario, , $solicitud] = $this->visible($id);
+        if ($solicitud === null || $usuario === null) {
+            return redirect()->to('/fondos')->with('error', 'No encontramos esa solicitud.');
+        }
+        $resultado = (new SolicitudServicio())->aceptar($solicitud, $usuario);
+        if (! $resultado['ok']) {
+            return redirect()->to('/fondos/' . $id)->with('errores', $resultado['errores']);
+        }
+
+        return redirect()->to('/fondos/' . $id)->with('ok', $this->aviso((string) $resultado['solicitud']['estado']));
+    }
+
+    public function rechazar(int $id)
+    {
+        [$usuario, , $solicitud] = $this->visible($id);
+        if ($solicitud === null || $usuario === null) {
+            return redirect()->to('/fondos')->with('error', 'No encontramos esa solicitud.');
+        }
+        $resultado = (new SolicitudServicio())->rechazar($solicitud, $usuario, (string) $this->request->getPost('detalle'));
+        if (! $resultado['ok']) {
+            return redirect()->to('/fondos/' . $id)->with('errores', $resultado['errores']);
+        }
+
+        return redirect()->to('/fondos/' . $id)->with('ok', 'Solicitud rechazada.');
+    }
+
+    public function entregar(int $id)
+    {
+        [$usuario, , $solicitud] = $this->visible($id);
+        if ($solicitud === null || $usuario === null) {
+            return redirect()->to('/fondos')->with('error', 'No encontramos esa solicitud.');
+        }
+        $resultado = (new SolicitudServicio())->entregar($solicitud, $usuario);
+        if (! $resultado['ok']) {
+            return redirect()->to('/fondos/' . $id)->with('errores', $resultado['errores']);
+        }
+
+        return redirect()->to('/fondos/' . $id)->with('ok', 'Fondo entregado. El saldo inicial es el monto aceptado.');
+    }
+
+    /**
+     * @param array<string, mixed> $usuario
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function visibles(array $usuario, int $empresaId): array
+    {
+        $items = model(SolicitudModel::class)->where('empresa_id', $empresaId)->orderBy('id', 'DESC')->findAll();
+        if ($usuario['rol'] === 'administrador') {
+            return $items;
+        }
+
+        return array_values(array_filter($items, function (array $item) use ($usuario): bool {
+            return (int) $item['usuario_id'] === (int) $usuario['id']
+                || ((string) $item['estado'] === 'en_aceptacion' && (int) $item['turno_usuario_id'] === (int) $usuario['id']);
+        }));
+    }
+
+    /**
+     * @return array{0: array<string, mixed>|null, 1: array<string, mixed>|null, 2: array<string, mixed>|null}
+     */
+    private function visible(int $id): array
+    {
+        [$usuario, $empresa] = $this->cuenta();
+        if ($usuario === null || $empresa === null) {
+            return [null, null, null];
+        }
+        $solicitud = model(SolicitudModel::class)->find($id);
+        if (! is_array($solicitud) || (int) $solicitud['empresa_id'] !== (int) $empresa['id']) {
+            return [$usuario, $empresa, null];
+        }
+        $propias = $this->visibles($usuario, (int) $empresa['id']);
+        foreach ($propias as $item) {
+            if ((int) $item['id'] === $id) {
+                return [$usuario, $empresa, $solicitud];
+            }
+        }
+
+        return [$usuario, $empresa, null];
+    }
+
+    /**
+     * @return array{0: array<string, mixed>|null, 1: array<string, mixed>|null}
+     */
+    private function cuenta(): array
+    {
+        $sesion = new Sesion();
+
+        return [$sesion->usuario(), $sesion->empresa()];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function nombres(int $empresaId): array
+    {
+        $nombres = [];
+        foreach (model(UsuarioModel::class)->where('empresa_id', $empresaId)->findAll() as $persona) {
+            $nombres[(int) $persona['id']] = (string) $persona['nombre'];
+        }
+
+        return $nombres;
+    }
+
+    private function aviso(string $estado): string
+    {
+        return [
+            'detenida'      => 'La solicitud se detuvo por una regla.',
+            'en_aceptacion' => 'La solicitud entró al flujo de aceptación.',
+            'aceptada'      => 'Solicitud aceptada. Tesorería puede entregar el fondo.',
+            'entregada'     => 'Fondo entregado. El saldo inicial es el monto aceptado.',
+        ][$estado] ?? 'Solicitud guardada.';
+    }
+}
