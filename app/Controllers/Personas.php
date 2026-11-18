@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Libraries\Paises;
 use App\Libraries\PersonaServicio;
 use App\Libraries\Planes;
 use App\Libraries\Sesion;
@@ -20,6 +21,7 @@ class Personas extends BaseController
 
         $personas = model(UsuarioModel::class)->where('empresa_id', $empresa['id'])->orderBy('id', 'ASC')->findAll();
         $cupo     = (int) ($empresa['cupo_usuarios'] ?? Planes::USUARIOS);
+        $pais     = Paises::pais((string) $empresa['pais']);
 
         return view('personas/index', [
             'personas'   => $personas,
@@ -27,6 +29,8 @@ class Personas extends BaseController
             'usadas'     => count($personas),
             'cupo'       => $cupo,
             'puedeSumar' => Planes::puedeSumarUsuario(count($personas), $cupo),
+            'documento'  => $pais['id_fiscal'] ?? 'RUT',
+            'ejemplo'    => $pais['ejemplo'] ?? '',
         ]);
     }
 

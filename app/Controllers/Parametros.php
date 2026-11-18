@@ -60,6 +60,10 @@ class Parametros extends BaseController
             'titulo' => 'Tipos de documento',
             'bajada' => 'La carga ofrece estos tipos. Un monto sobre el aceptado queda observado. Sin comprobante solo cuando el tipo lo permite y el monto cabe.',
         ],
+        'preasientos' => [
+            'titulo' => 'Preasientos',
+            'bajada' => 'En Chile el preasiento es un comprobante de traspaso. Junta las rendiciones del mes por persona o en uno solo del mes. El RUT del trabajador entra como auxiliar solo si lo pides. Nunca se arma uno por rendición.',
+        ],
     ];
 
     public function index()
@@ -207,13 +211,35 @@ class Parametros extends BaseController
         }
         $db   = db_connect();
         $usada = $db->table('categoria_cuentas')->where('cuenta_id', $id)->countAllResults() > 0
-            || $db->table('pre_asientos')->where('cuenta_id', $id)->countAllResults() > 0;
+            || $db->table('pre_asientos')->where('cuenta_id', $id)->countAllResults() > 0
+            || (int) ($empresa['preasiento_cuenta_id'] ?? 0) === $id
+            || $db->table('preasiento_lineas')->where('cuenta_id', $id)->countAllResults() > 0;
         if ($usada) {
             return redirect()->to('/parametros/cuentas')->with('error', 'Esa cuenta ya clasifica gastos. Quítala de la clasificación primero.');
         }
         model(CuentaModel::class)->delete($id);
 
         return redirect()->to('/parametros/cuentas')->with('ok', 'Cuenta eliminada.');
+    }
+
+    public function preasiento()
+    {
+        [$usuario, $empresa] = $this->admin();
+        if ($usuario === null || $empresa === null) {
+            return $this->fuera($empresa);
+        }
+        $agrupacion = (string) $this->request->getPost('agrupacion') === 'usuario' ? 'usuario' : 'mes';
+        $cuentaId = (int) $this->request->getPost('cuenta_id');
+        if ($cuentaId > 0 && $this->fila(CuentaModel::class, $cuentaId, (int) $empresa['id']) === null) {
+            return redirect()->to('/parametros/preasientos')->with('error', 'Elige una cuenta de la empresa.');
+        }
+        model(\App\Models\EmpresaModel::class)->update($empresa['id'], [
+            'preasiento_agrupacion' => $agrupacion,
+            'preasiento_auxiliar'   => $this->request->getPost('auxiliar') ? 1 : 0,
+            'preasiento_cuenta_id'  => $cuentaId > 0 ? $cuentaId : null,
+        ]);
+
+        return redirect()->to('/parametros/preasientos')->with('ok', 'Preasiento guardado.');
     }
 
     public function clasificacion()

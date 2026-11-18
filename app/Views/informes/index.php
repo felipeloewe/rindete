@@ -28,5 +28,11 @@
             <span><?= esc($pieza['bajada']) ?></span>
         </a>
     <?php endforeach ?>
+    <?php if ($esAdmin) : ?>
+        <a class="losa losa-informes" href="<?= base_url('informes/preasientos?anio=' . $anio . '&mes=' . $mes) ?>">
+            <strong>Preasientos</strong>
+            <span>Comprobante de traspaso del mes.</span>
+        </a>
+    <?php endif ?>
 </div>
 <?= $this->endSection() ?>
