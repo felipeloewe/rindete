@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Libraries\ConexionErp;
 use App\Libraries\GastoServicio;
 use App\Libraries\Modulos;
 use App\Libraries\Montos;
 use App\Libraries\Paises;
 use App\Libraries\ParametrosBase;
 use App\Libraries\Sesion;
+use App\Libraries\SistemasErp;
 use App\Models\AceptadorModel;
 use App\Models\CategoriaModel;
 use App\Models\ConexionModel;
@@ -22,8 +24,8 @@ class Parametros extends BaseController
 {
     private const DESTINOS = [
         'asientos' => 'Preasientos',
-        'pagos'    => 'Flujo de pagos',
-        'ambos'    => 'Preasientos y pagos',
+        'pagos'    => 'Nómina de fondos',
+        'ambos'    => 'Preasientos y nómina de fondos',
     ];
 
     private const CONCEPTOS = [
@@ -43,7 +45,7 @@ class Parametros extends BaseController
         ],
         'conexiones' => [
             'titulo' => 'Conexiones',
-            'bajada' => 'El cierre y el flujo de pagos usan solo las que quedan vigentes.',
+            'bajada' => 'Aquí se guarda el token de Softnet o de Odoo. Sirve para los preasientos y para crear en el banco la nómina de fondos por rendir.',
         ],
         'flujo' => [
             'titulo' => 'Flujo de aceptación',
@@ -162,6 +164,7 @@ class Parametros extends BaseController
             'persona'     => $persona,
             'empresa'     => $empresa,
             'destinos'    => self::DESTINOS,
+            'sistemas'    => SistemasErp::CATALOGO,
             'conceptos'   => self::CONCEPTOS,
             'moneda'      => Paises::pais((string) ($empresa['pais'] ?? ''))['moneda'] ?? 'USD',
             'nombres'     => $this->nombres($usuarios, $categorias, $cuentas),
@@ -295,19 +298,22 @@ class Parametros extends BaseController
         if ($usuario === null || $empresa === null) {
             return $this->fuera($empresa);
         }
-        $nombre  = mb_substr(trim((string) $this->request->getPost('nombre')), 0, 120);
-        $destino = (string) $this->request->getPost('destino');
-        if ($nombre === '' || ! isset(self::DESTINOS[$destino])) {
-            return redirect()->to('/parametros/conexiones')->with('error', 'Escribe el sistema y elige para qué etapa sirve.');
+        $creada = (new ConexionErp())->crear(
+            (int) $empresa['id'],
+            mb_substr(trim((string) $this->request->getPost('nombre')), 0, 120),
+            (string) $this->request->getPost('sistema'),
+            (string) $this->request->getPost('destino'),
+            (bool) $this->request->getPost('vigente'),
+            (string) $this->request->getPost('url'),
+            (string) $this->request->getPost('token_api'),
+        );
+        if (! $creada['ok']) {
+            return redirect()->to('/parametros/conexiones')->with('error', $creada['errores'][0]);
         }
-        model(ConexionModel::class)->insert([
-            'empresa_id' => $empresa['id'],
-            'nombre'     => $nombre,
-            'destino'    => $destino,
-            'vigente'    => $this->request->getPost('vigente') ? 1 : 0,
-        ]);
 
-        return redirect()->to('/parametros/conexiones')->with('ok', 'Conexión guardada.');
+        return redirect()->to('/parametros/conexiones')
+            ->with('ok', 'Conexión guardada en Parámetros. El token de la API queda aquí y no se vuelve a mostrar.')
+            ->with('token', $creada['token']);
     }
 
     public function eliminarConexion(int $id)

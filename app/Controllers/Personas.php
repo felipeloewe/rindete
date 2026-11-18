@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Libraries\BancosChile;
 use App\Libraries\Paises;
 use App\Libraries\PersonaServicio;
 use App\Libraries\Planes;
@@ -31,6 +32,8 @@ class Personas extends BaseController
             'puedeSumar' => Planes::puedeSumarUsuario(count($personas), $cupo),
             'documento'  => $pais['id_fiscal'] ?? 'RUT',
             'ejemplo'    => $pais['ejemplo'] ?? '',
+            'chile'      => (string) $empresa['pais'] === 'CL',
+            'bancos'     => BancosChile::CODIGOS,
         ]);
     }
 

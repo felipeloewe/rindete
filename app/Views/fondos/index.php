@@ -8,7 +8,12 @@
         <h1>Fondos</h1>
         <p>Pide el dinero por rendir. Tesorería lo entrega cuando el flujo lo acepta.</p>
     </div>
-    <a class="boton" href="<?= base_url('fondos/nueva') ?>">Pedir fondo</a>
+    <div class="lado">
+        <?php if ($esAdmin) : ?>
+            <a class="boton claro" href="<?= base_url('fondos/nomina') ?>">Nómina</a>
+        <?php endif ?>
+        <a class="boton" href="<?= base_url('fondos/nueva') ?>">Pedir fondo</a>
+    </div>
 </header>
 <?php if ($fondos !== []) : ?>
     <h2>Por rendir</h2>

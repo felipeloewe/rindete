@@ -167,6 +167,24 @@ class Informes extends BaseController
         return redirect()->to($vuelta)->with('ok', 'Preasientos armados.')->with('avisos', $resultado['avisos']);
     }
 
+    public function cerrarPreasientos()
+    {
+        [$usuario, $empresa, $anio, $mes] = $this->adminPeriodo(true);
+        if ($usuario === null || $empresa === null) {
+            return $this->fueraPreasiento($empresa);
+        }
+        if (! Modulos::activo($empresa, 'preasientos')) {
+            return redirect()->to('/modulos')->with('error', Modulos::aviso('preasientos'));
+        }
+        $resultado = (new PreAsientoChile())->cerrar((int) $empresa['id'], $anio, $mes);
+        $vuelta = '/informes/preasientos?anio=' . $anio . '&mes=' . $mes;
+        if (! $resultado['ok']) {
+            return redirect()->to($vuelta)->with('error', $resultado['errores'][0]);
+        }
+
+        return redirect()->to($vuelta)->with('ok', 'Mes cerrado. El ERP ya puede tomar estos preasientos.');
+    }
+
     /**
      * @param array<string, mixed> $empresa
      *
@@ -193,6 +211,7 @@ class Informes extends BaseController
             'cuenta'       => is_array($cuenta) ? $cuenta : null,
             'salida'       => is_array($salida) ? $salida : null,
             'comprobantes' => (new PreAsientoChile())->leer((int) $empresa['id'], $anio, $mes),
+            'tomado'       => (new PreAsientoChile())->tomado((int) $empresa['id'], $anio, $mes),
             'moneda'       => Paises::pais((string) $empresa['pais'])['moneda'] ?? 'CLP',
         ];
     }

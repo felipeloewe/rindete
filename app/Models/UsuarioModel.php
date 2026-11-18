@@ -13,7 +13,7 @@ class UsuarioModel extends Model
     protected $useAutoIncrement = true;
     protected $returnType       = 'array';
     protected $allowedFields    = [
-        'empresa_id', 'nombre', 'email', 'id_fiscal', 'password', 'rol', 'activo', 'creado',
+        'empresa_id', 'nombre', 'email', 'id_fiscal', 'cuenta_banco', 'banco_destino', 'password', 'rol', 'activo', 'creado',
         'puede_rendir_sin_solicitud', 'monto_maximo_rendicion',
     ];
 }

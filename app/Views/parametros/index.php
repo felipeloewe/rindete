@@ -20,7 +20,7 @@
     </a>
     <a class="losa losa-categorias" href="<?= base_url('parametros/conexiones') ?>">
         <strong>Conexiones</strong>
-        <span>Sistemas para preasientos y pagos.</span>
+        <span>El token de Softnet o de Odoo, para preasientos y la nómina en el banco.</span>
     </a>
     <a class="losa losa-parametros" href="<?= base_url('parametros/flujo') ?>">
         <strong>Flujo</strong>
