@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Libraries\InformeServicio;
+use App\Libraries\Modulos;
 use App\Libraries\Paises;
 use App\Libraries\PreAsientoChile;
 use App\Libraries\Sesion;
@@ -34,6 +35,16 @@ class Informes extends BaseController
             'titulo' => 'Tipo de gasto',
             'bajada' => 'Nivel de gasto de la compañía en el período, por tipo.',
         ],
+        'cuentas' => [
+            'titulo' => 'Cuentas',
+            'bajada' => 'Movimientos de cada cuenta: el fondo nace cuando sale el dinero y pasa al gasto cuando se rinde.',
+        ],
+    ];
+
+    /** @var array<string, string> */
+    private const DE_PAGO = [
+        'asientos' => 'asientos',
+        'cuentas'  => 'cuentas',
     ];
 
     private const MESES = [
@@ -64,6 +75,16 @@ class Informes extends BaseController
         if (! isset(self::PIEZAS[$pieza])) {
             return redirect()->to('/informes');
         }
+        if (isset(self::DE_PAGO[$pieza]) && ! Modulos::activo($empresa, self::DE_PAGO[$pieza])) {
+            return view('plan/fuera', [
+                'aviso'   => Modulos::aviso(self::DE_PAGO[$pieza]),
+                'detalle' => Modulos::CATALOGO[self::DE_PAGO[$pieza]]['detalle'],
+                'esAdmin' => $filtro['esAdmin'],
+            ]);
+        }
+        if ($pieza === 'cuentas' && ! $filtro['esAdmin']) {
+            return redirect()->to('/panel')->with('error', 'Solo el administrador ve el seguimiento de cuentas.');
+        }
         $servicio = new InformeServicio();
         $persona = $filtro['persona'];
         $datos = match ($pieza) {
@@ -72,6 +93,9 @@ class Informes extends BaseController
             'gastos'      => $servicio->gastos((int) $empresa['id'], $filtro['anio'], $filtro['mes'], $persona),
             'asientos'    => $servicio->asientos((int) $empresa['id'], $filtro['anio'], $filtro['mes'], $persona),
             'tipos'       => $servicio->tipos((int) $empresa['id'], $filtro['anio'], $filtro['mes'], $persona),
+            'cuentas'     => (new PreAsientoChile())->mayor((int) $empresa['id'], $filtro['anio'], $filtro['mes']) + [
+                'puedeArmar' => Modulos::activo($empresa, 'preasientos'),
+            ],
         };
 
         return view('informes/' . $pieza, $this->comun($usuario, $empresa, $filtro) + $datos + [
@@ -105,6 +129,11 @@ class Informes extends BaseController
             'periodo'  => $filtro['mes'] >= 1 && $filtro['mes'] <= 12
                 ? self::MESES[$filtro['mes']] . ' ' . $filtro['anio']
                 : 'Año ' . $filtro['anio'],
+            'incluidos' => [
+                'asientos'    => Modulos::activo($empresa, 'asientos'),
+                'preasientos' => Modulos::activo($empresa, 'preasientos'),
+                'cuentas'     => Modulos::activo($empresa, 'cuentas'),
+            ],
         ];
     }
 
@@ -113,6 +142,9 @@ class Informes extends BaseController
         [$usuario, $empresa, $anio, $mes] = $this->adminPeriodo(false);
         if ($usuario === null || $empresa === null) {
             return $this->fueraPreasiento($empresa);
+        }
+        if (! Modulos::activo($empresa, 'preasientos')) {
+            return $this->modulo('preasientos');
         }
 
         return view('informes/preasientos', $this->datosPreasiento($empresa, $anio, $mes));
@@ -123,6 +155,9 @@ class Informes extends BaseController
         [$usuario, $empresa, $anio, $mes] = $this->adminPeriodo(true);
         if ($usuario === null || $empresa === null) {
             return $this->fueraPreasiento($empresa);
+        }
+        if (! Modulos::activo($empresa, 'preasientos')) {
+            return redirect()->to('/modulos')->with('error', Modulos::aviso('preasientos'));
         }
         $resultado = (new PreAsientoChile())->armar($empresa, $anio, $mes);
         $vuelta = '/informes/preasientos?anio=' . $anio . '&mes=' . $mes;
@@ -144,7 +179,9 @@ class Informes extends BaseController
             $mes = (int) date('n');
         }
         $cuentaId = (int) ($empresa['preasiento_cuenta_id'] ?? 0);
+        $salidaId = (int) ($empresa['preasiento_salida_id'] ?? 0);
         $cuenta = $cuentaId > 0 ? model(CuentaModel::class)->find($cuentaId) : null;
+        $salida = $salidaId > 0 ? model(CuentaModel::class)->find($salidaId) : null;
 
         return [
             'anio'         => $anio,
@@ -155,6 +192,7 @@ class Informes extends BaseController
             'agrupacion'   => (string) ($empresa['preasiento_agrupacion'] ?? 'mes') === 'usuario' ? 'usuario' : 'mes',
             'auxiliar'     => (int) ($empresa['preasiento_auxiliar'] ?? 0) === 1,
             'cuenta'       => is_array($cuenta) ? $cuenta : null,
+            'salida'       => is_array($salida) ? $salida : null,
             'comprobantes' => (new PreAsientoChile())->leer((int) $empresa['id'], $anio, $mes),
             'moneda'       => Paises::pais((string) $empresa['pais'])['moneda'] ?? 'CLP',
         ];
@@ -179,6 +217,18 @@ class Informes extends BaseController
         }
 
         return [$usuario, $empresa, $anio, $mes];
+    }
+
+    /**
+     * @param array<string, mixed>|null $empresa
+     */
+    private function modulo(string $codigo)
+    {
+        return view('plan/fuera', [
+            'aviso'   => Modulos::aviso($codigo),
+            'detalle' => Modulos::CATALOGO[$codigo]['detalle'],
+            'esAdmin' => true,
+        ]);
     }
 
     /**

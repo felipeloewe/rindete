@@ -2,14 +2,17 @@
 
 declare(strict_types=1);
 
+use App\Libraries\Modulos;
 use App\Libraries\PersonaServicio;
 use App\Libraries\PreAsiento;
 use App\Libraries\PreAsientoChile;
 use App\Models\CategoriaModel;
 use App\Models\CuentaModel;
 use App\Models\EmpresaModel;
+use App\Models\FondoModel;
 use App\Models\GastoModel;
 use App\Models\RendicionModel;
+use App\Models\SolicitudModel;
 use App\Models\UsuarioModel;
 use CodeIgniter\Test\CIUnitTestCase;
 use CodeIgniter\Test\DatabaseTestTrait;
@@ -45,6 +48,7 @@ final class PreAsientosTest extends CIUnitTestCase
         $cuentaAlim = $this->cuenta($empresa, '5101', 'Alimentación');
         $cuentaTrans = $this->cuenta($empresa, '5102', 'Transporte');
         $haber = $this->cuenta($empresa, '1105', 'Fondos por rendir');
+        $banco = $this->cuenta($empresa, '1101', 'Banco');
         $db = db_connect();
         $db->table('categoria_cuentas')->insert(['categoria_id' => $alimentacion['id'], 'cuenta_id' => $cuentaAlim]);
         $db->table('categoria_cuentas')->insert(['categoria_id' => $transporte['id'], 'cuenta_id' => $cuentaTrans]);
@@ -70,6 +74,7 @@ final class PreAsientosTest extends CIUnitTestCase
         $empresa['preasiento_agrupacion'] = 'mes';
         $empresa['preasiento_auxiliar'] = 0;
         $empresa['preasiento_cuenta_id'] = $haber;
+        $empresa['preasiento_salida_id'] = $banco;
         $armada = (new PreAsientoChile())->armar($empresa, 2026, 11);
         $this->assertTrue($armada['ok'], implode(' ', $armada['errores']));
         $this->assertStringContainsString('Hotel', implode(' ', $armada['avisos']));
@@ -137,6 +142,7 @@ final class PreAsientosTest extends CIUnitTestCase
         [$ana, $empresa, $alimentacion] = $this->base();
         $cuenta = $this->cuenta($empresa, '5101', 'Alimentación');
         $haber = $this->cuenta($empresa, '1105', 'Fondos por rendir');
+        $banco = $this->cuenta($empresa, '1101', 'Banco');
         db_connect()->table('categoria_cuentas')->insert([
             'categoria_id' => $alimentacion['id'],
             'cuenta_id'    => $cuenta,
@@ -146,10 +152,19 @@ final class PreAsientosTest extends CIUnitTestCase
             'preasiento_agrupacion' => 'mes',
             'preasiento_auxiliar'   => 0,
             'preasiento_cuenta_id'  => $haber,
+            'preasiento_salida_id'  => $banco,
         ]);
 
         $this->withSession(['usuario_id' => $ana['id']]);
-        $pagina = $this->get('informes/preasientos?anio=2026&mes=11');
+        $cerrado = $this->get('informes/preasientos?anio=2026&mes=11');
+        $cerrado->assertOK();
+        $cerrado->assertSee('no está contratado');
+        $cerrado->assertDontSee('Armar preasientos');
+        $asientos = $this->get('informes/asientos?anio=2026&mes=11');
+        $asientos->assertSee('no está contratado');
+
+        \App\Libraries\Modulos::contratar((int) $empresa['id'], 'preasientos');
+        $pagina = $this->withSession(['usuario_id' => $ana['id']])->get('informes/preasientos?anio=2026&mes=11');
         $pagina->assertOK();
         $pagina->assertSee('Armar preasientos');
 
@@ -164,6 +179,82 @@ final class PreAsientosTest extends CIUnitTestCase
         $vista->assertOK();
         $vista->assertSee('Cuadra');
         $vista->assertSee('5101');
+    }
+
+    public function testLaSalidaNaceElFondoYLaRendicionLoPasaAlGasto(): void
+    {
+        [$ana, $empresa, $alimentacion] = $this->base();
+        $luis = (new PersonaServicio())->crear($empresa, [
+            'nombre'   => 'Luis Soto',
+            'email'    => 'luis@acme.test',
+            'password' => 'clave-segura',
+        ]);
+        $luis = model(UsuarioModel::class)->find($luis['id']);
+        $gasto = $this->cuenta($empresa, '5101', 'Alimentación');
+        $fondo = $this->cuenta($empresa, '2101', 'Fondos por rendir');
+        $banco = $this->cuenta($empresa, '1101', 'Banco');
+        db_connect()->table('categoria_cuentas')->insert([
+            'categoria_id' => $alimentacion['id'],
+            'cuenta_id'    => $gasto,
+        ]);
+        $this->fondo($ana, 5000, '2026-11-02 10:00:00');
+        $this->fondo($ana, 7000, '2026-11-08 10:00:00');
+        $this->fondo($luis, 4000, '2026-11-10 10:00:00');
+        $this->fondo($ana, 9000, '2026-10-20 10:00:00');
+        $this->rendir($ana, $alimentacion, 'Almuerzo', 6000, '2026-11-12');
+        $empresa['preasiento_agrupacion'] = 'mes';
+        $empresa['preasiento_auxiliar'] = 0;
+        $empresa['preasiento_cuenta_id'] = $fondo;
+        $empresa['preasiento_salida_id'] = $banco;
+
+        $armada = (new PreAsientoChile())->armar($empresa, 2026, 11);
+        $this->assertTrue($armada['ok'], implode(' ', $armada['errores']));
+        $comprobantes = (new PreAsientoChile())->leer((int) $empresa['id'], 2026, 11);
+        $this->assertCount(2, $comprobantes);
+        $this->assertSame('salida', $comprobantes[0]['tipo']);
+        $this->assertSame('traspaso', $comprobantes[1]['tipo']);
+        $this->assertEquals(16000, $comprobantes[0]['debe']);
+        $this->assertEquals(16000, $comprobantes[0]['haber']);
+        $this->assertEquals(6000, $comprobantes[1]['haber']);
+
+        $empresa['preasiento_agrupacion'] = 'usuario';
+        (new PreAsientoChile())->armar($empresa, 2026, 11);
+        $porPersona = (new PreAsientoChile())->leer((int) $empresa['id'], 2026, 11);
+        $salidas = array_values(array_filter($porPersona, static fn (array $fila): bool => $fila['tipo'] === 'salida'));
+        $this->assertCount(2, $salidas);
+        $montos = [];
+        foreach ($salidas as $salida) {
+            $montos[(int) $salida['usuario_id']] = (float) $salida['debe'];
+        }
+        $this->assertEquals(12000, $montos[(int) $ana['id']]);
+        $this->assertEquals(4000, $montos[(int) $luis['id']]);
+
+        $empresa['preasiento_agrupacion'] = 'mes';
+        (new PreAsientoChile())->armar($empresa, 2026, 11);
+        Modulos::contratar((int) $empresa['id'], 'cuentas');
+        $mayor = (new PreAsientoChile())->mayor((int) $empresa['id'], 2026, 11);
+        $saldos = [];
+        foreach ($mayor['cuentas'] as $cuenta) {
+            $saldos[$cuenta['codigo']] = $cuenta;
+        }
+        $this->assertEquals(16000, $saldos['2101']['debe']);
+        $this->assertEquals(6000, $saldos['2101']['haber']);
+        $this->assertEquals(10000, $saldos['2101']['saldo']);
+        $this->assertEquals(16000, $saldos['1101']['haber']);
+        $this->assertEquals(6000, $saldos['5101']['debe']);
+
+        $this->withSession(['usuario_id' => $ana['id']]);
+        $seguridad = service('security');
+        $alta = $this->post('modulos/contratar', [
+            'codigo' => 'asientos',
+            $seguridad->getTokenName() => $seguridad->getHash(),
+        ]);
+        $alta->assertRedirectTo(site_url('modulos'));
+        $this->assertTrue(Modulos::activo($empresa, 'asientos'));
+        $lista = $this->withSession(['usuario_id' => $ana['id']])->get('modulos');
+        $lista->assertOK();
+        $lista->assertSee('Contratado');
+        $lista->assertSee('Incluidos');
     }
 
     /**
@@ -206,6 +297,38 @@ final class PreAsientosTest extends CIUnitTestCase
             'usuario_id' => null,
             'activa'     => 1,
         ], true);
+    }
+
+    /**
+     * @param array<string, mixed> $usuario
+     */
+    private function fondo(array $usuario, float $monto, string $creado): void
+    {
+        $solicitud = model(SolicitudModel::class)->insert([
+            'empresa_id'   => $usuario['empresa_id'],
+            'usuario_id'   => $usuario['id'],
+            'categoria_id' => model(CategoriaModel::class)->where('empresa_id', $usuario['empresa_id'])->first()['id'],
+            'motivo'       => 'Fondo',
+            'monto'        => $monto,
+            'moneda'       => 'CLP',
+            'estado'       => 'entregada',
+            'detalle'      => '',
+            'turno_orden'  => 0,
+            'creada'       => $creado,
+            'resuelta'     => $creado,
+            'entregada'    => $creado,
+        ], true);
+        model(FondoModel::class)->insert([
+            'empresa_id'   => $usuario['empresa_id'],
+            'usuario_id'   => $usuario['id'],
+            'solicitud_id' => $solicitud,
+            'motivo'       => 'Fondo',
+            'monto'        => $monto,
+            'saldo'        => $monto,
+            'moneda'       => 'CLP',
+            'estado'       => 'abierto',
+            'creado'       => $creado,
+        ]);
     }
 
     /**

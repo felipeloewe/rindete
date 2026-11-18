@@ -22,16 +22,21 @@
             'tipos'       => 'losa-categorias',
         ];
     ?>
+    <?php
+        $losas['cuentas'] = 'losa-informes';
+        $dePago = ['asientos' => 'asientos', 'cuentas' => 'cuentas'];
+    ?>
     <?php foreach ($piezas as $clave => $pieza) : ?>
+        <?php $cerrado = isset($dePago[$clave]) && empty($incluidos[$dePago[$clave]]); ?>
         <a class="losa <?= esc($losas[$clave]) ?>" href="<?= base_url('informes/' . $clave . '?' . $consulta) ?>">
             <strong><?= esc($pieza['titulo']) ?></strong>
-            <span><?= esc($pieza['bajada']) ?></span>
+            <span><?= $cerrado ? 'Módulo sin contratar.' : esc($pieza['bajada']) ?></span>
         </a>
     <?php endforeach ?>
     <?php if ($esAdmin) : ?>
         <a class="losa losa-informes" href="<?= base_url('informes/preasientos?anio=' . $anio . '&mes=' . $mes) ?>">
             <strong>Preasientos</strong>
-            <span>Comprobante de traspaso del mes.</span>
+            <span><?= empty($incluidos['preasientos']) ? 'Módulo sin contratar.' : 'Salida de fondos y traspaso al gasto.' ?></span>
         </a>
     <?php endif ?>
 </div>

@@ -15,6 +15,6 @@ class EmpresaModel extends Model
     protected $allowedFields    = [
         'nombre', 'pais', 'id_fiscal', 'plan', 'cupo_usuarios', 'cupo_bytes', 'creado',
         'parametros_sembrados', 'monto_maximo_rendicion', 'detener_monto', 'detener_tipo', 'detener_habilitacion',
-        'preasiento_agrupacion', 'preasiento_auxiliar', 'preasiento_cuenta_id',
+        'preasiento_agrupacion', 'preasiento_auxiliar', 'preasiento_cuenta_id', 'preasiento_salida_id',
     ];
 }
