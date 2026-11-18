@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Libraries\BancosChile;
 use App\Libraries\NominaFondos;
 use App\Libraries\Paises;
 use App\Libraries\Sesion;
@@ -50,9 +51,31 @@ class Fondos extends BaseController
             'anios'       => range((int) date('Y') + 1, (int) date('Y') - 4),
             'pendientes'  => $servicio->pendientes((int) $empresa['id'], $anio, $mes),
             'nominas'     => $servicio->delMes((int) $empresa['id'], $anio, $mes),
-            'nombres'     => $this->nombres((int) $empresa['id']),
-            'cuentas'     => $this->cuentasBanco((int) $empresa['id']),
+            'nombres'      => $this->nombres((int) $empresa['id']),
+            'cuentas'      => $this->cuentasBanco((int) $empresa['id']),
+            'bancosPersona'=> $this->bancosPersona((int) $empresa['id']),
+            'bancos'       => BancosChile::CODIGOS,
+            'chile'        => (string) $empresa['pais'] === 'CL',
+            'cuentaCargo'  => (string) ($empresa['cuenta_cargo'] ?? ''),
         ]);
+    }
+
+    public function archivoNomina(int $id)
+    {
+        [$usuario, $empresa] = $this->cuenta();
+        if ($usuario === null || $empresa === null || ($usuario['rol'] ?? '') !== 'administrador') {
+            return $this->soloAdmin();
+        }
+        $resultado = (new NominaFondos())->archivo((int) $empresa['id'], $id);
+        if (! $resultado['ok']) {
+            return redirect()->to('/fondos/nomina')->with('errores', $resultado['errores']);
+        }
+        $bytes = iconv('UTF-8', 'Windows-1252//TRANSLIT//IGNORE', $resultado['contenido']);
+
+        return $this->response
+            ->setHeader('Content-Type', 'text/plain; charset=Windows-1252')
+            ->setHeader('Content-Disposition', 'attachment; filename="' . $resultado['nombre'] . '"')
+            ->setBody($bytes === false ? $resultado['contenido'] : $bytes);
     }
 
     public function cerrarNomina()
@@ -61,13 +84,18 @@ class Fondos extends BaseController
         if ($usuario === null || $empresa === null) {
             return $this->soloAdmin();
         }
-        $resultado = (new NominaFondos())->cerrar((int) $empresa['id'], $anio, $mes);
+        $resultado = (new NominaFondos())->cerrar(
+            (int) $empresa['id'],
+            $anio,
+            $mes,
+            (string) $this->request->getPost('cuenta_cargo'),
+        );
         $vuelta = '/fondos/nomina?anio=' . $anio . '&mes=' . $mes;
         if (! $resultado['ok']) {
             return redirect()->to($vuelta)->with('errores', $resultado['errores']);
         }
 
-        return redirect()->to($vuelta)->with('ok', 'Nómina creada en el banco. Cada persona queda con su fondo por rendir.');
+        return redirect()->to($vuelta)->with('ok', 'Nómina creada en el banco. Cada persona queda con su fondo por rendir. El archivo ya se puede descargar.');
     }
 
     public function nueva()
@@ -285,6 +313,19 @@ class Fondos extends BaseController
         }
 
         return $cuentas;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function bancosPersona(int $empresaId): array
+    {
+        $bancos = [];
+        foreach (model(UsuarioModel::class)->where('empresa_id', $empresaId)->findAll() as $persona) {
+            $bancos[(int) $persona['id']] = (string) ($persona['banco_destino'] ?? '');
+        }
+
+        return $bancos;
     }
 
     private function aviso(string $estado): string

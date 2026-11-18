@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Libraries\ConexionErp;
 use App\Libraries\Modulos;
+use App\Libraries\NominaBci;
 use App\Libraries\NominaFondos;
 use App\Libraries\PreAsientoChile;
 use App\Models\CategoriaModel;
@@ -116,11 +117,18 @@ final class ErpCierreTest extends CIUnitTestCase
         $this->solicitud($ana, $categoria, 'En curso', 3000, 'en_aceptacion', '2026-11-09 09:00:00');
 
         $servicio = new NominaFondos();
-        $sinCuenta = $servicio->cerrar((int) $empresa['id'], 2026, 11);
+        $sinCuenta = $servicio->cerrar((int) $empresa['id'], 2026, 11, '12345678');
         $this->assertFalse($sinCuenta['ok']);
         $this->assertStringContainsString('cuenta del banco', implode(' ', $sinCuenta['errores']));
         model(UsuarioModel::class)->update($ana['id'], ['cuenta_banco' => '12345678']);
-        $cierre = $servicio->cerrar((int) $empresa['id'], 2026, 11);
+        $sinBanco = $servicio->cerrar((int) $empresa['id'], 2026, 11, '12345678');
+        $this->assertFalse($sinBanco['ok']);
+        $this->assertStringContainsString('banco de destino', implode(' ', $sinBanco['errores']));
+        model(UsuarioModel::class)->update($ana['id'], ['banco_destino' => '016']);
+        $sinCargo = $servicio->cerrar((int) $empresa['id'], 2026, 11, '1234567890123');
+        $this->assertFalse($sinCargo['ok']);
+        $this->assertStringContainsString('cuenta de cargo', implode(' ', $sinCargo['errores']));
+        $cierre = $servicio->cerrar((int) $empresa['id'], 2026, 11, '12.345.678');
         $this->assertTrue($cierre['ok'], implode(' ', $cierre['errores']));
         $fondo = model(\App\Models\FondoModel::class)->where('solicitud_id', $aceptada)->first();
         $this->assertSame('abierto', $fondo['estado']);
@@ -133,7 +141,48 @@ final class ErpCierreTest extends CIUnitTestCase
         $this->assertSame($aceptada, (int) $nomina['lineas'][0]['solicitud_id']);
         $this->assertSame('12345678-5', $nomina['lineas'][0]['rut']);
         $this->assertSame('12345678', $nomina['lineas'][0]['cuenta_banco']);
+        $this->assertSame('016', $nomina['lineas'][0]['banco_destino']);
+        $this->assertSame('12345678', $nomina['cuenta_cargo']);
         $this->assertSame('en_banco', $nomina['estado']);
+        $archivo = $servicio->archivo((int) $empresa['id'], (int) $cierre['id']);
+        $this->assertTrue($archivo['ok'], implode(' ', $archivo['errores']));
+        $this->assertSame('nomina-fondos-2026-11.txt', $archivo['nombre']);
+        $this->assertSame(
+            "000012345678;000000000012345678;016;12345678;5;Ana Pérez;8000;;;OTR;Pasajes;ana@acme.test;Ana Pérez\r\n",
+            $archivo['contenido'],
+        );
+        $ejemplo = NominaBci::texto([
+            'anio' => 2026,
+            'mes' => 11,
+            'cuenta_cargo' => '12345678',
+            'lineas' => [[
+                'usuario_id' => 7,
+                'nombre' => 'Nombre Prueba',
+                'rut' => '123455678-3',
+                'cuenta_banco' => '12345678',
+                'banco_destino' => '016',
+                'motivo' => 'Prueba Pago',
+                'monto' => 3,
+            ]],
+        ], [7 => 'prueba@bci.cl']);
+        $this->assertSame(
+            "000012345678;000000000012345678;016;123455678;3;Nombre Prueba;3;;;OTR;Prueba Pago;prueba@bci.cl;Nombre Prueba\r\n",
+            $ejemplo['contenido'],
+        );
+        $conCentavos = NominaBci::texto([
+            'anio' => 2026,
+            'mes' => 11,
+            'cuenta_cargo' => '12345678',
+            'lineas' => [[
+                'nombre' => 'Nombre Prueba',
+                'rut' => '12345678-5',
+                'cuenta_banco' => '12345678',
+                'banco_destino' => '016',
+                'motivo' => 'Fondo',
+                'monto' => 10.5,
+            ]],
+        ]);
+        $this->assertFalse($conCentavos['ok']);
         $this->assertSame('Pasajes', $nomina['lineas'][0]['motivo']);
 
         $softnet = $this->conectar((int) $empresa['id'], 'Softnet tesorería', 'softnet', 'pagos');
@@ -173,8 +222,14 @@ final class ErpCierreTest extends CIUnitTestCase
         $pagina->assertOK();
         $pagina->assertSee('El banco la registró');
         $pagina->assertSee('odoo:novedad:11');
+        $pagina->assertSee('Descargar archivo');
         $pagina->assertDontSee('Crear en el banco');
         $pagina->assertDontSee('Remuneraciones');
+        $descarga = $this->withSession(['usuario_id' => $ana['id']])
+            ->get('fondos/nomina/' . $cierre['id'] . '/archivo');
+        $descarga->assertOK();
+        $descarga->assertHeader('Content-Type', 'text/plain; charset=Windows-1252');
+        $this->assertStringContainsString('8000;;;OTR;Pasajes;ana@acme.test', $descarga->getBody());
     }
 
     /**

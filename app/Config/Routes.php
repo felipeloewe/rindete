@@ -39,6 +39,7 @@ $routes->group('', ['filter' => 'auth'], static function (RouteCollection $route
     $routes->get('fondos', 'Fondos::index');
     $routes->get('fondos/nomina', 'Fondos::nomina');
     $routes->post('fondos/nomina', 'Fondos::cerrarNomina');
+    $routes->get('fondos/nomina/(:num)/archivo', 'Fondos::archivoNomina/$1');
     $routes->get('fondos/nueva', 'Fondos::nueva');
     $routes->post('fondos', 'Fondos::crear');
     $routes->post('fondos/(:num)/aceptar', 'Fondos::aceptar/$1');

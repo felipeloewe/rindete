@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Libraries;
 
+use App\Models\EmpresaModel;
 use App\Models\SolicitudModel;
 use App\Models\UsuarioModel;
 
@@ -12,7 +13,7 @@ class NominaFondos
     /**
      * @return array{ok: bool, errores: list<string>, id?: int}
      */
-    public function cerrar(int $empresaId, int $anio, int $mes): array
+    public function cerrar(int $empresaId, int $anio, int $mes, string $cuentaCargo = ''): array
     {
         if ($mes < 1 || $mes > 12) {
             return ['ok' => false, 'errores' => ['Elige un mes.']];
@@ -25,7 +26,13 @@ class NominaFondos
         foreach (model(UsuarioModel::class)->where('empresa_id', $empresaId)->findAll() as $persona) {
             $personas[(int) $persona['id']] = $persona;
         }
+        $empresa = model(EmpresaModel::class)->find($empresaId);
+        $chile = is_array($empresa) && (string) $empresa['pais'] === 'CL';
+        $cargo = $this->cuentaCargo($cuentaCargo);
         $errores = [];
+        if ($chile && $cargo === null) {
+            $errores[] = 'La cuenta de cargo lleva hasta 12 números. Es la cuenta de la empresa desde la que sale el dinero.';
+        }
         foreach ($pendientes as $solicitud) {
             $persona = $personas[(int) $solicitud['usuario_id']] ?? null;
             $nombre = is_array($persona) ? (string) $persona['nombre'] : 'Una persona';
@@ -35,9 +42,15 @@ class NominaFondos
             if (! is_array($persona) || trim((string) ($persona['cuenta_banco'] ?? '')) === '') {
                 $errores[] = 'A ' . $nombre . ' le falta la cuenta del banco. Se anota en Personas.';
             }
+            if ($chile && (! is_array($persona) || ! BancosChile::existe((string) ($persona['banco_destino'] ?? '')))) {
+                $errores[] = 'A ' . $nombre . ' le falta el banco de destino. Se anota en Personas.';
+            }
         }
         if ($errores !== []) {
             return ['ok' => false, 'errores' => $errores];
+        }
+        if ($chile) {
+            model(EmpresaModel::class)->update($empresaId, ['cuenta_cargo' => $cargo]);
         }
         $ahora = date('Y-m-d H:i:s');
         $db = db_connect();
@@ -46,9 +59,10 @@ class NominaFondos
             'empresa_id' => $empresaId,
             'anio'       => $anio,
             'mes'        => $mes,
-            'estado'     => 'en_banco',
-            'erp_ref'    => '',
-            'creada'     => $ahora,
+            'estado'       => 'en_banco',
+            'erp_ref'      => '',
+            'cuenta_cargo' => $chile ? $cargo : '',
+            'creada'       => $ahora,
             'consumida'  => null,
         ]);
         $id = (int) $db->insertID();
@@ -59,8 +73,9 @@ class NominaFondos
                 'solicitud_id' => (int) $solicitud['id'],
                 'usuario_id'   => (int) $solicitud['usuario_id'],
                 'nombre'       => (string) $persona['nombre'],
-                'rut'          => (string) $persona['id_fiscal'],
-                'cuenta_banco' => (string) $persona['cuenta_banco'],
+                'rut'           => (string) $persona['id_fiscal'],
+                'cuenta_banco'  => (string) $persona['cuenta_banco'],
+                'banco_destino' => (string) ($persona['banco_destino'] ?? ''),
                 'motivo'       => (string) $solicitud['motivo'],
                 'monto'        => $solicitud['monto'],
                 'moneda'       => (string) $solicitud['moneda'],
@@ -119,6 +134,37 @@ class NominaFondos
         return is_array($tomada)
             ? ['ok' => true, 'errores' => [], 'nomina' => $tomada]
             : ['ok' => false, 'errores' => ['No encontramos esa nómina.']];
+    }
+
+    /**
+     * @return array{ok: bool, errores: list<string>, contenido: string, nombre: string}
+     */
+    public function archivo(int $empresaId, int $id): array
+    {
+        $nomina = $this->una($empresaId, $id);
+        if ($nomina === null) {
+            return ['ok' => false, 'errores' => ['No encontramos esa nómina.'], 'contenido' => '', 'nombre' => ''];
+        }
+        $empresa = model(EmpresaModel::class)->find($empresaId);
+        if (! is_array($empresa) || (string) $empresa['pais'] !== 'CL') {
+            return ['ok' => false, 'errores' => ['El archivo de Pago de Nómina en Línea está definido para Chile.'], 'contenido' => '', 'nombre' => ''];
+        }
+        $correos = [];
+        foreach (model(UsuarioModel::class)->where('empresa_id', $empresaId)->findAll() as $persona) {
+            $correos[(int) $persona['id']] = (string) $persona['email'];
+        }
+
+        return NominaBci::texto($nomina, $correos);
+    }
+
+    private function cuentaCargo(string $raw): ?string
+    {
+        $plano = (string) preg_replace('/\D+/', '', $raw);
+        if ($plano === '' || strlen($plano) > 12) {
+            return null;
+        }
+
+        return $plano;
     }
 
     /**

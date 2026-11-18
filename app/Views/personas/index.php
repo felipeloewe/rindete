@@ -36,9 +36,19 @@
                     <input name="id_fiscal" maxlength="40" value="<?= esc(old('id_fiscal', '')) ?>" placeholder="<?= esc($ejemplo) ?>">
                 </label>
                 <label>Cuenta del banco
-                    <input name="cuenta_banco" maxlength="40" value="<?= esc(old('cuenta_banco', '')) ?>" placeholder="Para la nómina de fondos">
+                    <input name="cuenta_banco" maxlength="18" value="<?= esc(old('cuenta_banco', '')) ?>" placeholder="Para la nómina de fondos">
                 </label>
             </div>
+            <?php if ($chile) : ?>
+                <label>Banco de destino
+                    <select name="banco_destino">
+                        <option value="">Elige el banco</option>
+                        <?php foreach ($bancos as $codigo => $banco) : ?>
+                            <option value="<?= esc($codigo) ?>" <?= old('banco_destino') === $codigo ? 'selected' : '' ?>><?= esc($codigo) ?> <?= esc($banco) ?></option>
+                        <?php endforeach ?>
+                    </select>
+                </label>
+            <?php endif ?>
             <label class="cheque">
                 <input type="checkbox" name="puede_rendir_sin_solicitud" value="1" <?= old('puede_rendir_sin_solicitud') ? 'checked' : '' ?>>
                 Puede rendir sin solicitud
@@ -75,9 +85,19 @@
                     <input name="id_fiscal" maxlength="40" value="<?= esc((string) ($persona['id_fiscal'] ?? '')) ?>" placeholder="<?= esc($ejemplo) ?>">
                 </label>
                 <label>Cuenta del banco
-                    <input name="cuenta_banco" maxlength="40" value="<?= esc((string) ($persona['cuenta_banco'] ?? '')) ?>" placeholder="Para la nómina de fondos">
+                    <input name="cuenta_banco" maxlength="18" value="<?= esc((string) ($persona['cuenta_banco'] ?? '')) ?>" placeholder="Para la nómina de fondos">
                 </label>
             </div>
+            <?php if ($chile) : ?>
+                <label>Banco de destino
+                    <select name="banco_destino">
+                        <option value="">Elige el banco</option>
+                        <?php foreach ($bancos as $codigo => $banco) : ?>
+                            <option value="<?= esc($codigo) ?>" <?= (string) ($persona['banco_destino'] ?? '') === $codigo ? 'selected' : '' ?>><?= esc($codigo) ?> <?= esc($banco) ?></option>
+                        <?php endforeach ?>
+                    </select>
+                </label>
+            <?php endif ?>
             <?php if ((int) $persona['id'] === $propias) : ?>
                 <p>Esta es tu cuenta. Sigue activa.</p>
             <?php else : ?>

@@ -34,6 +34,7 @@ class PersonaServicio
         $monto = $this->monto((string) ($input['monto_maximo'] ?? ''), $errores);
         $fiscal = $this->documento($empresa, (string) ($input['id_fiscal'] ?? ''), $errores);
         $banco = $this->cuentaBanco((string) ($input['cuenta_banco'] ?? ''), $errores);
+        $destino = $this->bancoDestino((string) ($input['banco_destino'] ?? ''), $errores);
         $cupo  = (int) ($empresa['cupo_usuarios'] ?? Planes::USUARIOS);
         $actuales = model(UsuarioModel::class)->where('empresa_id', (int) $empresa['id'])->countAllResults();
         if (! Planes::puedeSumarUsuario($actuales, $cupo)) {
@@ -49,6 +50,7 @@ class PersonaServicio
             'email'                       => $email,
             'id_fiscal'                   => $fiscal,
             'cuenta_banco'                => $banco,
+            'banco_destino'               => $destino,
             'password'                    => password_hash($password, PASSWORD_DEFAULT),
             'rol'                         => 'rendidor',
             'activo'                      => 1,
@@ -82,6 +84,9 @@ class PersonaServicio
         $monto   = $this->monto((string) ($input['monto_maximo'] ?? ''), $errores);
         $fiscal  = $this->documento($empresa, (string) ($input['id_fiscal'] ?? ''), $errores);
         $banco   = $this->cuentaBanco((string) ($input['cuenta_banco'] ?? ''), $errores);
+        $destino = array_key_exists('banco_destino', $input)
+            ? $this->bancoDestino((string) $input['banco_destino'], $errores)
+            : null;
         $datos   = [
             'puede_rendir_sin_solicitud' => ! empty($input['puede_rendir_sin_solicitud']) ? 1 : 0,
             'monto_maximo_rendicion'     => $monto,
@@ -96,6 +101,9 @@ class PersonaServicio
             } else {
                 $datos['password'] = password_hash($clave, PASSWORD_DEFAULT);
             }
+        }
+        if ($destino !== null) {
+            $datos['banco_destino'] = $destino;
         }
         if ($errores !== []) {
             return ['ok' => false, 'errores' => $errores];
@@ -156,6 +164,30 @@ class PersonaServicio
         }
         if (strlen($raw) > 40 || preg_match('/^[0-9 -]+$/', $raw) !== 1) {
             $errores[] = 'La cuenta del banco solo lleva números y guiones.';
+
+            return '';
+        }
+        $plana = (string) preg_replace('/[^0-9A-Za-z]/', '', $raw);
+        if (strlen($plana) > 18) {
+            $errores[] = 'La cuenta del banco admite hasta 18 caracteres.';
+
+            return '';
+        }
+
+        return $raw;
+    }
+
+    /**
+     * @param list<string> $errores
+     */
+    private function bancoDestino(string $raw, array &$errores): string
+    {
+        $raw = trim($raw);
+        if ($raw === '') {
+            return '';
+        }
+        if (! BancosChile::existe($raw)) {
+            $errores[] = 'Elige el banco de la cuenta.';
 
             return '';
         }
