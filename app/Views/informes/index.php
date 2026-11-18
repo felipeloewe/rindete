@@ -38,6 +38,10 @@
             <strong>Preasientos del mes</strong>
             <span><?= empty($incluidos['preasientos']) ? 'Módulo sin contratar.' : 'El mes agrupado, antes de pasarlo al ERP.' ?></span>
         </a>
+        <a class="losa losa-parametros" href="<?= base_url('informes/contabilizados?anio=' . $anio . '&mes=' . $mes) ?>">
+            <strong>Asientos contabilizados</strong>
+            <span><?= empty($incluidos['preasientos']) ? 'Módulo sin contratar.' : 'Lo que ya se contabilizó en el ERP, por la API o a mano.' ?></span>
+        </a>
     <?php endif ?>
 </div>
 <?= $this->endSection() ?>

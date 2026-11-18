@@ -42,8 +42,18 @@ class Estados
         return [
             'propuesto' => 'Preasiento',
             'cerrado'   => 'Cerrado',
-            'asiento'   => 'Asiento',
+            'asiento'   => 'Contabilizado',
         ][$estado] ?? 'Preasiento';
+    }
+
+    public static function contabilizacion(string $origen, string $referencia): string
+    {
+        if ($origen === 'manual') {
+            return 'Manual';
+        }
+        $referencia = trim($referencia);
+
+        return $referencia !== '' ? 'API · ' . $referencia : 'API';
     }
 
     public static function nomina(string $estado): string

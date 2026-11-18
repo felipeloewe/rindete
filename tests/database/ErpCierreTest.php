@@ -101,9 +101,10 @@ final class ErpCierreTest extends CIUnitTestCase
 
         $pagina = $this->withSession(['usuario_id' => $ana['id']])->get('informes/preasientos?anio=2026&mes=11');
         $pagina->assertOK();
-        $pagina->assertSee('Asiento');
+        $pagina->assertSee('Contabilizado');
         $pagina->assertSee('odoo:15');
         $pagina->assertDontSee('Armar preasientos');
+        $pagina->assertDontSee('Contabilizado en el ERP');
     }
 
     public function testLaNominaCierraSoloSolicitudesAceptadasDelMes(): void
@@ -230,6 +231,64 @@ final class ErpCierreTest extends CIUnitTestCase
         $descarga->assertOK();
         $descarga->assertHeader('Content-Type', 'text/plain; charset=Windows-1252');
         $this->assertStringContainsString('8000;;;OTR;Pasajes;ana@acme.test', $descarga->getBody());
+    }
+
+    public function testSinApiElCheckboxDejaElPreasientoContabilizado(): void
+    {
+        [$ana, $empresa] = $this->empresa();
+        Modulos::contratar((int) $empresa['id'], 'preasientos');
+        $fondo = $this->cuenta($empresa, '2101', 'Fondos por rendir');
+        $banco = $this->cuenta($empresa, '1101', 'Banco');
+        $id = $this->comprobante((int) $empresa['id'], $fondo, $banco, 12000, 12000);
+        $motor = new PreAsientoChile();
+        $abierto = $motor->contabilizar((int) $empresa['id'], [$id]);
+        $this->assertFalse($abierto['ok']);
+        $this->assertStringContainsString('mes está cerrado', implode(' ', $abierto['errores']));
+        $this->assertTrue($motor->cerrar((int) $empresa['id'], 2026, 11)['ok']);
+        model(EmpresaModel::class)->update($empresa['id'], [
+            'preasiento_cuenta_id' => $fondo,
+            'preasiento_salida_id' => $banco,
+        ]);
+
+        $pagina = $this->withSession(['usuario_id' => $ana['id']])->get('informes/preasientos?anio=2026&mes=11');
+        $pagina->assertOK();
+        $pagina->assertSee('Contabilizado en el ERP');
+        $pagina->assertSee('no hay una API vigente');
+
+        $seguridad = service('security');
+        $vacio = $this->withSession(['usuario_id' => $ana['id']])->post('informes/preasientos/contabilizar', [
+            'anio' => '2026',
+            'mes'  => '11',
+            $seguridad->getTokenName() => $seguridad->getHash(),
+        ]);
+        $vacio->assertRedirectTo(site_url('informes/preasientos?anio=2026&mes=11'));
+        $vacio->assertSessionHas('errores');
+
+        $marca = $this->withSession(['usuario_id' => $ana['id']])->post('informes/preasientos/contabilizar', [
+            'anio' => '2026',
+            'mes'  => '11',
+            'ids'  => [$id],
+            $seguridad->getTokenName() => service('security')->getHash(),
+        ]);
+        $marca->assertRedirectTo(site_url('informes/contabilizados?anio=2026&mes=11'));
+        $dash = $this->withSession(['usuario_id' => $ana['id']])->get('informes/contabilizados?anio=2026&mes=11');
+        $dash->assertOK();
+        $dash->assertSee('Manual');
+        $dash->assertSee('2101');
+        $dash->assertSee('CLP 12.000');
+        $dash->assertSee('Traspaso de noviembre');
+        $guardado = db_connect()->table('preasiento_comprobantes')->where('id', $id)->get()->getRowArray();
+        $this->assertSame('asiento', $guardado['estado']);
+        $this->assertSame('manual', $guardado['origen']);
+
+        $otro = $this->comprobante((int) $empresa['id'], $fondo, $banco, 4000, 4000);
+        db_connect()->table('preasiento_comprobantes')->where('id', $otro)->update(['estado' => 'cerrado']);
+        $this->conectar((int) $empresa['id'], 'Odoo', 'odoo', 'asientos');
+        $bloqueado = $motor->contabilizar((int) $empresa['id'], [$otro]);
+        $this->assertFalse($bloqueado['ok']);
+        $this->assertStringContainsString('API vigente', implode(' ', $bloqueado['errores']));
+        $sigue = db_connect()->table('preasiento_comprobantes')->where('id', $otro)->get()->getRowArray();
+        $this->assertSame('cerrado', $sigue['estado']);
     }
 
     /**
