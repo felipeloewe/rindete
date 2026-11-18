@@ -39,12 +39,24 @@
             Sale de <?= esc($salida['codigo']) ?> <?= esc($salida['nombre']) ?>
             y el fondo es <?= esc($cuenta['codigo']) ?> <?= esc($cuenta['nombre']) ?>.
         </p>
-        <form method="post" action="<?= base_url('informes/preasientos') ?>">
-            <?= csrf_field() ?>
-            <input type="hidden" name="anio" value="<?= esc((string) $anio) ?>">
-            <input type="hidden" name="mes" value="<?= esc((string) $mes) ?>">
-            <button class="boton" type="submit">Armar preasientos</button>
-        </form>
+        <?php if ($tomado) : ?>
+            <p>Este mes está cerrado. El ERP puede tomarlo. Cuando lo hace, el preasiento pasa a ser asiento.</p>
+        <?php else : ?>
+            <form method="post" action="<?= base_url('informes/preasientos') ?>">
+                <?= csrf_field() ?>
+                <input type="hidden" name="anio" value="<?= esc((string) $anio) ?>">
+                <input type="hidden" name="mes" value="<?= esc((string) $mes) ?>">
+                <button class="boton" type="submit">Armar preasientos</button>
+            </form>
+            <?php if ($comprobantes !== []) : ?>
+                <form method="post" action="<?= base_url('informes/preasientos/cerrar') ?>">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="anio" value="<?= esc((string) $anio) ?>">
+                    <input type="hidden" name="mes" value="<?= esc((string) $mes) ?>">
+                    <button class="boton claro" type="submit">Cerrar mes</button>
+                </form>
+            <?php endif ?>
+        <?php endif ?>
     <?php endif ?>
 </section>
 <?php if ($comprobantes === []) : ?>
@@ -54,7 +66,7 @@
     <section class="bloque">
         <div class="cabeza">
             <h2><?= esc($comprobante['glosa']) ?></h2>
-            <span><?= ($comprobante['tipo'] ?? '') === 'salida' ? 'Salida' : 'Traspaso' ?> · <?= esc(date('d/m/Y', strtotime((string) $comprobante['fecha']))) ?></span>
+            <span><?= esc(\App\Libraries\Estados::comprobante((string) ($comprobante['estado'] ?? 'propuesto'))) ?> · <?= ($comprobante['tipo'] ?? '') === 'salida' ? 'Salida' : 'Traspaso' ?> · <?= esc(date('d/m/Y', strtotime((string) $comprobante['fecha']))) ?><?= ($comprobante['erp_ref'] ?? '') !== '' ? ' · ' . esc((string) $comprobante['erp_ref']) : '' ?></span>
         </div>
         <table class="tabla">
             <thead><tr><th>Cuenta</th><th>Glosa</th><th>Auxiliar</th><th>Debe</th><th>Haber</th></tr></thead>

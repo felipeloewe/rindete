@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Libraries\NominaFondos;
 use App\Libraries\Paises;
 use App\Libraries\Sesion;
 use App\Libraries\SolicitudServicio;
@@ -32,6 +33,40 @@ class Fondos extends BaseController
             'nombres'     => $this->nombres((int) $empresa['id']),
             'esAdmin'     => $usuario['rol'] === 'administrador',
         ]);
+    }
+
+    public function nomina()
+    {
+        [$usuario, $empresa, $anio, $mes] = $this->adminPeriodo(false);
+        if ($usuario === null || $empresa === null) {
+            return $this->soloAdmin();
+        }
+        $servicio = new NominaFondos();
+
+        return view('fondos/nomina', [
+            'anio'        => $anio,
+            'mes'         => $mes,
+            'meses'       => $this->meses(),
+            'anios'       => range((int) date('Y') + 1, (int) date('Y') - 4),
+            'pendientes'  => $servicio->pendientes((int) $empresa['id'], $anio, $mes),
+            'nominas'     => $servicio->delMes((int) $empresa['id'], $anio, $mes),
+            'nombres'     => $this->nombres((int) $empresa['id']),
+        ]);
+    }
+
+    public function cerrarNomina()
+    {
+        [$usuario, $empresa, $anio, $mes] = $this->adminPeriodo(true);
+        if ($usuario === null || $empresa === null) {
+            return $this->soloAdmin();
+        }
+        $resultado = (new NominaFondos())->cerrar((int) $empresa['id'], $anio, $mes);
+        $vuelta = '/fondos/nomina?anio=' . $anio . '&mes=' . $mes;
+        if (! $resultado['ok']) {
+            return redirect()->to($vuelta)->with('error', $resultado['errores'][0]);
+        }
+
+        return redirect()->to($vuelta)->with('ok', 'Nómina cerrada. El ERP ya puede tomarla.');
     }
 
     public function nueva()
@@ -175,8 +210,49 @@ class Fondos extends BaseController
     }
 
     /**
-     * @return array{0: array<string, mixed>|null, 1: array<string, mixed>|null}
+     * @return array{0: array<string, mixed>|null, 1: array<string, mixed>|null, 2: int, 3: int}
      */
+    private function adminPeriodo(bool $post): array
+    {
+        [$usuario, $empresa] = $this->cuenta();
+        $origen = $post ? $this->request->getPost() : $this->request->getGet();
+        $anio = (int) ($origen['anio'] ?? date('Y'));
+        $mes = (int) ($origen['mes'] ?? date('n'));
+        if ($anio < 2000 || $anio > (int) date('Y') + 1) {
+            $anio = (int) date('Y');
+        }
+        if ($mes < 1 || $mes > 12) {
+            $mes = (int) date('n');
+        }
+        if ($usuario === null || $empresa === null || ($usuario['rol'] ?? '') !== 'administrador') {
+            return [null, null, $anio, $mes];
+        }
+
+        return [$usuario, $empresa, $anio, $mes];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function meses(): array
+    {
+        return [
+            1 => 'Enero', 2 => 'Febrero', 3 => 'Marzo', 4 => 'Abril',
+            5 => 'Mayo', 6 => 'Junio', 7 => 'Julio', 8 => 'Agosto',
+            9 => 'Septiembre', 10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre',
+        ];
+    }
+
+    private function soloAdmin()
+    {
+        $sesion = new Sesion();
+        if ($sesion->usuario() === null) {
+            return redirect()->to('/login');
+        }
+
+        return redirect()->to('/fondos')->with('error', 'La nómina la cierra el administrador.');
+    }
+
     private function cuenta(): array
     {
         $sesion = new Sesion();

@@ -37,6 +37,23 @@ class Estados
         return $estado === 'enviada' ? 'chip chip-en_rendicion' : 'chip chip-legalizado';
     }
 
+    public static function comprobante(string $estado): string
+    {
+        return [
+            'propuesto' => 'Preasiento',
+            'cerrado'   => 'Cerrado',
+            'asiento'   => 'Asiento',
+        ][$estado] ?? 'Preasiento';
+    }
+
+    public static function nomina(string $estado): string
+    {
+        return [
+            'cerrada'   => 'Lista para el ERP',
+            'consumida' => 'El ERP ya la tomó',
+        ][$estado] ?? $estado;
+    }
+
     public static function solicitud(string $estado): string
     {
         return [

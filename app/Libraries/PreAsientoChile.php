@@ -87,6 +87,10 @@ class PreAsientoChile
             $grupos[$clave]['personas'][$persona] = ($grupos[$clave]['personas'][$persona] ?? 0) + (float) $fila['monto'];
         }
 
+        if ($this->tomado((int) $empresa['id'], $anio, $mes)) {
+            return $this->falla('Este mes ya está cerrado. El ERP puede tomarlo, y al tomarlo el preasiento pasa a ser asiento.');
+        }
+
         $this->reemplazar((int) $empresa['id'], $anio, $mes, $grupos, $salidas, $haber, $banco, $agrupacion, $conAuxiliar, $nombres, $avisos);
 
         if ($salidas === []) {
@@ -132,6 +136,139 @@ class PreAsientoChile
         unset($comprobante);
 
         return $comprobantes;
+    }
+
+    public function tomado(int $empresaId, int $anio, int $mes): bool
+    {
+        return db_connect()->table('preasiento_comprobantes')
+            ->where('empresa_id', $empresaId)
+            ->where('anio', $anio)
+            ->where('mes', $mes)
+            ->whereIn('estado', ['cerrado', 'asiento'])
+            ->countAllResults() > 0;
+    }
+
+    /**
+     * @return array{ok: bool, errores: list<string>}
+     */
+    public function cerrar(int $empresaId, int $anio, int $mes): array
+    {
+        if ($this->tomado($empresaId, $anio, $mes)) {
+            return ['ok' => false, 'errores' => ['Este mes ya está cerrado.']];
+        }
+        $propuestos = array_values(array_filter(
+            $this->leer($empresaId, $anio, $mes),
+            static fn (array $comprobante): bool => (string) $comprobante['estado'] === 'propuesto',
+        ));
+        if ($propuestos === []) {
+            return ['ok' => false, 'errores' => ['No hay preasientos de este mes para cerrar.']];
+        }
+        foreach ($propuestos as $comprobante) {
+            if (abs((float) $comprobante['debe'] - (float) $comprobante['haber']) >= 0.001) {
+                return ['ok' => false, 'errores' => ['Un preasiento no cuadra y el mes no se cierra.']];
+            }
+        }
+        $ids = array_map(static fn (array $comprobante): int => (int) $comprobante['id'], $propuestos);
+        db_connect()->table('preasiento_comprobantes')->whereIn('id', $ids)->update(['estado' => 'cerrado']);
+
+        return ['ok' => true, 'errores' => []];
+    }
+
+    /**
+     * @return array{ok: bool, errores: list<string>, comprobante?: array<string, mixed>}
+     */
+    public function consumir(int $empresaId, int $id, string $referencia): array
+    {
+        $referencia = trim($referencia);
+        if ($referencia === '' || strlen($referencia) > 120) {
+            return ['ok' => false, 'errores' => ['Escribe la referencia con la que el ERP guardó el asiento.']];
+        }
+        $comprobante = $this->uno($empresaId, $id);
+        if ($comprobante === null) {
+            return ['ok' => false, 'errores' => ['No encontramos ese preasiento.']];
+        }
+        if ((string) $comprobante['estado'] === 'asiento') {
+            if ((string) ($comprobante['erp_ref'] ?? '') === $referencia) {
+                return ['ok' => true, 'errores' => [], 'comprobante' => $comprobante];
+            }
+
+            return ['ok' => false, 'errores' => ['Ese preasiento ya es un asiento.']];
+        }
+        if ((string) $comprobante['estado'] !== 'cerrado') {
+            return ['ok' => false, 'errores' => ['El preasiento se toma cuando el mes está cerrado.']];
+        }
+        db_connect()->table('preasiento_comprobantes')->where('id', $id)->update([
+            'estado'    => 'asiento',
+            'erp_ref'   => $referencia,
+            'consumido' => date('Y-m-d H:i:s'),
+        ]);
+        $asiento = $this->uno($empresaId, $id);
+
+        return is_array($asiento)
+            ? ['ok' => true, 'errores' => [], 'comprobante' => $asiento]
+            : ['ok' => false, 'errores' => ['No encontramos ese preasiento.']];
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function porEstado(int $empresaId, string $estado, ?int $anio = null, ?int $mes = null): array
+    {
+        $consulta = db_connect()->table('preasiento_comprobantes')
+            ->where('empresa_id', $empresaId)
+            ->where('estado', $estado)
+            ->orderBy('id', 'ASC');
+        if ($anio !== null && $mes !== null) {
+            $consulta->where('anio', $anio)->where('mes', $mes);
+        }
+        $comprobantes = $consulta->get()->getResultArray();
+        foreach ($comprobantes as &$comprobante) {
+            $comprobante = $this->conLineas($comprobante);
+        }
+        unset($comprobante);
+
+        return $comprobantes;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function uno(int $empresaId, int $id): ?array
+    {
+        $comprobante = db_connect()->table('preasiento_comprobantes')
+            ->where('empresa_id', $empresaId)
+            ->where('id', $id)
+            ->get()
+            ->getRowArray();
+
+        return is_array($comprobante) ? $this->conLineas($comprobante) : null;
+    }
+
+    /**
+     * @param array<string, mixed> $comprobante
+     *
+     * @return array<string, mixed>
+     */
+    private function conLineas(array $comprobante): array
+    {
+        $lineas = db_connect()->table('preasiento_lineas')
+            ->select('preasiento_lineas.*, cuentas.codigo, cuentas.nombre')
+            ->join('cuentas', 'cuentas.id = preasiento_lineas.cuenta_id')
+            ->where('comprobante_id', $comprobante['id'])
+            ->orderBy('orden', 'ASC')
+            ->get()
+            ->getResultArray();
+        $debe = 0.0;
+        $haber = 0.0;
+        foreach ($lineas as $linea) {
+            $debe += (float) $linea['debe'];
+            $haber += (float) $linea['haber'];
+        }
+        $comprobante['lineas'] = $lineas;
+        $comprobante['debe'] = round($debe, 2);
+        $comprobante['haber'] = round($haber, 2);
+
+        return $comprobante;
     }
 
     /**

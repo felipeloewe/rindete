@@ -12,5 +12,5 @@ class ConexionModel extends Model
     protected $primaryKey       = 'id';
     protected $useAutoIncrement = true;
     protected $returnType       = 'array';
-    protected $allowedFields    = ['empresa_id', 'nombre', 'destino', 'vigente'];
+    protected $allowedFields    = ['empresa_id', 'nombre', 'sistema', 'destino', 'vigente', 'token_huella'];
 }
