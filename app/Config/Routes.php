@@ -26,6 +26,14 @@ $routes->group('', ['filter' => 'auth'], static function (RouteCollection $route
     $routes->get('gastos/(:num)', 'Gastos::ver/$1');
     $routes->post('gastos/(:num)', 'Gastos::actualizar/$1');
 
+    $routes->get('fondos', 'Fondos::index');
+    $routes->get('fondos/nueva', 'Fondos::nueva');
+    $routes->post('fondos', 'Fondos::crear');
+    $routes->post('fondos/(:num)/aceptar', 'Fondos::aceptar/$1');
+    $routes->post('fondos/(:num)/rechazar', 'Fondos::rechazar/$1');
+    $routes->post('fondos/(:num)/entregar', 'Fondos::entregar/$1');
+    $routes->get('fondos/(:num)', 'Fondos::ver/$1');
+
     $routes->get('rendiciones', 'Rendiciones::index');
     $routes->get('rendiciones/nueva', 'Rendiciones::nueva');
     $routes->post('rendiciones', 'Rendiciones::crear');
