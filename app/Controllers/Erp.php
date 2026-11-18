@@ -77,8 +77,12 @@ class Erp extends BaseController
         $mes = (int) $this->request->getGet('mes');
         $servicio = new NominaFondos();
         $nominas = $anio >= 2000 && $mes >= 1 && $mes <= 12
-            ? $servicio->delMes((int) $conexion['empresa_id'], $anio, $mes, 'cerrada')
+            ? $servicio->delMes((int) $conexion['empresa_id'], $anio, $mes)
             : $servicio->cerradas((int) $conexion['empresa_id']);
+        $nominas = array_values(array_filter(
+            $nominas,
+            static fn (array $nomina): bool => in_array((string) $nomina['estado'], ['en_banco', 'cerrada'], true),
+        ));
         $sistema = (string) $conexion['sistema'];
 
         return $this->response->setJSON([
@@ -99,7 +103,7 @@ class Erp extends BaseController
         $resultado = (new NominaFondos())->consumir((int) $conexion['empresa_id'], $id, $this->referencia());
         if (! $resultado['ok']) {
             $mensaje = $resultado['errores'][0];
-            $codigo = str_contains($mensaje, 'No encontramos') ? 404 : (str_contains($mensaje, 'ya fue tomada') ? 409 : 422);
+            $codigo = str_contains($mensaje, 'No encontramos') ? 404 : (str_contains($mensaje, 'ya fue registrada') ? 409 : 422);
 
             return $this->falla($codigo, $mensaje);
         }

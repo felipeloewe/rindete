@@ -12,6 +12,13 @@
             <input name="nombre" required maxlength="120" placeholder="Contabilidad de la empresa">
         </label>
     </div>
+    <label>Dirección de la API
+        <input name="url" type="url" required maxlength="255" placeholder="https://apisoftnet.cl/api/v1">
+    </label>
+    <label>Token de la API
+        <input name="token_api" required maxlength="500" autocomplete="off" placeholder="El token que entrega Softnet o Odoo">
+    </label>
+    <p>El token de Softnet o de Odoo se guarda en esta conexión. Abajo, Rindete muestra una sola vez el token con el que el ERP lee lo cerrado.</p>
     <label>Sirve a
         <select name="destino">
             <?php foreach ($destinos as $clave => $texto) : ?>
@@ -26,14 +33,14 @@
     <p><?= esc($sistema['nombre']) ?>. <?= esc($sistema['detalle']) ?></p>
 <?php endforeach ?>
 <?php if (session('token')) : ?>
-    <p class="aviso nota">Token de esta conexión: <code><?= esc(session('token')) ?></code></p>
+    <p class="aviso nota">Token para que el ERP lea Rindete: <code><?= esc(session('token')) ?></code></p>
 <?php endif ?>
 <?php if ($conexiones !== []) : ?>
     <table class="tabla">
         <tbody>
             <?php foreach ($conexiones as $conexion) : ?>
                 <tr>
-                    <td><?= esc($conexion['nombre']) ?><small><?= esc($sistemas[$conexion['sistema']]['nombre'] ?? 'Sin sistema') ?> · <?= esc($destinos[$conexion['destino']] ?? '') ?><?= (int) $conexion['vigente'] === 1 ? ' · vigente' : ' · no vigente' ?></small></td>
+                    <td><?= esc($conexion['nombre']) ?><small><?= esc($sistemas[$conexion['sistema']]['nombre'] ?? 'Sin sistema') ?> · <?= esc($destinos[$conexion['destino']] ?? '') ?><?= ($conexion['url'] ?? '') !== '' ? ' · ' . esc((string) $conexion['url']) : '' ?><?= ($conexion['token_api'] ?? '') !== '' && $conexion['token_api'] !== null ? ' · token de la API guardado' : '' ?><?= (int) $conexion['vigente'] === 1 ? ' · vigente' : ' · no vigente' ?></small></td>
                     <td>
                         <form method="post" action="<?= base_url('parametros/conexiones/' . $conexion['id'] . '/eliminar') ?>">
                             <?= csrf_field() ?>

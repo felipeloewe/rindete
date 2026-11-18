@@ -24,8 +24,8 @@ class Parametros extends BaseController
 {
     private const DESTINOS = [
         'asientos' => 'Preasientos',
-        'pagos'    => 'Flujo de pagos',
-        'ambos'    => 'Preasientos y pagos',
+        'pagos'    => 'Nómina de fondos',
+        'ambos'    => 'Preasientos y nómina de fondos',
     ];
 
     private const CONCEPTOS = [
@@ -45,7 +45,7 @@ class Parametros extends BaseController
         ],
         'conexiones' => [
             'titulo' => 'Conexiones',
-            'bajada' => 'Softnet y Odoo toman la nómina de fondos y los preasientos que quedan cerrados. Al tomar un preasiento, pasa a ser asiento.',
+            'bajada' => 'Aquí se guarda el token de Softnet o de Odoo. Sirve para los preasientos y para crear en el banco la nómina de fondos por rendir.',
         ],
         'flujo' => [
             'titulo' => 'Flujo de aceptación',
@@ -304,13 +304,15 @@ class Parametros extends BaseController
             (string) $this->request->getPost('sistema'),
             (string) $this->request->getPost('destino'),
             (bool) $this->request->getPost('vigente'),
+            (string) $this->request->getPost('url'),
+            (string) $this->request->getPost('token_api'),
         );
         if (! $creada['ok']) {
             return redirect()->to('/parametros/conexiones')->with('error', $creada['errores'][0]);
         }
 
         return redirect()->to('/parametros/conexiones')
-            ->with('ok', 'Conexión guardada. Copia el token: no se vuelve a mostrar.')
+            ->with('ok', 'Conexión guardada en Parámetros. El token de la API queda aquí y no se vuelve a mostrar.')
             ->with('token', $creada['token']);
     }
 

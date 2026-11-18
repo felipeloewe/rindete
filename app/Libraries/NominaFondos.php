@@ -19,35 +19,66 @@ class NominaFondos
         }
         $pendientes = $this->pendientes($empresaId, $anio, $mes);
         if ($pendientes === []) {
-            return ['ok' => false, 'errores' => ['No hay solicitudes aceptadas de este mes para cerrar en la nómina.']];
+            return ['ok' => false, 'errores' => ['No hay solicitudes aceptadas de este mes para la nómina de fondos por rendir.']];
         }
         $personas = [];
         foreach (model(UsuarioModel::class)->where('empresa_id', $empresaId)->findAll() as $persona) {
             $personas[(int) $persona['id']] = $persona;
         }
+        $errores = [];
+        foreach ($pendientes as $solicitud) {
+            $persona = $personas[(int) $solicitud['usuario_id']] ?? null;
+            $nombre = is_array($persona) ? (string) $persona['nombre'] : 'Una persona';
+            if (! is_array($persona) || trim((string) ($persona['id_fiscal'] ?? '')) === '') {
+                $errores[] = 'A ' . $nombre . ' le falta el RUT.';
+            }
+            if (! is_array($persona) || trim((string) ($persona['cuenta_banco'] ?? '')) === '') {
+                $errores[] = 'A ' . $nombre . ' le falta la cuenta del banco. Se anota en Personas.';
+            }
+        }
+        if ($errores !== []) {
+            return ['ok' => false, 'errores' => $errores];
+        }
+        $ahora = date('Y-m-d H:i:s');
         $db = db_connect();
         $db->transException(true)->transStart();
         $db->table('nominas')->insert([
             'empresa_id' => $empresaId,
             'anio'       => $anio,
             'mes'        => $mes,
-            'estado'     => 'cerrada',
+            'estado'     => 'en_banco',
             'erp_ref'    => '',
-            'creada'     => date('Y-m-d H:i:s'),
+            'creada'     => $ahora,
             'consumida'  => null,
         ]);
         $id = (int) $db->insertID();
         foreach ($pendientes as $solicitud) {
-            $persona = $personas[(int) $solicitud['usuario_id']] ?? null;
+            $persona = $personas[(int) $solicitud['usuario_id']];
             $db->table('nomina_lineas')->insert([
                 'nomina_id'    => $id,
                 'solicitud_id' => (int) $solicitud['id'],
                 'usuario_id'   => (int) $solicitud['usuario_id'],
-                'nombre'       => is_array($persona) ? (string) $persona['nombre'] : '',
-                'rut'          => is_array($persona) ? (string) ($persona['id_fiscal'] ?? '') : '',
+                'nombre'       => (string) $persona['nombre'],
+                'rut'          => (string) $persona['id_fiscal'],
+                'cuenta_banco' => (string) $persona['cuenta_banco'],
                 'motivo'       => (string) $solicitud['motivo'],
                 'monto'        => $solicitud['monto'],
                 'moneda'       => (string) $solicitud['moneda'],
+            ]);
+            $db->table('fondos')->insert([
+                'empresa_id'   => $empresaId,
+                'usuario_id'   => (int) $solicitud['usuario_id'],
+                'solicitud_id' => (int) $solicitud['id'],
+                'motivo'       => (string) $solicitud['motivo'],
+                'monto'        => $solicitud['monto'],
+                'saldo'        => $solicitud['monto'],
+                'moneda'       => (string) $solicitud['moneda'],
+                'estado'       => 'abierto',
+                'creado'       => $ahora,
+            ]);
+            $db->table('solicitudes')->where('id', (int) $solicitud['id'])->update([
+                'estado'    => 'entregada',
+                'entregada' => $ahora,
             ]);
         }
         $db->transComplete();
@@ -68,15 +99,18 @@ class NominaFondos
         if ($nomina === null) {
             return ['ok' => false, 'errores' => ['No encontramos esa nómina.']];
         }
-        if ((string) $nomina['estado'] === 'consumida') {
+        if ((string) $nomina['estado'] === 'confirmada') {
             if ((string) $nomina['erp_ref'] === $referencia) {
                 return ['ok' => true, 'errores' => [], 'nomina' => $nomina];
             }
 
-            return ['ok' => false, 'errores' => ['Esa nómina ya fue tomada por el ERP.']];
+            return ['ok' => false, 'errores' => ['Esa nómina ya fue registrada por el banco.']];
+        }
+        if (! in_array((string) $nomina['estado'], ['en_banco', 'cerrada'], true)) {
+            return ['ok' => false, 'errores' => ['La nómina se registra cuando ya está creada en el banco.']];
         }
         db_connect()->table('nominas')->where('id', $id)->update([
-            'estado'    => 'consumida',
+            'estado'    => 'confirmada',
             'erp_ref'   => $referencia,
             'consumida' => date('Y-m-d H:i:s'),
         ]);
@@ -123,7 +157,7 @@ class NominaFondos
     {
         $nominas = db_connect()->table('nominas')
             ->where('empresa_id', $empresaId)
-            ->where('estado', 'cerrada')
+            ->whereIn('estado', ['en_banco', 'cerrada'])
             ->orderBy('id', 'ASC')
             ->get()
             ->getResultArray();
@@ -177,6 +211,7 @@ class NominaFondos
         if (! is_array($nomina)) {
             return null;
         }
+        $nomina['banco'] = $this->bancoDeLaEmpresa($empresaId);
         $nomina['lineas'] = db_connect()->table('nomina_lineas')
             ->where('nomina_id', $id)
             ->orderBy('id', 'ASC')
@@ -184,6 +219,18 @@ class NominaFondos
             ->getResultArray();
 
         return $nomina;
+    }
+
+    private function bancoDeLaEmpresa(int $empresaId): string
+    {
+        $empresa = db_connect()->table('empresas')->select('preasiento_salida_id')->where('id', $empresaId)->get()->getRowArray();
+        $cuentaId = (int) ($empresa['preasiento_salida_id'] ?? 0);
+        if ($cuentaId < 1) {
+            return '';
+        }
+        $cuenta = db_connect()->table('cuentas')->select('codigo')->where('id', $cuentaId)->get()->getRowArray();
+
+        return is_array($cuenta) ? (string) $cuenta['codigo'] : '';
     }
 
     /**

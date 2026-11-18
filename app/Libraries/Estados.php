@@ -49,8 +49,10 @@ class Estados
     public static function nomina(string $estado): string
     {
         return [
-            'cerrada'   => 'Lista para el ERP',
-            'consumida' => 'El ERP ya la tomó',
+            'en_banco'   => 'Creada en el banco',
+            'confirmada' => 'El banco la registró',
+            'cerrada'    => 'Creada en el banco',
+            'consumida'  => 'El banco la registró',
         ][$estado] ?? $estado;
     }
 

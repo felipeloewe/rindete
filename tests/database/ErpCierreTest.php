@@ -47,7 +47,7 @@ final class ErpCierreTest extends CIUnitTestCase
         $this->assertFalse($rearmar['ok']);
         $this->assertStringContainsString('cerrado', implode(' ', $rearmar['errores']));
 
-        $odoo = (new ConexionErp())->crear((int) $empresa['id'], 'Odoo producción', 'odoo', 'asientos', true);
+        $odoo = $this->conectar((int) $empresa['id'], 'Odoo producción', 'odoo', 'asientos');
         $apagado = $this->withHeaders(['Authorization' => 'Bearer ' . $odoo['token']])->get('api/v1/preasientos');
         $apagado->assertStatus(403);
         Modulos::contratar((int) $empresa['id'], 'preasientos');
@@ -55,6 +55,9 @@ final class ErpCierreTest extends CIUnitTestCase
         $guardada = model(ConexionModel::class)->where('empresa_id', $empresa['id'])->first();
         $this->assertSame(hash('sha256', $odoo['token']), $guardada['token_huella']);
         $this->assertStringNotContainsString($odoo['token'], json_encode($guardada, JSON_THROW_ON_ERROR));
+        $this->assertStringNotContainsString('token-api-secreto', (string) $guardada['token_api']);
+        $this->assertSame('token-api-secreto', service('encrypter')->decrypt(base64_decode((string) $guardada['token_api'])));
+        $this->assertSame('https://erp.example.test/api', $guardada['url']);
 
         $sinToken = $this->withHeaders(['Authorization' => 'Basic no'])->get('api/v1/preasientos');
         $sinToken->assertStatus(401);
@@ -68,7 +71,7 @@ final class ErpCierreTest extends CIUnitTestCase
         $this->assertSame('2101', $cuerpo['preasientos'][0]['proceso']['pasos'][0]['cuerpo']['vals_list'][0]['line_ids'][0][2]['account_code']);
         $this->assertEquals(12000, $cuerpo['preasientos'][0]['debe']);
 
-        $pagos = (new ConexionErp())->crear((int) $empresa['id'], 'Odoo nómina', 'odoo', 'pagos', true);
+        $pagos = $this->conectar((int) $empresa['id'], 'Odoo nómina', 'odoo', 'pagos');
         $ajena = $this->withHeaders(['Authorization' => 'Bearer ' . $pagos['token']])->get('api/v1/preasientos');
         $ajena->assertStatus(403);
 
@@ -89,7 +92,7 @@ final class ErpCierreTest extends CIUnitTestCase
             ->post('api/v1/preasientos/' . $id . '/consumir', ['referencia' => 'odoo:99']);
         $otra->assertStatus(409);
 
-        $softnet = (new ConexionErp())->crear((int) $empresa['id'], 'Softnet', 'softnet', 'ambos', true);
+        $softnet = $this->conectar((int) $empresa['id'], 'Softnet', 'softnet', 'ambos');
         $vacio = $this->withHeaders(['Authorization' => 'Bearer ' . $softnet['token']])->get('api/v1/preasientos');
         $vacio->assertOK();
         $sinPendientes = json_decode($vacio->getJSON(), true, 512, JSON_THROW_ON_ERROR);
@@ -113,8 +116,15 @@ final class ErpCierreTest extends CIUnitTestCase
         $this->solicitud($ana, $categoria, 'En curso', 3000, 'en_aceptacion', '2026-11-09 09:00:00');
 
         $servicio = new NominaFondos();
+        $sinCuenta = $servicio->cerrar((int) $empresa['id'], 2026, 11);
+        $this->assertFalse($sinCuenta['ok']);
+        $this->assertStringContainsString('cuenta del banco', implode(' ', $sinCuenta['errores']));
+        model(UsuarioModel::class)->update($ana['id'], ['cuenta_banco' => '12345678']);
         $cierre = $servicio->cerrar((int) $empresa['id'], 2026, 11);
         $this->assertTrue($cierre['ok'], implode(' ', $cierre['errores']));
+        $fondo = model(\App\Models\FondoModel::class)->where('solicitud_id', $aceptada)->first();
+        $this->assertSame('abierto', $fondo['estado']);
+        $this->assertEquals(8000, $fondo['saldo']);
         $otra = $servicio->cerrar((int) $empresa['id'], 2026, 11);
         $this->assertFalse($otra['ok']);
 
@@ -122,42 +132,65 @@ final class ErpCierreTest extends CIUnitTestCase
         $this->assertCount(1, $nomina['lineas']);
         $this->assertSame($aceptada, (int) $nomina['lineas'][0]['solicitud_id']);
         $this->assertSame('12345678-5', $nomina['lineas'][0]['rut']);
+        $this->assertSame('12345678', $nomina['lineas'][0]['cuenta_banco']);
+        $this->assertSame('en_banco', $nomina['estado']);
         $this->assertSame('Pasajes', $nomina['lineas'][0]['motivo']);
 
-        $softnet = (new ConexionErp())->crear((int) $empresa['id'], 'Softnet remuneraciones', 'softnet', 'pagos', true);
+        $softnet = $this->conectar((int) $empresa['id'], 'Softnet tesorería', 'softnet', 'pagos');
         $lista = $this->withHeaders(['Authorization' => 'Bearer ' . $softnet['token']])
             ->get('api/v1/nominas?anio=2026&mes=11');
         $lista->assertOK();
         $cuerpo = json_decode($lista->getJSON(), true, 512, JSON_THROW_ON_ERROR);
-        $this->assertSame('Remuneraciones', $cuerpo['nominas'][0]['proceso']['modulo']);
+        $this->assertSame('Tesorería', $cuerpo['nominas'][0]['proceso']['modulo']);
+        $this->assertSame('fondos_por_rendir', $cuerpo['nominas'][0]['tipo']);
         $this->assertSame(8000, $cuerpo['nominas'][0]['lineas'][0]['monto']);
 
-        $odoo = (new ConexionErp())->crear((int) $empresa['id'], 'Odoo nómina', 'odoo', 'ambos', true);
+        $odoo = $this->conectar((int) $empresa['id'], 'Odoo nómina', 'odoo', 'ambos');
         $toma = $this->withBodyFormat('json')
             ->withHeaders(['Authorization' => 'Bearer ' . $odoo['token']])
             ->post('api/v1/nominas/' . $cierre['id'] . '/consumir', ['referencia' => 'odoo:novedad:11']);
         $toma->assertOK();
         $tomada = json_decode($toma->getJSON(), true, 512, JSON_THROW_ON_ERROR);
-        $this->assertSame('hr.payslip.input', $tomada['proceso']['modelo']);
-        $this->assertSame('consumida', $tomada['estado']);
+        $this->assertSame('account.payment', $tomada['proceso']['modelo']);
+        $this->assertSame('outbound', $tomada['proceso']['pagos'][0]['payment_type']);
+        $this->assertSame('confirmada', $tomada['estado']);
         $queda = $this->withHeaders(['Authorization' => 'Bearer ' . $softnet['token']])->get('api/v1/nominas');
         $this->assertSame([], json_decode($queda->getJSON(), true, 512, JSON_THROW_ON_ERROR)['nominas']);
 
         $seguridad = service('security');
         $alta = $this->withSession(['usuario_id' => $ana['id']])->post('parametros/conexiones', [
-            'nombre'  => 'Odoo de prueba',
-            'sistema' => 'odoo',
-            'destino' => 'ambos',
-            'vigente' => '1',
+            'nombre'    => 'Odoo de prueba',
+            'sistema'   => 'odoo',
+            'url'       => 'https://acme.odoo.com',
+            'token_api' => 'odoo-token-de-prueba',
+            'destino'   => 'ambos',
+            'vigente'   => '1',
             $seguridad->getTokenName() => $seguridad->getHash(),
         ]);
         $alta->assertRedirectTo(site_url('parametros/conexiones'));
         $alta->assertSessionHas('token');
         $pagina = $this->withSession(['usuario_id' => $ana['id']])->get('fondos/nomina?anio=2026&mes=11');
         $pagina->assertOK();
-        $pagina->assertSee('El ERP ya la tomó');
+        $pagina->assertSee('El banco la registró');
         $pagina->assertSee('odoo:novedad:11');
-        $pagina->assertDontSee('Cerrar nómina');
+        $pagina->assertDontSee('Crear en el banco');
+        $pagina->assertDontSee('Remuneraciones');
+    }
+
+    /**
+     * @return array{ok: bool, errores: list<string>, token: string}
+     */
+    private function conectar(int $empresaId, string $nombre, string $sistema, string $destino): array
+    {
+        return (new ConexionErp())->crear(
+            $empresaId,
+            $nombre,
+            $sistema,
+            $destino,
+            true,
+            'https://erp.example.test/api',
+            'token-api-secreto',
+        );
     }
 
     /**

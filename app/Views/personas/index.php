@@ -31,9 +31,14 @@
                     <input name="monto_maximo" inputmode="decimal" value="<?= esc(old('monto_maximo', '')) ?>" placeholder="Vacío usa el de la empresa">
                 </label>
             </div>
-            <label><?= esc($documento) ?>
-                <input name="id_fiscal" maxlength="40" value="<?= esc(old('id_fiscal', '')) ?>" placeholder="<?= esc($ejemplo) ?>">
-            </label>
+            <div class="grid-2">
+                <label><?= esc($documento) ?>
+                    <input name="id_fiscal" maxlength="40" value="<?= esc(old('id_fiscal', '')) ?>" placeholder="<?= esc($ejemplo) ?>">
+                </label>
+                <label>Cuenta del banco
+                    <input name="cuenta_banco" maxlength="40" value="<?= esc(old('cuenta_banco', '')) ?>" placeholder="Para la nómina de fondos">
+                </label>
+            </div>
             <label class="cheque">
                 <input type="checkbox" name="puede_rendir_sin_solicitud" value="1" <?= old('puede_rendir_sin_solicitud') ? 'checked' : '' ?>>
                 Puede rendir sin solicitud
@@ -65,9 +70,14 @@
                     <input name="password" type="password" minlength="8" autocomplete="new-password" placeholder="Solo si quieres cambiarla">
                 </label>
             </div>
-            <label><?= esc($documento) ?>
-                <input name="id_fiscal" maxlength="40" value="<?= esc((string) ($persona['id_fiscal'] ?? '')) ?>" placeholder="<?= esc($ejemplo) ?>">
-            </label>
+            <div class="grid-2">
+                <label><?= esc($documento) ?>
+                    <input name="id_fiscal" maxlength="40" value="<?= esc((string) ($persona['id_fiscal'] ?? '')) ?>" placeholder="<?= esc($ejemplo) ?>">
+                </label>
+                <label>Cuenta del banco
+                    <input name="cuenta_banco" maxlength="40" value="<?= esc((string) ($persona['cuenta_banco'] ?? '')) ?>" placeholder="Para la nómina de fondos">
+                </label>
+            </div>
             <?php if ((int) $persona['id'] === $propias) : ?>
                 <p>Esta es tu cuenta. Sigue activa.</p>
             <?php else : ?>

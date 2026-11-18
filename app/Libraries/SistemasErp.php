@@ -6,9 +6,9 @@ namespace App\Libraries;
 
 /**
  * Softnet y Odoo consumen lo que Rindete cerró.
- * Softnet publica una API de documentos tributarios y no recibe asientos ni nómina:
- * la carga queda en Contabilidad y en Remuneraciones.
- * Odoo 19 crea el asiento en account.move y lo publica; la nómina es una novedad del período.
+ * Softnet publica una API de documentos tributarios. El asiento se carga en Contabilidad
+ * y la nómina de fondos por rendir se crea en el banco, desde Tesorería.
+ * Odoo crea el asiento en account.move y la nómina como pagos de salida.
  */
 class SistemasErp
 {
@@ -16,11 +16,11 @@ class SistemasErp
     public const CATALOGO = [
         'softnet' => [
             'nombre'  => 'Softnet',
-            'detalle' => 'La API pública emite documentos tributarios y no recibe asientos ni nómina. Lo cerrado se carga en Contabilidad y en Remuneraciones.',
+            'detalle' => 'El token de su API se guarda en esta conexión. El preasiento va a Contabilidad. La nómina de fondos por rendir se crea en el banco, desde Tesorería.',
         ],
         'odoo' => [
             'nombre'  => 'Odoo',
-            'detalle' => 'El preasiento se crea en account.move y se publica. La nómina entra como novedad del período, por el RUT del trabajador.',
+            'detalle' => 'El token de su API se guarda en esta conexión. El preasiento se crea en account.move. La nómina de fondos por rendir sale como pagos desde el banco.',
         ],
     ];
 
@@ -75,6 +75,7 @@ class SistemasErp
                 'solicitud_id' => (int) $linea['solicitud_id'],
                 'nombre'       => (string) $linea['nombre'],
                 'rut'          => (string) $linea['rut'],
+                'cuenta_banco' => (string) ($linea['cuenta_banco'] ?? ''),
                 'motivo'       => (string) $linea['motivo'],
                 'monto'        => round((float) $linea['monto'], 2),
                 'moneda'       => (string) $linea['moneda'],
@@ -82,9 +83,11 @@ class SistemasErp
         }
         $documento = [
             'id'         => (int) $nomina['id'],
+            'tipo'       => 'fondos_por_rendir',
             'estado'     => (string) $nomina['estado'],
             'anio'       => (int) $nomina['anio'],
             'mes'        => (int) $nomina['mes'],
+            'banco'      => (string) ($nomina['banco'] ?? ''),
             'referencia' => (string) ($nomina['erp_ref'] ?? ''),
             'lineas'     => $lineas,
         ];
@@ -156,22 +159,25 @@ class SistemasErp
      */
     private static function nominaOdoo(array $documento): array
     {
-        $lineas = [];
+        $pagos = [];
         foreach ($documento['lineas'] as $linea) {
-            $lineas[] = [
-                'vat'    => $linea['rut'],
-                'nombre' => $linea['nombre'],
-                'amount' => $linea['monto'],
-                'name'   => $linea['motivo'],
+            $pagos[] = [
+                'payment_type'         => 'outbound',
+                'partner_type'         => 'supplier',
+                'amount'               => $linea['monto'],
+                'partner_vat'          => $linea['rut'],
+                'partner_bank_account' => $linea['cuenta_banco'],
+                'ref'                  => 'rindete:nomina:' . $documento['id'] . ':' . $linea['solicitud_id'],
+                'memo'                 => 'Fondo por rendir, ' . $linea['nombre'],
             ];
         }
 
         return [
             'sistema' => 'odoo',
-            'modelo'  => 'hr.payslip.input',
-            'periodo' => sprintf('%04d-%02d', $documento['anio'], $documento['mes']),
-            'nota'    => 'Cada línea es una novedad del período para el trabajador. El código de entrada lo define la regla salarial del fondo por rendir.',
-            'lineas'  => $lineas,
+            'modelo'  => 'account.payment',
+            'banco'   => $documento['banco'],
+            'nota'    => 'Una sola nómina de fondos por rendir. Cada línea es un pago de salida desde el banco de la empresa hacia la cuenta de la persona. No es una liquidación de remuneraciones.',
+            'pagos'   => $pagos,
         ];
     }
 
@@ -182,9 +188,9 @@ class SistemasErp
     {
         return [
             'sistema' => 'softnet',
-            'modulo'  => 'Remuneraciones',
+            'modulo'  => 'Tesorería',
             'api'     => 'https://apisoftnet.cl/api/v1',
-            'nota'    => 'Esa API no recibe la nómina. Carga cada línea como novedad del período: RUT, motivo y monto.',
+            'nota'    => 'Una nómina de transferencias en el banco de la empresa. Cada línea es un fondo por rendir: RUT, cuenta de destino y monto. No es remuneración. La API pública no crea esa nómina; Tesorería o el banco la toman de este lote.',
         ];
     }
 }

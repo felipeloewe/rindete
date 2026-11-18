@@ -51,6 +51,7 @@ class Fondos extends BaseController
             'pendientes'  => $servicio->pendientes((int) $empresa['id'], $anio, $mes),
             'nominas'     => $servicio->delMes((int) $empresa['id'], $anio, $mes),
             'nombres'     => $this->nombres((int) $empresa['id']),
+            'cuentas'     => $this->cuentasBanco((int) $empresa['id']),
         ]);
     }
 
@@ -63,10 +64,10 @@ class Fondos extends BaseController
         $resultado = (new NominaFondos())->cerrar((int) $empresa['id'], $anio, $mes);
         $vuelta = '/fondos/nomina?anio=' . $anio . '&mes=' . $mes;
         if (! $resultado['ok']) {
-            return redirect()->to($vuelta)->with('error', $resultado['errores'][0]);
+            return redirect()->to($vuelta)->with('errores', $resultado['errores']);
         }
 
-        return redirect()->to($vuelta)->with('ok', 'Nómina cerrada. El ERP ya puede tomarla.');
+        return redirect()->to($vuelta)->with('ok', 'Nómina creada en el banco. Cada persona queda con su fondo por rendir.');
     }
 
     public function nueva()
@@ -271,6 +272,19 @@ class Fondos extends BaseController
         }
 
         return $nombres;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function cuentasBanco(int $empresaId): array
+    {
+        $cuentas = [];
+        foreach (model(UsuarioModel::class)->where('empresa_id', $empresaId)->findAll() as $persona) {
+            $cuentas[(int) $persona['id']] = (string) ($persona['cuenta_banco'] ?? '');
+        }
+
+        return $cuentas;
     }
 
     private function aviso(string $estado): string

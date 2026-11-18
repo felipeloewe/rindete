@@ -5,8 +5,8 @@
 <?= $this->section('content') ?>
 <header class="pagina">
     <div>
-        <h1>Nómina de fondos</h1>
-        <p>Entran las solicitudes aceptadas del mes. Al cerrarlas, Softnet las carga en Remuneraciones y Odoo las toma como novedad del período.</p>
+        <h1>Nómina de fondos por rendir</h1>
+        <p>Si hay varias personas con un fondo aceptado, entran en una sola nómina. Crearla en el banco entrega el dinero y deja el fondo por rendir. No es una nómina de remuneraciones.</p>
     </div>
     <a class="boton" href="<?= base_url('fondos') ?>">Volver</a>
 </header>
@@ -32,11 +32,12 @@
         <p>No hay solicitudes aceptadas de este mes fuera de una nómina.</p>
     <?php else : ?>
         <table class="tabla">
-            <thead><tr><th>Persona</th><th>Motivo</th><th>Monto</th></tr></thead>
+            <thead><tr><th>Persona</th><th>Cuenta del banco</th><th>Motivo</th><th>Monto</th></tr></thead>
             <tbody>
                 <?php foreach ($pendientes as $solicitud) : ?>
                     <tr>
                         <td><?= esc($nombres[(int) $solicitud['usuario_id']] ?? '') ?></td>
+                        <td><?= ($cuentas[(int) $solicitud['usuario_id']] ?? '') !== '' ? esc($cuentas[(int) $solicitud['usuario_id']]) : 'Sin cuenta' ?></td>
                         <td><?= esc($solicitud['motivo']) ?></td>
                         <td><?= esc(\App\Libraries\Montos::formato((float) $solicitud['monto'], (string) $solicitud['moneda'])) ?></td>
                     </tr>
@@ -47,23 +48,24 @@
             <?= csrf_field() ?>
             <input type="hidden" name="anio" value="<?= esc((string) $anio) ?>">
             <input type="hidden" name="mes" value="<?= esc((string) $mes) ?>">
-            <button class="boton" type="submit">Cerrar nómina</button>
+            <button class="boton" type="submit">Crear en el banco</button>
         </form>
     <?php endif ?>
 </section>
 <?php foreach ($nominas as $nomina) : ?>
     <section class="bloque">
         <div class="cabeza">
-            <h2>Nómina <?= esc((string) $nomina['id']) ?></h2>
+            <h2>Nómina de fondos por rendir</h2>
             <span><?= esc(\App\Libraries\Estados::nomina((string) $nomina['estado'])) ?><?= ($nomina['erp_ref'] ?? '') !== '' ? ' · ' . esc((string) $nomina['erp_ref']) : '' ?></span>
         </div>
         <table class="tabla">
-            <thead><tr><th>Persona</th><th>RUT</th><th>Motivo</th><th>Monto</th></tr></thead>
+            <thead><tr><th>Persona</th><th>RUT</th><th>Cuenta del banco</th><th>Motivo</th><th>Monto</th></tr></thead>
             <tbody>
                 <?php foreach ($nomina['lineas'] as $linea) : ?>
                     <tr>
                         <td><?= esc($linea['nombre']) ?></td>
                         <td><?= esc((string) $linea['rut']) ?></td>
+                        <td><?= esc((string) ($linea['cuenta_banco'] ?? '')) ?></td>
                         <td><?= esc($linea['motivo']) ?></td>
                         <td><?= esc(\App\Libraries\Montos::formato((float) $linea['monto'], (string) $linea['moneda'])) ?></td>
                     </tr>
