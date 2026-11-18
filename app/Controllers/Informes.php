@@ -6,7 +6,9 @@ namespace App\Controllers;
 
 use App\Libraries\InformeServicio;
 use App\Libraries\Paises;
+use App\Libraries\PreAsientoChile;
 use App\Libraries\Sesion;
+use App\Models\CuentaModel;
 use App\Models\UsuarioModel;
 
 class Informes extends BaseController
@@ -104,6 +106,89 @@ class Informes extends BaseController
                 ? self::MESES[$filtro['mes']] . ' ' . $filtro['anio']
                 : 'Año ' . $filtro['anio'],
         ];
+    }
+
+    public function preasientos()
+    {
+        [$usuario, $empresa, $anio, $mes] = $this->adminPeriodo(false);
+        if ($usuario === null || $empresa === null) {
+            return $this->fueraPreasiento($empresa);
+        }
+
+        return view('informes/preasientos', $this->datosPreasiento($empresa, $anio, $mes));
+    }
+
+    public function armarPreasientos()
+    {
+        [$usuario, $empresa, $anio, $mes] = $this->adminPeriodo(true);
+        if ($usuario === null || $empresa === null) {
+            return $this->fueraPreasiento($empresa);
+        }
+        $resultado = (new PreAsientoChile())->armar($empresa, $anio, $mes);
+        $vuelta = '/informes/preasientos?anio=' . $anio . '&mes=' . $mes;
+        if (! $resultado['ok']) {
+            return redirect()->to($vuelta)->with('errores', $resultado['errores']);
+        }
+
+        return redirect()->to($vuelta)->with('ok', 'Preasientos armados.')->with('avisos', $resultado['avisos']);
+    }
+
+    /**
+     * @param array<string, mixed> $empresa
+     *
+     * @return array<string, mixed>
+     */
+    private function datosPreasiento(array $empresa, int $anio, int $mes): array
+    {
+        if ($mes < 1 || $mes > 12) {
+            $mes = (int) date('n');
+        }
+        $cuentaId = (int) ($empresa['preasiento_cuenta_id'] ?? 0);
+        $cuenta = $cuentaId > 0 ? model(CuentaModel::class)->find($cuentaId) : null;
+
+        return [
+            'anio'         => $anio,
+            'mes'          => $mes,
+            'meses'        => self::MESES,
+            'anios'        => range((int) date('Y') + 1, (int) date('Y') - 4),
+            'chile'        => (string) $empresa['pais'] === 'CL',
+            'agrupacion'   => (string) ($empresa['preasiento_agrupacion'] ?? 'mes') === 'usuario' ? 'usuario' : 'mes',
+            'auxiliar'     => (int) ($empresa['preasiento_auxiliar'] ?? 0) === 1,
+            'cuenta'       => is_array($cuenta) ? $cuenta : null,
+            'comprobantes' => (new PreAsientoChile())->leer((int) $empresa['id'], $anio, $mes),
+            'moneda'       => Paises::pais((string) $empresa['pais'])['moneda'] ?? 'CLP',
+        ];
+    }
+
+    /**
+     * @return array{0: array<string, mixed>|null, 1: array<string, mixed>|null, 2: int, 3: int}
+     */
+    private function adminPeriodo(bool $post): array
+    {
+        $sesion  = new Sesion();
+        $usuario = $sesion->usuario();
+        $empresa = $sesion->empresa();
+        $origen = $post ? $this->request->getPost() : $this->request->getGet();
+        $anio = (int) ($origen['anio'] ?? date('Y'));
+        $mes = (int) ($origen['mes'] ?? date('n'));
+        if ($anio < 2000 || $anio > (int) date('Y') + 1) {
+            $anio = (int) date('Y');
+        }
+        if ($usuario === null || $empresa === null || ($usuario['rol'] ?? '') !== 'administrador') {
+            return [null, $empresa, $anio, $mes];
+        }
+
+        return [$usuario, $empresa, $anio, $mes];
+    }
+
+    /**
+     * @param array<string, mixed>|null $empresa
+     */
+    private function fueraPreasiento(?array $empresa)
+    {
+        return $empresa === null
+            ? redirect()->to('/login')
+            : redirect()->to('/panel')->with('error', 'Solo el administrador arma los preasientos.');
     }
 
     /**

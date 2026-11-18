@@ -31,6 +31,9 @@
                     <input name="monto_maximo" inputmode="decimal" value="<?= esc(old('monto_maximo', '')) ?>" placeholder="Vacío usa el de la empresa">
                 </label>
             </div>
+            <label><?= esc($documento) ?>
+                <input name="id_fiscal" maxlength="40" value="<?= esc(old('id_fiscal', '')) ?>" placeholder="<?= esc($ejemplo) ?>">
+            </label>
             <label class="cheque">
                 <input type="checkbox" name="puede_rendir_sin_solicitud" value="1" <?= old('puede_rendir_sin_solicitud') ? 'checked' : '' ?>>
                 Puede rendir sin solicitud
@@ -47,7 +50,7 @@
             <h2><?= esc($persona['nombre']) ?></h2>
             <span><?= $persona['rol'] === 'administrador' ? 'Administrador' : 'Rinde' ?></span>
         </div>
-        <p><?= esc($persona['email']) ?></p>
+        <p><?= esc($persona['email']) ?><?= ($persona['id_fiscal'] ?? '') !== '' && $persona['id_fiscal'] !== null ? ' · ' . esc($persona['id_fiscal']) : '' ?></p>
         <form method="post" action="<?= base_url('personas/' . $persona['id']) ?>">
             <?= csrf_field() ?>
             <label class="cheque">
@@ -62,6 +65,9 @@
                     <input name="password" type="password" minlength="8" autocomplete="new-password" placeholder="Solo si quieres cambiarla">
                 </label>
             </div>
+            <label><?= esc($documento) ?>
+                <input name="id_fiscal" maxlength="40" value="<?= esc((string) ($persona['id_fiscal'] ?? '')) ?>" placeholder="<?= esc($ejemplo) ?>">
+            </label>
             <?php if ((int) $persona['id'] === $propias) : ?>
                 <p>Esta es tu cuenta. Sigue activa.</p>
             <?php else : ?>

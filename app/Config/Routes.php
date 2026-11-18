@@ -38,6 +38,8 @@ $routes->group('', ['filter' => 'auth'], static function (RouteCollection $route
     $routes->get('fondos/(:num)', 'Fondos::ver/$1');
 
     $routes->get('informes', 'Informes::index');
+    $routes->get('informes/preasientos', 'Informes::preasientos');
+    $routes->post('informes/preasientos', 'Informes::armarPreasientos');
     $routes->get('informes/(:segment)', 'Informes::ver/$1');
 
     $routes->get('rendiciones', 'Rendiciones::index');
@@ -57,6 +59,7 @@ $routes->group('', ['filter' => 'auth'], static function (RouteCollection $route
     $routes->get('parametros/tarjetas', 'Parametros::ver/tarjetas');
     $routes->get('parametros/aceptados', 'Parametros::ver/aceptados');
     $routes->get('parametros/tipos', 'Parametros::ver/tipos');
+    $routes->get('parametros/preasientos', 'Parametros::ver/preasientos');
     $routes->post('parametros/cuentas', 'Parametros::cuenta');
     $routes->post('parametros/cuentas/(:num)/eliminar', 'Parametros::eliminarCuenta/$1');
     $routes->post('parametros/clasificacion', 'Parametros::clasificacion');
@@ -69,6 +72,7 @@ $routes->group('', ['filter' => 'auth'], static function (RouteCollection $route
     $routes->post('parametros/tarjetas/(:num)/eliminar', 'Parametros::eliminarTarjeta/$1');
     $routes->post('parametros/aceptados', 'Parametros::aceptados');
     $routes->post('parametros/tipos', 'Parametros::tipo');
+    $routes->post('parametros/preasientos', 'Parametros::preasiento');
     $routes->post('parametros/tipos/(:num)', 'Parametros::actualizarTipo/$1');
 
     $routes->get('categorias', 'Categorias::index');

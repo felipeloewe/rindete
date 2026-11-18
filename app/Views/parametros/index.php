@@ -38,5 +38,9 @@
         <strong>Tipos de documento</strong>
         <span>Montos y comprobante.</span>
     </a>
+    <a class="losa losa-informes" href="<?= base_url('parametros/preasientos') ?>">
+        <strong>Preasientos</strong>
+        <span>Chile: por persona o por mes.</span>
+    </a>
 </div>
 <?= $this->endSection() ?>

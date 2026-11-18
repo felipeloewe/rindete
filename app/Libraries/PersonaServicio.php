@@ -32,6 +32,7 @@ class PersonaServicio
             $errores[] = 'La contraseña debe tener al menos 8 caracteres.';
         }
         $monto = $this->monto((string) ($input['monto_maximo'] ?? ''), $errores);
+        $fiscal = $this->documento($empresa, (string) ($input['id_fiscal'] ?? ''), $errores);
         $cupo  = (int) ($empresa['cupo_usuarios'] ?? Planes::USUARIOS);
         $actuales = model(UsuarioModel::class)->where('empresa_id', (int) $empresa['id'])->countAllResults();
         if (! Planes::puedeSumarUsuario($actuales, $cupo)) {
@@ -45,6 +46,7 @@ class PersonaServicio
             'empresa_id'                 => (int) $empresa['id'],
             'nombre'                      => $nombre,
             'email'                       => $email,
+            'id_fiscal'                   => $fiscal,
             'password'                    => password_hash($password, PASSWORD_DEFAULT),
             'rol'                         => 'rendidor',
             'activo'                      => 1,
@@ -69,12 +71,18 @@ class PersonaServicio
         if ((int) $actor['empresa_id'] !== (int) $persona['empresa_id']) {
             return ['ok' => false, 'errores' => ['Esa persona no es de esta empresa.']];
         }
+        $empresa = model(\App\Models\EmpresaModel::class)->find((int) $persona['empresa_id']);
+        if (! is_array($empresa)) {
+            return ['ok' => false, 'errores' => ['No encontramos la empresa.']];
+        }
 
         $errores = [];
         $monto   = $this->monto((string) ($input['monto_maximo'] ?? ''), $errores);
+        $fiscal  = $this->documento($empresa, (string) ($input['id_fiscal'] ?? ''), $errores);
         $datos   = [
             'puede_rendir_sin_solicitud' => ! empty($input['puede_rendir_sin_solicitud']) ? 1 : 0,
             'monto_maximo_rendicion'     => $monto,
+            'id_fiscal'                  => $fiscal,
             'activo'                      => (int) $actor['id'] === (int) $persona['id'] ? 1 : (! empty($input['activo']) ? 1 : 0),
         ];
         $clave = (string) ($input['password'] ?? '');
@@ -111,5 +119,25 @@ class PersonaServicio
         }
 
         return $valor;
+    }
+
+    /**
+     * @param array<string, mixed> $empresa
+     * @param list<string> $errores
+     */
+    private function documento(array $empresa, string $raw, array &$errores): ?string
+    {
+        $raw = trim($raw);
+        if ($raw === '') {
+            return null;
+        }
+        $fiscal = IdFiscal::validar((string) $empresa['pais'], $raw);
+        if (! $fiscal['ok']) {
+            $errores[] = $fiscal['error'];
+
+            return null;
+        }
+
+        return $fiscal['valor'];
     }
 }

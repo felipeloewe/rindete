@@ -33,6 +33,7 @@
             'parametros/tarjetas'      => 'empresa',
             'parametros/aceptados'     => 'cuenta',
             'parametros/tipos'         => 'param-tipos',
+            'parametros/preasientos'   => 'informes',
         ][$ruta] ?? 'parametros';
     } elseif ($ruta === 'personas' || str_starts_with($ruta, 'personas/')) {
         $seccion = 'personas';
@@ -99,6 +100,9 @@
         <?php endif ?>
         <?php foreach (session('errores') ?? [] as $mensaje) : ?>
             <p class="aviso mal"><?= esc($mensaje) ?></p>
+        <?php endforeach ?>
+        <?php foreach (session('avisos') ?? [] as $mensaje) : ?>
+            <p class="aviso nota"><?= esc($mensaje) ?></p>
         <?php endforeach ?>
         <?= $this->renderSection('content') ?>
     </main>
