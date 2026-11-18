@@ -36,8 +36,10 @@ body {
 body.sec-gastos { --titulo: #0a565c; --wash: #d8f3ee; --boton: #7dcec6; --boton-ink: #014149; --boton-hover: #68c4ba; }
 body.sec-rendiciones { --titulo: #315448; --wash: #e5f3ea; --boton: #b7d7c8; --boton-ink: #1d3b30; --boton-hover: #a4cbb8; }
 body.sec-fondos { --titulo: #6a4a16; --wash: #fbf3e2; --boton: #f3ddb8; --boton-ink: #4a3b22; --boton-hover: #e8cfa4; }
+body.sec-informes { --titulo: #1e3a5f; --wash: #e4eef8; --boton: #c5d7ee; --boton-ink: #1c2a40; --boton-hover: #b3c9e6; }
 body.sec-categorias { --titulo: #6a5432; --wash: #f8ead4; --boton: #f3ddb8; --boton-ink: #4a3b22; --boton-hover: #e8cfa4; }
 body.sec-parametros { --titulo: #24344d; --wash: #e4ebf5; --boton: #d5e0f0; --boton-ink: #1c2a40; --boton-hover: #c5d4e8; }
+body.sec-personas { --titulo: #3d4a32; --wash: #e7f0df; --boton: #c9d7b8; --boton-ink: #24301c; --boton-hover: #b7c9a4; }
 body.sec-empresa { --titulo: #9a4030; --wash: #ffe4d8; --boton: #ff8a62; --boton-ink: #3d2418; --boton-hover: #f07850; }
 body.sec-cuenta { --titulo: #0e5c62; --wash: #d7ebe8; --boton: #0e5c62; --boton-ink: #f7fffe; --boton-hover: #0a4a4f; }
 body.sec-param-tipos { --titulo: #014149; --wash: #d8f7f1; --boton: #06dfc7; --boton-ink: #014149; --boton-hover: #04dcc4; }
@@ -189,11 +191,15 @@ a.losa:hover { transform: translateY(-4px); color: var(--ink); }
 .losa-rendiciones { background: linear-gradient(165deg, #c5e4d8 0%, #f3faf6 70%); }
 .losa-rendiciones strong { color: #315448; }
 .losa-fondos { background: linear-gradient(165deg, #f3ddb8 0%, #fff9ef 70%); }
+.losa-informes { background: linear-gradient(165deg, #c5d7ee 0%, #f4f8fc 72%); }
+.losa-informes strong, .losa-informes span { color: #1e3a5f; }
 .losa-fondos strong, .losa-fondos span { color: #6a4a16; }
 .losa-categorias { background: linear-gradient(165deg, #f8ead4 0%, #fff8ee 70%); }
 .losa-categorias h2, .losa-categorias strong { color: #6a5432; }
 .losa-parametros { background: linear-gradient(165deg, #d5e2f2 0%, #f4f7fb 70%); }
 .losa-parametros strong, .losa-parametros span { color: #24344d; }
+.losa-personas { background: linear-gradient(165deg, #d5e2c4 0%, #f4f8ee 72%); }
+.losa-personas strong, .losa-personas span { color: #3d4a32; }
 .losa-empresa { background: linear-gradient(165deg, #ffb089 0%, #ffe8df 72%); }
 .losa-empresa h2, .losa-empresa strong, .losa-empresa span { color: #6b3224; }
 .losa-aceptados { background: linear-gradient(165deg, #b7d4d2 0%, #f4fafa 70%); }
@@ -216,8 +222,11 @@ h1 {
 h1 + p { margin-top: 0; }
 
 h2 { margin: 0; font-family: var(--display); font-size: 1.25rem; color: var(--titulo); }
+h2.seccion { margin: 1.6rem 0 0.2rem; }
 
 label { display: block; margin: 0 0 0.9rem; font-size: 0.92rem; }
+label.cheque { display: flex; align-items: center; gap: 0.5rem; }
+label.cheque input { width: auto; margin: 0; }
 
 input, select, textarea {
     display: block;

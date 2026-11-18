@@ -12,6 +12,16 @@
     </div>
     <span class="<?= esc(\App\Libraries\Estados::claseRendicion((string) $rendicion['estado']), 'attr') ?>"><?= esc(\App\Libraries\Estados::rendicion((string) $rendicion['estado'])) ?></span>
 </header>
+<?php if ($directa) : ?>
+    <section class="bloque">
+        <h2>Sin solicitud</h2>
+        <dl class="ficha">
+            <div><dt>Tope aplicado</dt><dd><?= esc($tope) ?></dd></div>
+            <div><dt>Viático</dt><dd><?= esc($viatico) ?></dd></div>
+            <div><dt>Asignación</dt><dd><?= esc($asignacion) ?></dd></div>
+        </dl>
+    </section>
+<?php endif ?>
 <section class="bloque">
     <div class="cabeza">
         <h2>Gastos incluidos</h2>

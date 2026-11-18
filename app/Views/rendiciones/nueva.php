@@ -4,8 +4,18 @@
 
 <?= $this->section('content') ?>
 <header class="pagina">
-    <h1>Nueva rendición</h1>
+    <div>
+        <h1>Nueva rendición</h1>
+        <p>Se abre sin solicitud. El tope y los conceptos son los tuyos si existen, y si no los de la empresa.</p>
+    </div>
 </header>
+<section class="bloque">
+    <dl class="ficha">
+        <div><dt>Tope</dt><dd><?= esc($tope) ?></dd></div>
+        <div><dt>Viático</dt><dd><?= esc($viatico) ?></dd></div>
+        <div><dt>Asignación</dt><dd><?= esc($asignacion) ?></dd></div>
+    </dl>
+</section>
 <section class="bloque">
     <form method="post" action="<?= base_url('rendiciones') ?>">
         <?= csrf_field() ?>

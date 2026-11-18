@@ -6,10 +6,15 @@
 <header class="pagina">
     <div>
         <h1>Rendiciones</h1>
-        <p>Agrupa gastos legalizados y envíalos juntos.</p>
+        <p>Quien está autorizado abre la rendición directo, sin solicitud de fondos, y suma los gastos legalizados.</p>
     </div>
-    <a class="boton" href="<?= base_url('rendiciones/nueva') ?>">Nueva rendición</a>
+    <?php if ($autorizada) : ?>
+        <a class="boton" href="<?= base_url('rendiciones/nueva') ?>">Nueva rendición</a>
+    <?php endif ?>
 </header>
+<?php if (! $autorizada) : ?>
+    <p class="bloque">Para abrir una rendición sin solicitud, la empresa tiene que autorizarte.</p>
+<?php endif ?>
 <?php if ($items === []) : ?>
     <p class="bloque">Todavía no hay rendiciones.</p>
 <?php else : ?>
@@ -23,7 +28,7 @@
                 <tr>
                     <td>
                         <a href="<?= base_url('rendiciones/' . $item['id']) ?>"><?= esc($item['titulo']) ?></a>
-                        <small><?= esc(date('d/m/Y', strtotime((string) $item['creada']))) ?></small>
+                        <small><?= esc($nombres[(int) $item['usuario_id']] ?? '') ?> · <?= esc(date('d/m/Y', strtotime((string) $item['creada']))) ?></small>
                     </td>
                     <td><?= esc((string) $total['cantidad']) ?></td>
                     <td><?= esc(\App\Libraries\Montos::formato((float) $total['monto'], (string) $total['moneda'])) ?></td>
