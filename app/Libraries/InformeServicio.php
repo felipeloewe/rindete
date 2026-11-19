@@ -284,6 +284,98 @@ class InformeServicio
     }
 
     /**
+     * Rendiciones que el mes no alcanzó a cerrar.
+     *
+     * @return array{filas: list<array<string, mixed>>, total: float}
+     */
+    public function pendientes(int $empresaId, int $anio, int $mes, ?int $usuarioId): array
+    {
+        [, $hasta] = self::limites($anio, $mes);
+        $consulta = model(RendicionModel::class)
+            ->where('empresa_id', $empresaId)
+            ->whereIn('estado', ['abierta', 'cierre_pedido'])
+            ->where('creada <', $hasta)
+            ->orderBy('id', 'ASC');
+        if ($usuarioId !== null) {
+            $consulta->where('usuario_id', $usuarioId);
+        }
+        $nombres = $this->nombres($empresaId);
+        $saldos = new SaldoRendicion();
+        $filas = [];
+        $total = 0.0;
+        foreach ($consulta->findAll() as $rendicion) {
+            $saldo = $saldos->de($rendicion)['saldo'];
+            $filas[] = $rendicion + [
+                'nombre' => $nombres[(int) $rendicion['usuario_id']] ?? '',
+                'saldo'  => $saldo,
+            ];
+            if ($saldo > 0) {
+                $total += $saldo;
+            }
+        }
+
+        return ['filas' => $filas, 'total' => $total];
+    }
+
+    /**
+     * Lo que cada persona traspasa a la liquidación de sueldo en el período.
+     *
+     * @return array{filas: list<array<string, mixed>>, total: float}
+     */
+    public function remuneraciones(int $empresaId, int $anio, int $mes, ?int $usuarioId): array
+    {
+        [$desde, $hasta] = self::limites($anio, $mes);
+        $consulta = db_connect()->table('gastos')
+            ->select('gastos.usuario_id, gastos.monto, categorias.concepto')
+            ->join('categorias', 'categorias.id = gastos.categoria_id')
+            ->where('gastos.empresa_id', $empresaId)
+            ->where('gastos.rendicion_id >', 0)
+            ->whereIn('gastos.estado', self::RENDIDOS)
+            ->whereIn('categorias.concepto', ['viatico', 'asignacion', 'bien'])
+            ->where('gastos.fecha >=', $desde)
+            ->where('gastos.fecha <', $hasta);
+        if ($usuarioId !== null) {
+            $consulta->where('gastos.usuario_id', $usuarioId);
+        }
+        $nombres = $this->nombres($empresaId);
+        $cuentas = new RendicionDirecta();
+        $grupos = [];
+        foreach ($consulta->orderBy('gastos.usuario_id', 'ASC')->get()->getResultArray() as $gasto) {
+            $id = (int) $gasto['usuario_id'];
+            if (! isset($grupos[$id])) {
+                $grupos[$id] = [
+                    'usuario_id' => $id,
+                    'nombre'     => $nombres[$id] ?? '',
+                    'viatico'    => 0.0,
+                    'asignacion' => 0.0,
+                    'bien'       => 0.0,
+                    'cuentas'    => [],
+                ];
+            }
+            $concepto = (string) $gasto['concepto'];
+            $grupos[$id][$concepto] += (float) $gasto['monto'];
+        }
+        $filas = [];
+        $total = 0.0;
+        foreach ($grupos as $grupo) {
+            $grupo['total'] = $grupo['viatico'] + $grupo['asignacion'] + $grupo['bien'];
+            foreach (['viatico', 'asignacion', 'bien'] as $concepto) {
+                if ($grupo[$concepto] <= 0) {
+                    continue;
+                }
+                $cuenta = $cuentas->concepto($empresaId, (int) $grupo['usuario_id'], $concepto);
+                $grupo['cuentas'][$concepto] = is_array($cuenta)
+                    ? trim((string) $cuenta['codigo'] . ' ' . $cuenta['nombre'])
+                    : '';
+            }
+            $total += $grupo['total'];
+            $filas[] = $grupo;
+        }
+
+        return ['filas' => $filas, 'total' => $total];
+    }
+
+    /**
      * @return list<array<string, mixed>>
      */
     private function gastosRendidos(int $empresaId, string $desde, string $hasta, ?int $usuarioId): array

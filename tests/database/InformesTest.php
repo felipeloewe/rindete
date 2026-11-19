@@ -102,6 +102,58 @@ final class InformesTest extends CIUnitTestCase
         $ajena->assertDontSee('Viaje de Ana');
     }
 
+    public function testPendientesYRemuneracionesDelMes(): void
+    {
+        [$ana, $empresa, $alimentacion] = $this->base();
+        model(CategoriaModel::class)->update($alimentacion['id'], ['concepto' => 'viatico']);
+        $abierta = (int) model(RendicionModel::class)->insert([
+            'empresa_id'      => $ana['empresa_id'],
+            'usuario_id'      => $ana['id'],
+            'titulo'          => 'Noviembre abierto',
+            'nota'            => '',
+            'estado'          => 'abierta',
+            'creada'          => '2026-11-03 09:00:00',
+            'enviada'         => null,
+            'origen'          => 'directa',
+            'monto_maximo'    => 0,
+            'monto_por_rendir'=> 10000,
+        ], true);
+        model(RendicionModel::class)->insert([
+            'empresa_id'   => $ana['empresa_id'],
+            'usuario_id'   => $ana['id'],
+            'titulo'       => 'Noviembre cerrado',
+            'nota'         => '',
+            'estado'       => 'cerrada',
+            'creada'       => '2026-11-04 09:00:00',
+            'enviada'      => '2026-11-20 09:00:00',
+            'origen'       => 'directa',
+            'monto_maximo' => 0,
+        ]);
+        $gasto = $this->gasto($ana, $alimentacion, 'Viático de noviembre', 4000, '2026-11-08', 'en_rendicion');
+        model(GastoModel::class)->update($gasto['id'], ['rendicion_id' => $abierta]);
+
+        $informe = new InformeServicio();
+        $pendientes = $informe->pendientes((int) $empresa['id'], 2026, 11, null);
+        $this->assertCount(1, $pendientes['filas']);
+        $this->assertSame('Noviembre abierto', $pendientes['filas'][0]['titulo']);
+        $this->assertEquals(6000, $pendientes['filas'][0]['saldo']);
+        $this->assertEquals(6000, $pendientes['total']);
+
+        $remuneraciones = $informe->remuneraciones((int) $empresa['id'], 2026, 11, null);
+        $this->assertEquals(4000, $remuneraciones['total']);
+        $this->assertEquals(4000, $remuneraciones['filas'][0]['viatico']);
+        $this->assertSame('Ana Pérez', $remuneraciones['filas'][0]['nombre']);
+
+        $pagina = $this->withSession(['usuario_id' => $ana['id']])->get('informes/pendientes?anio=2026&mes=11');
+        $pagina->assertOK();
+        $pagina->assertSee('Noviembre abierto');
+        $pagina->assertDontSee('Noviembre cerrado');
+        $sueldo = $this->withSession(['usuario_id' => $ana['id']])->get('informes/remuneraciones?anio=2026&mes=11');
+        $sueldo->assertOK();
+        $sueldo->assertSee('A liquidación');
+        $sueldo->assertSee('Ana Pérez');
+    }
+
     /**
      * @return array{0: array<string, mixed>, 1: array<string, mixed>, 2: array<string, mixed>}
      */
