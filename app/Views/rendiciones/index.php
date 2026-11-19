@@ -6,7 +6,7 @@
 <header class="pagina">
     <div>
         <h1>Rendiciones</h1>
-        <p>Quien está autorizado abre la rendición directo, sin solicitud de fondos, y suma los gastos legalizados.</p>
+        <p>Al cerrarla, el saldo decide: si falta dinero pide aceptación, si sobra abre otra rendición y si cuadra se cierra.</p>
     </div>
     <?php if ($autorizada) : ?>
         <a class="boton" href="<?= base_url('rendiciones/nueva') ?>">Nueva rendición</a>
@@ -20,7 +20,7 @@
 <?php else : ?>
     <table class="tabla">
         <thead>
-            <tr><th>Rendición</th><th>Gastos</th><th>Total</th><th>Estado</th></tr>
+            <tr><th>Rendición</th><th>Gastos</th><th>Total</th><th>Saldo</th><th>Estado</th></tr>
         </thead>
         <tbody>
             <?php foreach ($items as $item) : ?>
@@ -32,6 +32,7 @@
                     </td>
                     <td><?= esc((string) $total['cantidad']) ?></td>
                     <td><?= esc(\App\Libraries\Montos::formato((float) $total['monto'], (string) $total['moneda'])) ?></td>
+                    <td><?= esc(\App\Libraries\Montos::formato((float) ($total['saldo'] ?? 0), (string) $total['moneda'])) ?></td>
                     <td><span class="<?= esc(\App\Libraries\Estados::claseRendicion((string) $item['estado']), 'attr') ?>"><?= esc(\App\Libraries\Estados::rendicion((string) $item['estado'])) ?></span></td>
                 </tr>
             <?php endforeach ?>

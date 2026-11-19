@@ -77,7 +77,7 @@ class InformeServicio
     }
 
     /**
-     * @return array{movimientos: list<array<string, mixed>>, entregado: float, rendido: float, saldo: float, por_rendir: float}
+     * @return array{movimientos: list<array<string, mixed>>, entregado: float, rendido: float, saldo: float, por_rendir: float, por_rendir_abiertas: float}
      */
     public function cartola(int $empresaId, int $anio, int $mes, ?int $usuarioId): array
     {
@@ -140,8 +140,9 @@ class InformeServicio
             'movimientos' => $movimientos,
             'entregado'   => $entregado,
             'rendido'     => $rendido,
-            'saldo'       => $saldo,
-            'por_rendir'  => $porRendir,
+            'saldo'               => $saldo,
+            'por_rendir'          => $porRendir,
+            'por_rendir_abiertas' => (new SaldoRendicion())->porRendirAbierto($empresaId, $usuarioId),
         ];
     }
 

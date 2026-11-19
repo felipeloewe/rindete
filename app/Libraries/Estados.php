@@ -27,14 +27,21 @@ class Estados
     public static function rendicion(string $estado): string
     {
         return [
-            'abierta' => 'Abierta',
-            'enviada' => 'Enviada',
+            'abierta'       => 'Abierta',
+            'enviada'       => 'Enviada',
+            'cierre_pedido' => 'Cierre pedido',
+            'cerrada'       => 'Cerrada',
         ][$estado] ?? $estado;
     }
 
     public static function claseRendicion(string $estado): string
     {
-        return $estado === 'enviada' ? 'chip chip-en_rendicion' : 'chip chip-legalizado';
+        return match ($estado) {
+            'enviada'       => 'chip chip-en_rendicion',
+            'cierre_pedido' => 'chip chip-observado',
+            'cerrada'       => 'chip chip-aprobado',
+            default         => 'chip chip-legalizado',
+        };
     }
 
     public static function comprobante(string $estado): string
