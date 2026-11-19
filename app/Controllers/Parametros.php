@@ -67,6 +67,10 @@ class Parametros extends BaseController
             'titulo' => 'Preasientos',
             'bajada' => 'En Chile el preasiento del mes junta la salida del dinero, el paso al gasto y el traspaso de viático, asignación y bien a la liquidación de sueldo.',
         ],
+        'lugares' => [
+            'titulo' => 'Centros y sucursales',
+            'bajada' => 'Centros de costo, sucursales y otros conceptos que la carga puede anotar en el gasto.',
+        ],
     ];
 
     public function index()
@@ -168,6 +172,11 @@ class Parametros extends BaseController
             'conceptos'   => self::CONCEPTOS,
             'moneda'      => Paises::pais((string) ($empresa['pais'] ?? ''))['moneda'] ?? 'USD',
             'nombres'     => $this->nombres($usuarios, $categorias, $cuentas),
+            'lugares'     => [
+                'centro'   => (new \App\Libraries\Lugares())->lista($empresaId, 'centro'),
+                'sucursal' => (new \App\Libraries\Lugares())->lista($empresaId, 'sucursal'),
+                'concepto' => (new \App\Libraries\Lugares())->lista($empresaId, 'concepto'),
+            ],
         ];
     }
 
@@ -303,6 +312,39 @@ class Parametros extends BaseController
         (new GastoServicio())->reevaluar((int) $empresa['id']);
 
         return redirect()->to('/parametros/clasificacion')->with('ok', 'Clasificación guardada. Los gastos legalizados ya tienen su preasiento.');
+    }
+
+    public function lugar()
+    {
+        [$usuario, $empresa] = $this->admin();
+        if ($usuario === null || $empresa === null) {
+            return $this->fuera($empresa);
+        }
+        $creado = (new \App\Libraries\Lugares())->crear(
+            (int) $empresa['id'],
+            (string) $this->request->getPost('tipo'),
+            (string) $this->request->getPost('nombre'),
+        );
+        if (! $creado['ok']) {
+            return redirect()->to('/parametros/lugares')->with('error', $creado['errores'][0]);
+        }
+
+        return redirect()->to('/parametros/lugares')->with('ok', 'Quedó disponible para la carga.');
+    }
+
+    public function quitarLugar()
+    {
+        [$usuario, $empresa] = $this->admin();
+        if ($usuario === null || $empresa === null) {
+            return $this->fuera($empresa);
+        }
+        (new \App\Libraries\Lugares())->quitar(
+            (int) $empresa['id'],
+            (string) $this->request->getPost('tipo'),
+            (int) $this->request->getPost('id'),
+        );
+
+        return redirect()->to('/parametros/lugares')->with('ok', 'Se quitó de la carga.');
     }
 
     public function conexion()

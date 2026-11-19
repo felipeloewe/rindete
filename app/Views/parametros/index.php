@@ -42,5 +42,9 @@
         <strong>Preasientos</strong>
         <span><?= ! empty($preasientos) ? 'Del fondo o del gasto, antes del ERP.' : 'Módulo sin contratar.' ?></span>
     </a>
+    <a class="losa losa-gastos" href="<?= base_url('parametros/lugares') ?>">
+        <strong>Centros y sucursales</strong>
+        <span>Lo que la carga puede anotar en el gasto.</span>
+    </a>
 </div>
 <?= $this->endSection() ?>
