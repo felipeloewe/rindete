@@ -60,7 +60,7 @@
                 <input type="date" name="fecha" required value="<?= esc($valor('fecha', date('Y-m-d'))) ?>">
             </label>
             <label>Monto (<?= esc($moneda) ?>)
-                <input name="monto" inputmode="decimal" required value="<?= esc($valor('monto')) ?>" placeholder="0">
+                <input name="monto" inputmode="decimal" value="<?= esc($valor('monto')) ?>" placeholder="0">
             </label>
         </div>
         <fieldset>
