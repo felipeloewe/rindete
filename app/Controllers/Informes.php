@@ -10,6 +10,7 @@ use App\Libraries\Modulos;
 use App\Libraries\Paises;
 use App\Libraries\PreAsientoChile;
 use App\Libraries\Sesion;
+use App\Libraries\TrazadorMedios;
 use App\Models\CuentaModel;
 use App\Models\UsuarioModel;
 
@@ -63,6 +64,10 @@ class Informes extends BaseController
         'recuperar' => [
             'titulo' => 'Por recuperar',
             'bajada' => 'Lo que hay que recuperar desde socios hacia cada entidad.',
+        ],
+        'medios' => [
+            'titulo' => 'Movimientos de medios',
+            'bajada' => 'Abonos, remesas y retiros de Global66, y los pagos de comercio que avisa MACH.',
         ],
         'cuentas' => [
             'titulo' => 'Cuentas',
@@ -132,6 +137,7 @@ class Informes extends BaseController
             'caja'           => (new \App\Libraries\CajaChica())->estado((int) $empresa['id'], $filtro['anio'], $filtro['mes'], $persona),
             'socios'         => (new \App\Libraries\PagoSocio())->estado((int) $empresa['id'], $filtro['anio'], $filtro['mes'], false),
             'recuperar'      => (new \App\Libraries\PagoSocio())->estado((int) $empresa['id'], $filtro['anio'], $filtro['mes'], true),
+            'medios'         => (new TrazadorMedios())->estado((int) $empresa['id'], $filtro['anio'], $filtro['mes'], $persona),
             'cuentas'     => (new PreAsientoChile())->mayor((int) $empresa['id'], $filtro['anio'], $filtro['mes']) + [
                 'puedeArmar' => Modulos::activo($empresa, 'preasientos'),
             ],
@@ -173,6 +179,28 @@ class Informes extends BaseController
                 'cuentas'     => Modulos::activo($empresa, 'cuentas'),
             ],
         ];
+    }
+
+    public function rendirMovimiento(int $id)
+    {
+        $sesion = new Sesion();
+        $usuario = $sesion->usuario();
+        $empresa = $sesion->empresa();
+        $anio = (int) $this->request->getPost('anio');
+        $mes = (int) $this->request->getPost('mes');
+        $destino = '/informes/medios?anio=' . $anio . '&mes=' . $mes;
+        if ($usuario === null || $empresa === null) {
+            return redirect()->to('/login');
+        }
+        $resultado = (new TrazadorMedios())->rendir($usuario, (int) $empresa['id'], $id, (int) $this->request->getPost('categoria_id'));
+        if (! $resultado['ok']) {
+            return redirect()->to($destino)->with('error', $resultado['errores'][0]);
+        }
+        if ($resultado['aviso'] !== '') {
+            return redirect()->to($destino)->with('avisos', [$resultado['aviso']]);
+        }
+
+        return redirect()->to($destino)->with('ok', 'El movimiento quedó en la rendición de la tarjeta.');
     }
 
     public function preasientos()

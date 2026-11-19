@@ -27,6 +27,7 @@
             'caja'           => 'losa-fondos',
             'socios'         => 'losa-personas',
             'recuperar'      => 'losa-parametros',
+            'medios'         => 'losa-empresa',
         ];
     ?>
     <?php

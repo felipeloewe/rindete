@@ -6,16 +6,21 @@ namespace App\Controllers;
 
 use App\Libraries\ConexionErp;
 use App\Libraries\GastoServicio;
+use App\Libraries\Global66Cuenta;
+use App\Libraries\MediosConexion;
 use App\Libraries\Modulos;
 use App\Libraries\Montos;
 use App\Libraries\Paises;
 use App\Libraries\ParametrosBase;
 use App\Libraries\Sesion;
 use App\Libraries\SistemasErp;
+use App\Libraries\TarjetaIdentidad;
+use App\Libraries\TrazadorMedios;
 use App\Models\AceptadorModel;
 use App\Models\CategoriaModel;
 use App\Models\ConexionModel;
 use App\Models\CuentaModel;
+use App\Models\MedioModel;
 use App\Models\TarjetaModel;
 use App\Models\TipoDocumentoModel;
 use App\Models\UsuarioModel;
@@ -53,7 +58,11 @@ class Parametros extends BaseController
         ],
         'tarjetas' => [
             'titulo' => 'Tarjetas',
-            'bajada' => 'Una tarjeta puede tener más de una persona con acceso. El cargo se contrasta con los gastos y el monto de esta mantención.',
+            'bajada' => 'Identifica la tarjeta de quien rinde. Si es de la empresa, queda exclusiva del proceso de rendiciones.',
+        ],
+        'medios' => [
+            'titulo' => 'Global66 y MACH',
+            'bajada' => 'Global66 avisa abonos y remesas, y con el token de consulta trae los movimientos de la cuenta. MACH avisa pagos de comercio: no publica los movimientos de la tarjeta de débito del titular.',
         ],
         'aceptados' => [
             'titulo' => 'Gastos aceptados',
@@ -177,6 +186,9 @@ class Parametros extends BaseController
             'moneda'      => Paises::pais((string) ($empresa['pais'] ?? ''))['moneda'] ?? 'USD',
             'nombres'     => $this->nombres($usuarios, $categorias, $cuentas),
             'formas'      => (new \App\Libraries\FormasPago())->lista($empresaId),
+            'medios'      => model(MedioModel::class)->where('empresa_id', $empresaId)->orderBy('proveedor', 'ASC')->findAll(),
+            'emisores'    => TarjetaIdentidad::EMISORES,
+            'proveedores' => MediosConexion::PROVEEDORES,
             'lugares'     => [
                 'centro'   => (new \App\Libraries\Lugares())->lista($empresaId, 'centro'),
                 'sucursal' => (new \App\Libraries\Lugares())->lista($empresaId, 'sucursal'),
@@ -480,22 +492,89 @@ class Parametros extends BaseController
         if ($nombre === '' || $monto === null || $personas === []) {
             return redirect()->to('/parametros/tarjetas')->with('error', 'Escribe la tarjeta, el monto y al menos una persona con acceso.');
         }
-        $id = model(TarjetaModel::class)->insert([
-            'empresa_id'     => $empresa['id'],
-            'nombre'         => $nombre,
-            'personal'       => $this->request->getPost('personal') ? 1 : 0,
-            'monto_aceptado' => $monto,
-            'activa'         => 1,
-        ], true);
-        $db = db_connect();
-        foreach ($personas as $persona) {
-            $db->table('tarjeta_usuarios')->insert(['tarjeta_id' => $id, 'usuario_id' => $persona]);
-        }
-        foreach ($gastos as $categoria) {
-            $db->table('tarjeta_categorias')->insert(['tarjeta_id' => $id, 'categoria_id' => $categoria]);
+        $resultado = (new TarjetaIdentidad())->guardar(
+            (int) $empresa['id'],
+            $nombre,
+            $monto,
+            (bool) $this->request->getPost('personal'),
+            $personas,
+            $gastos,
+            (string) $this->request->getPost('ultimos4'),
+            (string) $this->request->getPost('emisor'),
+            (string) $this->request->getPost('referencia'),
+            (string) $this->request->getPost('billetera'),
+            (int) $this->request->getPost('titular_id'),
+        );
+        if (! $resultado['ok']) {
+            return redirect()->to('/parametros/tarjetas')->with('error', $resultado['errores'][0]);
         }
 
         return redirect()->to('/parametros/tarjetas')->with('ok', 'Tarjeta guardada.');
+    }
+
+    public function sincronizarTarjeta(int $id)
+    {
+        [$usuario, $empresa] = $this->admin();
+        if ($usuario === null || $empresa === null) {
+            return $this->fuera($empresa);
+        }
+        $tarjeta = $this->fila(TarjetaModel::class, $id, (int) $empresa['id']);
+        if ($tarjeta === null || (string) $tarjeta['emisor'] !== 'global66' || (string) $tarjeta['billetera'] === '') {
+            return redirect()->to('/parametros/tarjetas')->with('error', 'Esa tarjeta no tiene una billetera Global66.');
+        }
+        $medio = (new MediosConexion())->de((int) $empresa['id'], 'global66');
+        if ($medio === null) {
+            return redirect()->to('/parametros/tarjetas')->with('error', 'Primero guarda la conexión de Global66, con la clave del webhook.');
+        }
+        $token = (new MediosConexion())->tokenConsulta($medio);
+        if ($token === '') {
+            return redirect()->to('/parametros/tarjetas')->with('error', 'Pega el token de consulta de Global66 para traer los movimientos de la cuenta.');
+        }
+        $consulta = (new Global66Cuenta())->consultar($token, (string) $tarjeta['billetera']);
+        if (! $consulta['ok']) {
+            return redirect()->to('/parametros/tarjetas')->with('error', $consulta['errores'][0]);
+        }
+        $nuevos = (new TrazadorMedios())->incorporar((int) $empresa['id'], $id, $consulta['movements']);
+        $texto = $nuevos === 1
+            ? 'Quedó 1 movimiento de la cuenta.'
+            : ($nuevos === 0 ? 'La cuenta no tenía movimientos nuevos.' : 'Quedaron ' . $nuevos . ' movimientos de la cuenta.');
+
+        return redirect()->to('/parametros/tarjetas')->with('ok', $texto);
+    }
+
+    public function medio()
+    {
+        [$usuario, $empresa] = $this->admin();
+        if ($usuario === null || $empresa === null) {
+            return $this->fuera($empresa);
+        }
+        $proveedor = (string) $this->request->getPost('proveedor');
+        $resultado = (new MediosConexion())->guardar(
+            (int) $empresa['id'],
+            $proveedor,
+            (string) $this->request->getPost('secreto'),
+            (string) $this->request->getPost('token_consulta'),
+        );
+        if (! $resultado['ok']) {
+            return redirect()->to('/parametros/medios')->with('error', $resultado['errores'][0]);
+        }
+        $nombre = MediosConexion::PROVEEDORES[$proveedor] ?? 'El medio';
+
+        return redirect()->to('/parametros/medios')->with('ok', 'Conexión de ' . $nombre . ' guardada.');
+    }
+
+    public function eliminarMedio(int $id)
+    {
+        [$usuario, $empresa] = $this->admin();
+        if ($usuario === null || $empresa === null) {
+            return $this->fuera($empresa);
+        }
+        if ($this->fila(MedioModel::class, $id, (int) $empresa['id']) === null) {
+            return redirect()->to('/parametros/medios')->with('error', 'No encontramos esa conexión.');
+        }
+        model(MedioModel::class)->delete($id);
+
+        return redirect()->to('/parametros/medios')->with('ok', 'Conexión quitada.');
     }
 
     public function eliminarTarjeta(int $id)

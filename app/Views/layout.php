@@ -36,6 +36,7 @@
             'parametros/clasificacion' => 'rendiciones',
             'parametros/conexiones'    => 'categorias',
             'parametros/tarjetas'      => 'empresa',
+            'parametros/medios'        => 'empresa',
             'parametros/aceptados'     => 'cuenta',
             'parametros/tipos'         => 'param-tipos',
             'parametros/preasientos'   => 'informes',

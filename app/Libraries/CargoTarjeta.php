@@ -14,7 +14,7 @@ class CargoTarjeta
     /**
      * @param array<string, mixed> $usuario
      *
-     * @return array{ok: bool, errores: list<string>, estado?: string}
+     * @return array{ok: bool, errores: list<string>, estado?: string, id?: int}
      */
     public function crear(array $usuario, int $empresaId, int $tarjetaId, int $categoriaId, string $motivo, float $monto, string $moneda, bool $dte): array
     {
@@ -70,7 +70,8 @@ class CargoTarjeta
             $fondoId = $abierto['fondo_id'];
             $rendicionId = $abierto['rendicion_id'];
         }
-        db_connect()->table('cargos_tarjeta')->insert([
+        $db = db_connect();
+        $db->table('cargos_tarjeta')->insert([
             'empresa_id'   => $empresaId,
             'tarjeta_id'   => $tarjetaId,
             'usuario_id'   => (int) $usuario['id'],
@@ -87,7 +88,7 @@ class CargoTarjeta
             'creada'       => date('Y-m-d H:i:s'),
         ]);
 
-        return ['ok' => true, 'errores' => [], 'estado' => $estado];
+        return ['ok' => true, 'errores' => [], 'estado' => $estado, 'id' => (int) $db->insertID()];
     }
 
     /**
