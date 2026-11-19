@@ -31,7 +31,16 @@
                 <?php endforeach ?>
             </select>
         </label>
-        <p>Al entregar el fondo, el dinero sale del banco o de la caja y nace el fondo por rendir. Al rendir, ese fondo pasa a la cuenta de cada gasto.</p>
+        <label>Liquidación de sueldo
+            <select name="liquidacion_id">
+                <option value="0">Sin traspaso de remuneraciones</option>
+                <?php foreach ($cuentas as $cuenta) : ?>
+                    <?php if ((int) $cuenta['activa'] !== 1) { continue; } ?>
+                    <option value="<?= esc($cuenta['id']) ?>" <?= (int) ($empresa['preasiento_liquidacion_id'] ?? 0) === (int) $cuenta['id'] ? 'selected' : '' ?>><?= esc($cuenta['codigo']) ?> <?= esc($cuenta['nombre']) ?></option>
+                <?php endforeach ?>
+            </select>
+        </label>
+        <p>Al entregar el fondo, el dinero sale del banco o de la caja y nace el fondo por rendir. Al rendir, ese fondo pasa a la cuenta de cada gasto. Viático, asignación y bien pasan además a la liquidación de sueldo, con la cuenta de remuneración de la persona si existe y si no la de la empresa.</p>
         <button class="boton" type="submit">Guardar</button>
     </form>
 <?php endif ?>

@@ -17,6 +17,14 @@
                 </select>
             </label>
         </div>
+        <label>Concepto de remuneración
+            <select name="concepto">
+                <option value="">No se traspasa</option>
+                <?php foreach ($conceptos as $clave => $texto) : ?>
+                    <option value="<?= esc($clave) ?>" <?= (string) ($categoria['concepto'] ?? '') === $clave ? 'selected' : '' ?>><?= esc($texto) ?></option>
+                <?php endforeach ?>
+            </select>
+        </label>
         <button class="boton" type="submit">Guardar</button>
     </form>
 <?php endforeach ?>

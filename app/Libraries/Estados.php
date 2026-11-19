@@ -44,6 +44,15 @@ class Estados
         };
     }
 
+    public static function momento(string $tipo): string
+    {
+        return match ($tipo) {
+            'salida'      => 'Salida',
+            'liquidacion' => 'Liquidación',
+            default       => 'Traspaso',
+        };
+    }
+
     public static function comprobante(string $estado): string
     {
         return [

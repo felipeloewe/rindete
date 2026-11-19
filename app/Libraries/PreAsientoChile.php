@@ -9,12 +9,21 @@ use App\Models\UsuarioModel;
 
 /**
  * Preasientos de Chile. Al entregar un fondo sale el dinero y nace el fondo por rendir.
- * Al rendir, ese fondo pasa a la cuenta del gasto. Cada momento queda agrupado por
- * persona o en uno solo del mes. Nunca hay uno por rendición ni por fondo.
+ * Al rendir, ese fondo pasa a la cuenta del gasto. Viático, asignación y bien pasan
+ * además a la liquidación de sueldo, con la cuenta de remuneración de la persona
+ * si existe y si no la de la empresa. Cada momento queda agrupado por persona o
+ * en uno solo del mes. Nunca hay uno por rendición ni por fondo.
  * El auxiliar lleva el RUT del trabajador solo cuando el administrador lo pide.
  */
 class PreAsientoChile
 {
+    /** @var array<string, string> */
+    private const CONCEPTOS = [
+        'viatico'    => 'Viático',
+        'asignacion' => 'Asignación',
+        'bien'       => 'Bien',
+    ];
+
     /** @var list<string> */
     private const MESES = [
         1 => 'enero', 2 => 'febrero', 3 => 'marzo', 4 => 'abril',
@@ -91,7 +100,9 @@ class PreAsientoChile
             return $this->falla('Este mes ya está cerrado. El ERP puede tomarlo, y al tomarlo el preasiento pasa a ser asiento.');
         }
 
-        $this->reemplazar((int) $empresa['id'], $anio, $mes, $grupos, $salidas, $haber, $banco, $agrupacion, $conAuxiliar, $nombres, $avisos);
+        $liquidacion = $this->cuentaDe($empresa, (int) ($empresa['preasiento_liquidacion_id'] ?? 0));
+        $remuneraciones = $this->gruposLiquidacion($empresa, $desde, $hasta, $agrupacion, $liquidacion, $nombres, $avisos);
+        $this->reemplazar((int) $empresa['id'], $anio, $mes, $grupos, $salidas, $remuneraciones, $haber, $banco, $liquidacion, $agrupacion, $conAuxiliar, $nombres, $avisos);
 
         if ($salidas === []) {
             $avisos[] = 'No hay fondos entregados en este mes.';
@@ -403,12 +414,14 @@ class PreAsientoChile
     /**
      * @param array<string, array{usuario_id: int|null, moneda: string, debe: array<int, float>, personas: array<int, float>}> $grupos
      * @param array<string, array{usuario_id: int|null, moneda: string, personas: array<int, float>}> $salidas
+     * @param array<string, array{usuario_id: int|null, moneda: string, lineas: array<string, array{cuenta_id: int, concepto: string, monto: float}>, personas: array<int, float>}> $remuneraciones
      * @param array<string, mixed> $haber
      * @param array<string, mixed> $banco
+     * @param array<string, mixed>|null $liquidacion
      * @param array<int, string> $nombres
      * @param list<string> $avisos
      */
-    private function reemplazar(int $empresaId, int $anio, int $mes, array $grupos, array $salidas, array $haber, array $banco, string $agrupacion, bool $conAuxiliar, array $nombres, array &$avisos): void
+    private function reemplazar(int $empresaId, int $anio, int $mes, array $grupos, array $salidas, array $remuneraciones, array $haber, array $banco, ?array $liquidacion, string $agrupacion, bool $conAuxiliar, array $nombres, array &$avisos): void
     {
         $db = db_connect();
         $viejos = $db->table('preasiento_comprobantes')
@@ -504,7 +517,112 @@ class PreAsientoChile
                 ]);
             }
         }
+        if ($liquidacion !== null) {
+            foreach ($remuneraciones as $grupo) {
+                $persona = $grupo['usuario_id'];
+                $glosa = $persona === null
+                    ? 'Traspaso a liquidación de sueldo, ' . $periodo
+                    : 'Traspaso a liquidación de ' . ($nombres[$persona] ?? 'la persona') . ', ' . $periodo;
+                $id = $this->comprobante($db, $empresaId, $anio, $mes, $agrupacion, $persona, 'liquidacion', $glosa, $fecha, $grupo['moneda']);
+                $orden = 1;
+                $total = 0.0;
+                ksort($grupo['lineas']);
+                foreach ($grupo['lineas'] as $linea) {
+                    $monto = round((float) $linea['monto'], 2);
+                    $total += $monto;
+                    $rut = $conAuxiliar && $persona !== null ? $this->rut($persona, $nombres, $avisos, $sinRut) : '';
+                    $this->linea($db, $id, $orden, (int) $linea['cuenta_id'], self::CONCEPTOS[$linea['concepto']] ?? 'Remuneración', $monto, 0, $rut);
+                    $orden++;
+                }
+                $total = round($total, 2);
+                if ($conAuxiliar && $persona === null) {
+                    foreach ($grupo['personas'] as $usuarioId => $monto) {
+                        $this->linea($db, $id, $orden, (int) $liquidacion['id'], 'Liquidación de sueldo, ' . ($nombres[$usuarioId] ?? ''), 0, round($monto, 2), $this->rut($usuarioId, $nombres, $avisos, $sinRut));
+                        $orden++;
+                    }
+                } else {
+                    $rut = $conAuxiliar && $persona !== null ? $this->rut($persona, $nombres, $avisos, $sinRut) : '';
+                    $this->linea($db, $id, $orden, (int) $liquidacion['id'], 'Liquidación de sueldo' . ($persona !== null ? ', ' . ($nombres[$persona] ?? '') : ''), 0, $total, $rut);
+                }
+            }
+        }
         $db->transComplete();
+    }
+
+    /**
+     * @param array<string, mixed> $empresa
+     * @param array<string, mixed>|null $liquidacion
+     * @param array<int, string> $nombres
+     * @param list<string> $avisos
+     *
+     * @return array<string, array{usuario_id: int|null, moneda: string, lineas: array<string, array{cuenta_id: int, concepto: string, monto: float}>, personas: array<int, float>}>
+     */
+    private function gruposLiquidacion(array $empresa, string $desde, string $hasta, string $agrupacion, ?array $liquidacion, array $nombres, array &$avisos): array
+    {
+        $filas = db_connect()->table('gastos')
+            ->select('gastos.usuario_id, gastos.monto, gastos.moneda, categorias.concepto')
+            ->join('categorias', 'categorias.id = gastos.categoria_id')
+            ->where('gastos.empresa_id', (int) $empresa['id'])
+            ->where('gastos.fecha >=', $desde)
+            ->where('gastos.fecha <', $hasta)
+            ->where('gastos.rendicion_id >', 0)
+            ->whereIn('gastos.estado', InformeServicio::RENDIDOS)
+            ->whereIn('categorias.concepto', array_keys(self::CONCEPTOS))
+            ->get()
+            ->getResultArray();
+        if ($filas === []) {
+            return [];
+        }
+        if ($liquidacion === null) {
+            $avisos[] = 'Elige la cuenta de liquidación de sueldo. El traspaso de viáticos, asignaciones y bienes quedó fuera.';
+
+            return [];
+        }
+        $grupos = [];
+        $faltan = [];
+        $misma = false;
+        foreach ($filas as $fila) {
+            $persona = (int) $fila['usuario_id'];
+            $concepto = (string) $fila['concepto'];
+            $cuenta = RendicionDirecta::concepto((int) $empresa['id'], $persona, $concepto);
+            if ($cuenta === null) {
+                $claveAviso = $persona . '|' . $concepto;
+                if (! isset($faltan[$claveAviso])) {
+                    $faltan[$claveAviso] = true;
+                    $avisos[] = 'Falta la cuenta de ' . mb_strtolower(self::CONCEPTOS[$concepto]) . ' de ' . ($nombres[$persona] ?? 'la persona') . '. Ese concepto quedó fuera del traspaso a liquidación.';
+                }
+                continue;
+            }
+            if ((int) $cuenta['id'] === (int) $liquidacion['id']) {
+                $misma = true;
+                continue;
+            }
+            $moneda = (string) $fila['moneda'];
+            $clave = ($agrupacion === 'usuario' ? $persona : 0) . '|' . $moneda;
+            if (! isset($grupos[$clave])) {
+                $grupos[$clave] = [
+                    'usuario_id' => $agrupacion === 'usuario' ? $persona : null,
+                    'moneda'     => $moneda,
+                    'lineas'     => [],
+                    'personas'   => [],
+                ];
+            }
+            $linea = (int) $cuenta['id'] . '|' . $concepto;
+            if (! isset($grupos[$clave]['lineas'][$linea])) {
+                $grupos[$clave]['lineas'][$linea] = [
+                    'cuenta_id' => (int) $cuenta['id'],
+                    'concepto'  => $concepto,
+                    'monto'     => 0.0,
+                ];
+            }
+            $grupos[$clave]['lineas'][$linea]['monto'] += (float) $fila['monto'];
+            $grupos[$clave]['personas'][$persona] = ($grupos[$clave]['personas'][$persona] ?? 0) + (float) $fila['monto'];
+        }
+        if ($misma) {
+            $avisos[] = 'La liquidación de sueldo es otra cuenta. El concepto que usa esa misma cuenta quedó fuera.';
+        }
+
+        return $grupos;
     }
 
     /**

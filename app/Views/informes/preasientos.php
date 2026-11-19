@@ -6,7 +6,7 @@
 <header class="pagina">
     <div>
         <h1>Preasientos</h1>
-        <p>Preasientos del mes, antes de ingresarlos al ERP. Al entregar un fondo sale el dinero y nace el fondo por rendir. Al rendir, ese fondo pasa al gasto. El mes queda por persona o en un solo comprobante. No hay uno por rendición ni por fondo.</p>
+        <p>Preasientos del mes, antes de ingresarlos al ERP. Al entregar un fondo sale el dinero y nace el fondo por rendir. Al rendir, ese fondo pasa al gasto. Viático, asignación y bien pasan a la liquidación de sueldo. El mes queda por persona o en un solo comprobante. No hay uno por rendición ni por fondo.</p>
     </div>
     <div class="lado">
         <a class="boton claro" href="<?= base_url('informes/contabilizados?anio=' . $anio . '&mes=' . $mes) ?>">Asientos contabilizados</a>
@@ -72,7 +72,7 @@
         <div class="cabeza">
             <h2><?= esc($comprobante['glosa']) ?></h2>
             <?php $estadoComprobante = (string) ($comprobante['estado'] ?? 'propuesto'); ?>
-            <span><?= esc(\App\Libraries\Estados::comprobante($estadoComprobante)) ?><?= $estadoComprobante === 'asiento' ? ' · ' . esc(\App\Libraries\Estados::contabilizacion((string) ($comprobante['origen'] ?? ''), (string) ($comprobante['erp_ref'] ?? ''))) : '' ?> · <?= ($comprobante['tipo'] ?? '') === 'salida' ? 'Salida' : 'Traspaso' ?> · <?= esc(date('d/m/Y', strtotime((string) $comprobante['fecha']))) ?></span>
+            <span><?= esc(\App\Libraries\Estados::comprobante($estadoComprobante)) ?><?= $estadoComprobante === 'asiento' ? ' · ' . esc(\App\Libraries\Estados::contabilizacion((string) ($comprobante['origen'] ?? ''), (string) ($comprobante['erp_ref'] ?? ''))) : '' ?> · <?= esc(\App\Libraries\Estados::momento((string) ($comprobante['tipo'] ?? ''))) ?> · <?= esc(date('d/m/Y', strtotime((string) $comprobante['fecha']))) ?></span>
         </div>
         <table class="tabla">
             <thead><tr><th>Cuenta</th><th>Glosa</th><th>Auxiliar</th><th>Debe</th><th>Haber</th></tr></thead>
