@@ -10,6 +10,7 @@
     </div>
     <div class="lado">
         <?php if ($esAdmin) : ?>
+            <a class="boton claro" href="<?= base_url('fondos/pagos') ?>">Pagos</a>
             <a class="boton claro" href="<?= base_url('fondos/nomina') ?>">Nómina</a>
         <?php endif ?>
         <a class="boton" href="<?= base_url('fondos/nueva') ?>">Pedir fondo</a>

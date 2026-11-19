@@ -72,6 +72,25 @@ class Estados
         return $referencia !== '' ? 'API · ' . $referencia : 'API';
     }
 
+    public static function pago(string $estado): string
+    {
+        return [
+            'pendiente'  => 'Pendiente',
+            'en_proceso' => 'En proceso',
+            'pagado'     => 'Pagado',
+        ][$estado] ?? $estado;
+    }
+
+    public static function clasePago(string $estado): string
+    {
+        return match ($estado) {
+            'pendiente'  => 'chip chip-observado',
+            'en_proceso' => 'chip chip-en_rendicion',
+            'pagado'     => 'chip chip-aprobado',
+            default      => 'chip chip-legalizado',
+        };
+    }
+
     public static function nomina(string $estado): string
     {
         return [
