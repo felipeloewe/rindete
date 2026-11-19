@@ -23,6 +23,24 @@
         <strong>Fondos</strong>
         <span>Pide el dinero y sigue el saldo.</span>
     </a>
+    <?php if (($usuario['rol'] ?? '') === 'administrador') : ?>
+        <a class="losa losa-gastos" href="<?= base_url('documentos') ?>">
+            <strong>Documento único</strong>
+            <span>Una forma de pago y el aviso a tesorería.</span>
+        </a>
+        <a class="losa losa-fondos" href="<?= base_url('caja') ?>">
+            <strong>Caja chica</strong>
+            <span>Entrega, centralización y reposición.</span>
+        </a>
+        <a class="losa losa-personas" href="<?= base_url('socios') ?>">
+            <strong>Socios</strong>
+            <span>Varios documentos y lo que hay que recuperar.</span>
+        </a>
+    <?php endif ?>
+    <a class="losa losa-empresa" href="<?= base_url('cargos') ?>">
+        <strong>Tarjeta</strong>
+        <span>Cargo, validación y fondo por rendir.</span>
+    </a>
     <a class="losa losa-informes" href="<?= base_url('informes') ?>">
         <strong>Informes</strong>
         <span>Cartola y rendiciones del mes.</span>

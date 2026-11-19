@@ -41,7 +41,7 @@
             <?php foreach ($filas as $fila) : ?>
                 <tr>
                     <td><?= esc($fila['nombre']) ?></td>
-                    <td><a href="<?= base_url('fondos/' . $fila['id']) ?>"><?= esc($fila['motivo']) ?></a></td>
+                    <td><a href="<?= base_url($fila['ruta'] ?? ('fondos/' . $fila['id'])) ?>"><?= esc($fila['motivo']) ?></a></td>
                     <td><?= esc(\App\Libraries\Montos::formato((float) $fila['monto'], (string) $fila['moneda'])) ?></td>
                     <td><span class="<?= esc(\App\Libraries\Estados::clasePago((string) $fila['estado'])) ?>"><?= esc(\App\Libraries\Estados::pago((string) $fila['estado'])) ?></span></td>
                 </tr>

@@ -691,6 +691,9 @@ class PreAsientoChile
             ->getResultArray();
         $grupos = [];
         foreach ($filas as $fila) {
+            if (in_array((string) ($fila['origen'] ?? ''), ['tarjeta', 'caja'], true)) {
+                continue;
+            }
             $persona = (int) $fila['usuario_id'];
             $moneda = (string) $fila['moneda'];
             $clave = ($agrupacion === 'usuario' ? $persona : 0) . '|' . $moneda;

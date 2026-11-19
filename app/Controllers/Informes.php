@@ -44,6 +44,26 @@ class Informes extends BaseController
             'titulo' => 'Remuneraciones',
             'bajada' => 'Viático, asignación y bien que pasan a la liquidación.',
         ],
+        'tarjeta' => [
+            'titulo' => 'Tarjeta',
+            'bajada' => 'Cargos, lo validado, lo rendido y facturas por pagar.',
+        ],
+        'desviaciones' => [
+            'titulo' => 'Desviaciones de tarjeta',
+            'bajada' => 'Lo que no calza entre el cargo y lo rendido después del pago.',
+        ],
+        'caja' => [
+            'titulo' => 'Caja chica',
+            'bajada' => 'Entregas, reposiciones y saldo de la caja centralizada.',
+        ],
+        'socios' => [
+            'titulo' => 'Socios',
+            'bajada' => 'Documentos pagados, forma de pago y saldo por entidad.',
+        ],
+        'recuperar' => [
+            'titulo' => 'Por recuperar',
+            'bajada' => 'Lo que hay que recuperar desde socios hacia cada entidad.',
+        ],
         'cuentas' => [
             'titulo' => 'Cuentas',
             'bajada' => 'Movimientos de cada cuenta: el fondo nace cuando sale el dinero y pasa al gasto cuando se rinde.',
@@ -94,6 +114,9 @@ class Informes extends BaseController
         if ($pieza === 'cuentas' && ! $filtro['esAdmin']) {
             return redirect()->to('/panel')->with('error', 'Solo el administrador ve el seguimiento de cuentas.');
         }
+        if (in_array($pieza, ['caja', 'socios', 'recuperar'], true) && ! $filtro['esAdmin']) {
+            return redirect()->to('/informes')->with('error', 'Ese estado de cuenta lo ve quien administra la empresa.');
+        }
         $servicio = new InformeServicio();
         $persona = $filtro['persona'];
         $datos = match ($pieza) {
@@ -104,6 +127,11 @@ class Informes extends BaseController
             'tipos'          => $servicio->tipos((int) $empresa['id'], $filtro['anio'], $filtro['mes'], $persona),
             'pendientes'     => $servicio->pendientes((int) $empresa['id'], $filtro['anio'], $filtro['mes'], $persona),
             'remuneraciones' => $servicio->remuneraciones((int) $empresa['id'], $filtro['anio'], $filtro['mes'], $persona),
+            'tarjeta'        => (new \App\Libraries\CargoTarjeta())->estado((int) $empresa['id'], $filtro['anio'], $filtro['mes'], $persona),
+            'desviaciones'   => (new \App\Libraries\CargoTarjeta())->desviaciones((int) $empresa['id'], $filtro['anio'], $filtro['mes'], $persona),
+            'caja'           => (new \App\Libraries\CajaChica())->estado((int) $empresa['id'], $filtro['anio'], $filtro['mes'], $persona),
+            'socios'         => (new \App\Libraries\PagoSocio())->estado((int) $empresa['id'], $filtro['anio'], $filtro['mes'], false),
+            'recuperar'      => (new \App\Libraries\PagoSocio())->estado((int) $empresa['id'], $filtro['anio'], $filtro['mes'], true),
             'cuentas'     => (new PreAsientoChile())->mayor((int) $empresa['id'], $filtro['anio'], $filtro['mes']) + [
                 'puedeArmar' => Modulos::activo($empresa, 'preasientos'),
             ],
