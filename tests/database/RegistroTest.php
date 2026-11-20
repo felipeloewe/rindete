@@ -35,8 +35,17 @@ final class RegistroTest extends CIUnitTestCase
         $usuario = model(UsuarioModel::class)->porEmail('ana@acme.test');
         $this->assertIsArray($usuario);
         $this->assertSame('administrador', $usuario['rol']);
+        $this->assertSame('2026-11-20', $usuario['politica_version']);
+        $this->assertSame('2026-11-20', $empresa['politica_version']);
         $this->assertSame(6, model(CategoriaModel::class)->where('empresa_id', $usuario['empresa_id'])->countAllResults());
         $this->assertTrue(password_verify('clave-segura', $usuario['password']));
+    }
+
+    public function testSinAceptarLaPoliticaNoCreaLaCuenta(): void
+    {
+        $resultado = $this->postForm('registro', $this->datos(['acepta_politica' => '']));
+        $resultado->assertRedirect();
+        $this->assertSame(0, model(EmpresaModel::class)->countAllResults());
     }
 
     public function testNoRepiteCorreoNiIdentificacion(): void
@@ -59,6 +68,7 @@ final class RegistroTest extends CIUnitTestCase
         $login = $this->postForm('login', [
             'email'    => 'ana@acme.test',
             'password' => 'clave-segura',
+            'acepta_politica' => '1',
         ]);
 
         $login->assertRedirectTo(site_url('panel'));
@@ -93,6 +103,7 @@ final class RegistroTest extends CIUnitTestCase
             'nombre'    => 'Ana Pérez',
             'email'     => 'ana@acme.test',
             'password'  => 'clave-segura',
+            'acepta_politica' => '1',
         ], $cambios);
     }
 }

@@ -117,7 +117,7 @@ final class ParametrosTest extends CIUnitTestCase
             'rol'        => 'rendidor',
             'activo'     => 1,
             'creado'     => date('Y-m-d H:i:s'),
-        ], true);
+        ] + \App\Libraries\PoliticaDatos::marca(), true);
         $vista = $this->withSession(['usuario_id' => $rendidor])->get('parametros');
         $vista->assertRedirectTo(site_url('panel'));
     }
@@ -134,6 +134,7 @@ final class ParametrosTest extends CIUnitTestCase
             'nombre'    => 'Ana Pérez',
             'email'     => 'ana@acme.test',
             'password'  => 'clave-segura',
+            'acepta_politica' => '1',
         ]);
         $usuario = model(UsuarioModel::class)->porEmail('ana@acme.test');
 

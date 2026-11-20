@@ -32,6 +32,9 @@ final class PersonasTest extends CIUnitTestCase
         $pagina = $this->get('personas');
         $pagina->assertOK();
         $pagina->assertSee('Dar de alta');
+        $pagina->assertSee('Aceptación de políticas');
+        $pagina->assertSee('Ley N° 19.628');
+        $pagina->assertSee('Ley N° 21.719');
         $pagina->assertSee('1 de 4');
 
         $servicio = new PersonaServicio();
@@ -40,6 +43,7 @@ final class PersonasTest extends CIUnitTestCase
                 'nombre'   => 'Persona ' . $correo,
                 'email'    => $correo,
                 'password' => 'clave-segura',
+                'acepta_politica' => '1',
             ]);
             $this->assertTrue($alta['ok'], implode(' ', $alta['errores']));
         }
@@ -47,6 +51,7 @@ final class PersonasTest extends CIUnitTestCase
             'nombre'   => 'Quinta',
             'email'    => 'quinta@acme.test',
             'password' => 'clave-segura',
+            'acepta_politica' => '1',
         ]);
         $this->assertFalse($lleno['ok']);
         $this->assertSame('El plan Free admite 4 usuarios.', $lleno['errores'][0]);
@@ -74,6 +79,7 @@ final class PersonasTest extends CIUnitTestCase
             'nombre'   => 'Luis Soto',
             'email'    => 'luis@acme.test',
             'password' => 'clave-segura',
+            'acepta_politica' => '1',
         ]);
         $luis = model(UsuarioModel::class)->find($alta['id']);
         $servicio = new RendicionServicio();
@@ -125,6 +131,7 @@ final class PersonasTest extends CIUnitTestCase
             'nombre'                        => 'Ana Pérez',
             'email'                         => 'ana@acme.test',
             'password'                      => 'clave-segura',
+            'acepta_politica' => '1',
             $security->getTokenName()       => $security->getHash(),
         ]);
         $ana = model(UsuarioModel::class)->porEmail('ana@acme.test');

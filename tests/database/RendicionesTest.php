@@ -142,7 +142,7 @@ final class RendicionesTest extends CIUnitTestCase
             'rol'        => 'rendidor',
             'activo'     => 1,
             'creado'     => date('Y-m-d H:i:s'),
-        ], true);
+        ] + \App\Libraries\PoliticaDatos::marca(), true);
         $luis = model(UsuarioModel::class)->find($luis);
         model(AceptadorModel::class)->insert([
             'empresa_id' => $ana['empresa_id'],
@@ -298,6 +298,7 @@ final class RendicionesTest extends CIUnitTestCase
             'nombre'    => 'Ana Pérez',
             'email'     => 'ana@acme.test',
             'password'  => 'clave-segura',
+            'acepta_politica' => '1',
         ];
     }
 }

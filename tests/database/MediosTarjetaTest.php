@@ -301,6 +301,7 @@ final class MediosTarjetaTest extends CIUnitTestCase
             'nombre'    => 'Ana Pérez',
             'email'     => 'ana@acme.test',
             'password'  => 'clave-segura',
+            'acepta_politica' => '1',
             $seguridad->getTokenName() => $seguridad->getHash(),
         ]);
         $ana = model(UsuarioModel::class)->porEmail('ana@acme.test');

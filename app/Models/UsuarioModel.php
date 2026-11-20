@@ -16,7 +16,7 @@ class UsuarioModel extends Model
     protected $allowCallbacks   = true;
     protected $afterFind        = ['hidratar'];
     protected $allowedFields    = [
-        'empresa_id', 'rol', 'activo', 'creado',
+        'empresa_id', 'rol', 'activo', 'creado', 'politica_version', 'politica_aceptada_en',
         'puede_rendir_sin_solicitud', 'monto_maximo_rendicion',
     ];
 
