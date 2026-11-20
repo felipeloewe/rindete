@@ -76,7 +76,10 @@ class Fondos extends BaseController
             'anios'    => range((int) date('Y') + 1, (int) date('Y') - 4),
             'periodo'  => $meses[$mes] . ' ' . $anio,
             'consulta' => 'anio=' . $anio . '&mes=' . $mes,
-            'filas'    => (new NominaFondos())->tablero((int) $empresa['id'], $anio, $mes),
+            'filas'    => array_merge(
+                (new NominaFondos())->tablero((int) $empresa['id'], $anio, $mes),
+                (new \App\Libraries\DocumentoUnico())->delMes((int) $empresa['id'], $anio, $mes),
+            ),
         ]);
     }
 
@@ -226,7 +229,7 @@ class Fondos extends BaseController
      */
     private function visibles(array $usuario, int $empresaId): array
     {
-        $items = model(SolicitudModel::class)->where('empresa_id', $empresaId)->orderBy('id', 'DESC')->findAll();
+        $items = model(SolicitudModel::class)->where('empresa_id', $empresaId)->where('estado !=', 'interna')->orderBy('id', 'DESC')->findAll();
         if ($usuario['rol'] === 'administrador') {
             return $items;
         }

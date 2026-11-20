@@ -48,6 +48,19 @@ $routes->group('', ['filter' => 'auth'], static function (RouteCollection $route
     $routes->post('fondos/(:num)/entregar', 'Fondos::entregar/$1');
     $routes->get('fondos/(:num)', 'Fondos::ver/$1');
 
+    $routes->get('documentos', 'Inicios::documentos');
+    $routes->post('documentos', 'Inicios::crearDocumento');
+    $routes->post('documentos/(:num)/resolver', 'Inicios::resolverDocumento/$1');
+    $routes->get('cargos', 'Inicios::cargos');
+    $routes->post('cargos', 'Inicios::crearCargo');
+    $routes->get('caja', 'Inicios::caja');
+    $routes->post('caja/entrega', 'Inicios::entregarCaja');
+    $routes->post('caja/reposicion', 'Inicios::reponerCaja');
+    $routes->get('socios', 'Inicios::socios');
+    $routes->post('socios/entidad', 'Inicios::entidad');
+    $routes->post('socios', 'Inicios::crearSocio');
+    $routes->post('socios/(:num)/recuperar', 'Inicios::recuperar/$1');
+
     $routes->get('modulos', 'Modulos::index');
     $routes->post('modulos/contratar', 'Modulos::contratar');
     $routes->post('modulos/dejar', 'Modulos::dejar');
@@ -82,6 +95,8 @@ $routes->group('', ['filter' => 'auth'], static function (RouteCollection $route
     $routes->get('parametros/tipos', 'Parametros::ver/tipos');
     $routes->get('parametros/preasientos', 'Parametros::ver/preasientos');
     $routes->get('parametros/lugares', 'Parametros::ver/lugares');
+    $routes->get('parametros/formas', 'Parametros::ver/formas');
+    $routes->post('parametros/formas', 'Parametros::forma');
     $routes->post('parametros/cuentas', 'Parametros::cuenta');
     $routes->post('parametros/cuentas/(:num)/eliminar', 'Parametros::eliminarCuenta/$1');
     $routes->post('parametros/clasificacion', 'Parametros::clasificacion');

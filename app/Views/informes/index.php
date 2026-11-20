@@ -22,6 +22,11 @@
             'tipos'          => 'losa-categorias',
             'pendientes'     => 'losa-rendiciones',
             'remuneraciones' => 'losa-fondos',
+            'tarjeta'        => 'losa-empresa',
+            'desviaciones'   => 'losa-gastos',
+            'caja'           => 'losa-fondos',
+            'socios'         => 'losa-personas',
+            'recuperar'      => 'losa-parametros',
         ];
     ?>
     <?php

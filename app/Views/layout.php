@@ -22,7 +22,7 @@
         $seccion = 'gastos';
     } elseif ($ruta === 'rendiciones' || str_starts_with($ruta, 'rendiciones/')) {
         $seccion = 'rendiciones';
-    } elseif ($ruta === 'fondos' || str_starts_with($ruta, 'fondos/')) {
+    } elseif ($ruta === 'fondos' || str_starts_with($ruta, 'fondos/') || in_array($ruta, ['documentos', 'cargos', 'caja', 'socios'], true) || str_starts_with($ruta, 'documentos/') || str_starts_with($ruta, 'socios/')) {
         $seccion = 'fondos';
     } elseif ($ruta === 'modulos' || str_starts_with($ruta, 'modulos/')) {
         $seccion = 'parametros';

@@ -71,6 +71,10 @@ class Parametros extends BaseController
             'titulo' => 'Centros y sucursales',
             'bajada' => 'Centros de costo, sucursales y otros conceptos que la carga puede anotar en el gasto.',
         ],
+        'formas' => [
+            'titulo' => 'Formas de pago',
+            'bajada' => 'Se mantienen una vez y se aplican al documento único y a los documentos del socio. Efectivo exige el comprobante de pago al contado.',
+        ],
     ];
 
     public function index()
@@ -172,6 +176,7 @@ class Parametros extends BaseController
             'conceptos'   => self::CONCEPTOS,
             'moneda'      => Paises::pais((string) ($empresa['pais'] ?? ''))['moneda'] ?? 'USD',
             'nombres'     => $this->nombres($usuarios, $categorias, $cuentas),
+            'formas'      => (new \App\Libraries\FormasPago())->lista($empresaId),
             'lugares'     => [
                 'centro'   => (new \App\Libraries\Lugares())->lista($empresaId, 'centro'),
                 'sucursal' => (new \App\Libraries\Lugares())->lista($empresaId, 'sucursal'),
@@ -312,6 +317,24 @@ class Parametros extends BaseController
         (new GastoServicio())->reevaluar((int) $empresa['id']);
 
         return redirect()->to('/parametros/clasificacion')->with('ok', 'Clasificación guardada. Los gastos legalizados ya tienen su preasiento.');
+    }
+
+    public function forma()
+    {
+        [$usuario, $empresa] = $this->admin();
+        if ($usuario === null || $empresa === null) {
+            return $this->fuera($empresa);
+        }
+        $creada = (new \App\Libraries\FormasPago())->crear(
+            (int) $empresa['id'],
+            (string) $this->request->getPost('nombre'),
+            (bool) $this->request->getPost('efectivo'),
+        );
+        if (! $creada['ok']) {
+            return redirect()->to('/parametros/formas')->with('error', $creada['errores'][0]);
+        }
+
+        return redirect()->to('/parametros/formas')->with('ok', 'Forma de pago lista para el documento y para el socio.');
     }
 
     public function lugar()

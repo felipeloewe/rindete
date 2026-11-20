@@ -92,6 +92,9 @@ class InformeServicio
             $fondos->where('usuario_id', $usuarioId);
         }
         foreach ($fondos->findAll() as $fondo) {
+            if (in_array((string) ($fondo['origen'] ?? ''), ['tarjeta', 'caja'], true)) {
+                continue;
+            }
             $persona = (int) $fondo['usuario_id'];
             $movimientos[] = [
                 'fecha'   => substr((string) $fondo['creado'], 0, 10),
@@ -133,6 +136,9 @@ class InformeServicio
         }
         $porRendir = 0.0;
         foreach ($abiertos->findAll() as $fondo) {
+            if (in_array((string) ($fondo['origen'] ?? ''), ['tarjeta', 'caja'], true)) {
+                continue;
+            }
             $porRendir += (float) $fondo['saldo'];
         }
 
