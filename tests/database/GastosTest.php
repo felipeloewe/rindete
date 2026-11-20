@@ -34,7 +34,7 @@ final class GastosTest extends CIUnitTestCase
     public function testGuardarSinComprobanteQuedaObservado(): void
     {
         $this->postForm('registro', $this->cuenta());
-        $usuario   = model(UsuarioModel::class)->where('email', 'ana@acme.test')->first();
+        $usuario   = model(UsuarioModel::class)->porEmail('ana@acme.test');
         $categoria = model(CategoriaModel::class)->where('nombre', 'Alimentación')->first();
 
         $this->withSession(['usuario_id' => $usuario['id']]);
@@ -62,7 +62,7 @@ final class GastosTest extends CIUnitTestCase
     public function testUnComprobanteDentroDelTopeQuedaLegalizado(): void
     {
         $this->postForm('registro', $this->cuenta());
-        $usuario   = model(UsuarioModel::class)->where('email', 'ana@acme.test')->first();
+        $usuario   = model(UsuarioModel::class)->porEmail('ana@acme.test');
         $empresa   = model(EmpresaModel::class)->find($usuario['empresa_id']);
         $categoria = model(CategoriaModel::class)->where('nombre', 'Alimentación')->first();
         $ruta      = WRITEPATH . 'nota-prueba.pdf';
@@ -89,7 +89,7 @@ final class GastosTest extends CIUnitTestCase
     public function testUnComprobanteSobreElCupoSeRechaza(): void
     {
         $this->postForm('registro', $this->cuenta());
-        $usuario   = model(UsuarioModel::class)->where('email', 'ana@acme.test')->first();
+        $usuario   = model(UsuarioModel::class)->porEmail('ana@acme.test');
         $empresa   = model(EmpresaModel::class)->find($usuario['empresa_id']);
         $categoria = model(CategoriaModel::class)->where('nombre', 'Alimentación')->first();
         model(EmpresaModel::class)->update($empresa['id'], ['cupo_bytes' => 20]);
@@ -117,7 +117,7 @@ final class GastosTest extends CIUnitTestCase
     public function testElCentroDeLaEmpresaQuedaEnElGasto(): void
     {
         $this->postForm('registro', $this->cuenta());
-        $usuario = model(UsuarioModel::class)->where('email', 'ana@acme.test')->first();
+        $usuario = model(UsuarioModel::class)->porEmail('ana@acme.test');
         $empresa = model(EmpresaModel::class)->find($usuario['empresa_id']);
         $categoria = model(CategoriaModel::class)->where('nombre', 'Alimentación')->first();
         $lugares = new \App\Libraries\Lugares();

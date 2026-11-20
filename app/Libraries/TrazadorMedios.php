@@ -112,9 +112,8 @@ class TrazadorMedios
     {
         [$desde, $hasta] = InformeServicio::limites($anio, $mes);
         $consulta = db_connect()->table('movimientos_medio')
-            ->select('movimientos_medio.*, tarjetas.nombre AS tarjeta, tarjetas.ultimos4, tarjetas.exclusiva, usuarios.nombre AS persona')
+            ->select('movimientos_medio.*, tarjetas.nombre AS tarjeta, tarjetas.ultimos4, tarjetas.exclusiva')
             ->join('tarjetas', 'tarjetas.id = movimientos_medio.tarjeta_id', 'left')
-            ->join('usuarios', 'usuarios.id = movimientos_medio.usuario_id', 'left')
             ->where('movimientos_medio.empresa_id', $empresaId)
             ->where('ocurrido >=', $desde . ' 00:00:00')
             ->where('ocurrido <', $hasta . ' 00:00:00')
@@ -122,9 +121,14 @@ class TrazadorMedios
         if ($usuarioId !== null) {
             $consulta->where('movimientos_medio.usuario_id', $usuarioId);
         }
+        $filas = $consulta->get()->getResultArray();
+        $nombres = (new Identidad())->nombres(array_map(static fn (array $fila): int => (int) ($fila['usuario_id'] ?? 0), $filas));
+        foreach ($filas as $i => $fila) {
+            $filas[$i]['persona'] = $nombres[(int) ($fila['usuario_id'] ?? 0)] ?? '';
+        }
 
         return [
-            'filas'      => $consulta->get()->getResultArray(),
+            'filas'      => $filas,
             'categorias' => model(CategoriaModel::class)->where('empresa_id', $empresaId)->orderBy('nombre', 'ASC')->findAll(),
         ];
     }

@@ -322,7 +322,7 @@ final class ErpCierreTest extends CIUnitTestCase
             'password'  => 'clave-segura',
             $seguridad->getTokenName() => $seguridad->getHash(),
         ]);
-        $ana = model(UsuarioModel::class)->where('email', 'ana@acme.test')->first();
+        $ana = model(UsuarioModel::class)->porEmail('ana@acme.test');
 
         return [$ana, model(EmpresaModel::class)->find($ana['empresa_id'])];
     }

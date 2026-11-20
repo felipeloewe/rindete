@@ -48,37 +48,45 @@ class AltaEmpresa
 
         $empresas = model(EmpresaModel::class);
         $usuarios = model(UsuarioModel::class);
-        if ($empresas->where('pais', $pais)->where('id_fiscal', $fiscal['valor'])->first() !== null) {
+        if ($empresas->porFiscal($pais, $fiscal['valor']) !== null) {
             $documento = Paises::pais($pais)['id_fiscal'];
 
             return ['ok' => false, 'errores' => ['Ese ' . $documento . ' ya tiene una cuenta. Contacta al administrador de la empresa para que te dé acceso.']];
         }
-        if ($usuarios->where('email', $email)->first() !== null) {
+        if ($usuarios->porEmail($email) !== null) {
             return ['ok' => false, 'errores' => ['Ese correo ya tiene una cuenta.']];
         }
 
-        $ahora = date('Y-m-d H:i:s');
-        $db    = db_connect();
-        $db->transException(true)->transStart();
-        $empresaId = $empresas->insert([
-            'nombre'    => $empresa,
-            'pais'      => $pais,
-            'id_fiscal' => $fiscal['valor'],
-            'creado'    => $ahora,
-        ] + Planes::alta(), true);
-        $usuarioId = $usuarios->insert([
-            'empresa_id' => $empresaId,
-            'nombre'     => $nombre,
-            'email'      => $email,
-            'password'   => password_hash($password, PASSWORD_DEFAULT),
-            'rol'                         => 'administrador',
-            'activo'                      => 1,
-            'puede_rendir_sin_solicitud' => 1,
-            'creado'                      => $ahora,
-        ], true);
-        CategoriasBase::sembrar((int) $empresaId, Paises::pais($pais)['moneda']);
-        ParametrosBase::sembrar(['id' => (int) $empresaId, 'pais' => $pais]);
-        $db->transComplete();
+        $ahora     = date('Y-m-d H:i:s');
+        $db        = db_connect();
+        $empresaId = 0;
+        $usuarioId = 0;
+        try {
+            $db->transException(true)->transStart();
+            $empresaId = $empresas->insert([
+                'nombre'    => $empresa,
+                'pais'      => $pais,
+                'id_fiscal' => $fiscal['valor'],
+                'creado'    => $ahora,
+            ] + Planes::alta(), true);
+            $usuarioId = $usuarios->insert([
+                'empresa_id' => $empresaId,
+                'nombre'     => $nombre,
+                'email'      => $email,
+                'password'   => password_hash($password, PASSWORD_DEFAULT),
+                'rol'                         => 'administrador',
+                'activo'                      => 1,
+                'puede_rendir_sin_solicitud' => 1,
+                'creado'                      => $ahora,
+            ], true);
+            CategoriasBase::sembrar((int) $empresaId, Paises::pais($pais)['moneda']);
+            ParametrosBase::sembrar(['id' => (int) $empresaId, 'pais' => $pais]);
+            $db->transComplete();
+        } catch (\Throwable $e) {
+            (new Identidad())->olvidarOrganizacion((int) $empresaId);
+            (new Identidad())->olvidarPersona((int) $usuarioId);
+            throw $e;
+        }
 
         $usuario = $usuarios->find($usuarioId);
         if (! is_array($usuario)) {

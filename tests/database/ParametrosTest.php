@@ -135,7 +135,7 @@ final class ParametrosTest extends CIUnitTestCase
             'email'     => 'ana@acme.test',
             'password'  => 'clave-segura',
         ]);
-        $usuario = model(UsuarioModel::class)->where('email', 'ana@acme.test')->first();
+        $usuario = model(UsuarioModel::class)->porEmail('ana@acme.test');
 
         return ['usuario_id' => (int) $usuario['id']];
     }

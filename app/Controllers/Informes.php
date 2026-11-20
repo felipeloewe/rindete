@@ -158,7 +158,8 @@ class Informes extends BaseController
      */
     private function comun(array $usuario, array $empresa, array $filtro): array
     {
-        $personas = model(UsuarioModel::class)->where('empresa_id', $empresa['id'])->orderBy('nombre', 'ASC')->findAll();
+        $personas = model(UsuarioModel::class)->where('empresa_id', $empresa['id'])->findAll();
+        usort($personas, static fn (array $a, array $b): int => strcasecmp((string) ($a['nombre'] ?? ''), (string) ($b['nombre'] ?? '')));
         $consulta = 'anio=' . $filtro['anio'] . '&mes=' . $filtro['mes'] . '&persona=' . (int) ($filtro['persona'] ?? 0);
 
         return [

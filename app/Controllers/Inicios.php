@@ -130,7 +130,7 @@ class Inicios extends BaseController
         return view('inicios/caja', [
             'saldo'      => $caja->saldo((int) $empresa['id']),
             'filas'      => $caja->estado((int) $empresa['id'], (int) date('Y'), 0, null)['filas'],
-            'personas'   => model(UsuarioModel::class)->where('empresa_id', $empresa['id'])->orderBy('nombre', 'ASC')->findAll(),
+            'personas'   => $this->personasPorNombre((int) $empresa['id']),
             'categorias' => model(CategoriaModel::class)->where('empresa_id', $empresa['id'])->where('activa', 1)->orderBy('nombre', 'ASC')->findAll(),
             'moneda'     => $this->moneda($empresa),
         ]);
@@ -308,5 +308,16 @@ class Inicios extends BaseController
         }
 
         return $nombres;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function personasPorNombre(int $empresaId): array
+    {
+        $personas = model(UsuarioModel::class)->where('empresa_id', $empresaId)->findAll();
+        usort($personas, static fn (array $a, array $b): int => strcasecmp((string) ($a['nombre'] ?? ''), (string) ($b['nombre'] ?? '')));
+
+        return $personas;
     }
 }

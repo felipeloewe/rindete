@@ -25,7 +25,7 @@ class PersonaServicio
         }
         if (! IdFiscal::emailValido($email)) {
             $errores[] = 'El correo no es válido.';
-        } elseif (model(UsuarioModel::class)->where('email', $email)->first() !== null) {
+        } elseif (model(UsuarioModel::class)->porEmail($email) !== null) {
             $errores[] = 'Ese correo ya tiene una cuenta.';
         }
         if (strlen($password) < 8) {
