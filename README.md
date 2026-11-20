@@ -18,9 +18,15 @@ En `.env`, completa la base MySQL y `app.baseURL`.
 
 ## Deploy
 
-`deploy/cpanel.py` publica esta rama en `app.rindete.cl` con la API de cPanel. Usa la cuenta `rindete` y la variable `RINDETE_API_KEY`. No toca `pidetufactura.com`.
+`deploy/cpanel.py` publica esta rama en `app.rindete.cl` con la API de cPanel. Verifica TLS contra el almacén de CAs del sistema (o un PEM en `RINDETE_SSL_CA_FILE` para pin documentado). Las migraciones corren una sola vez vía cron acotado + lockfile; el deploy falla si migrate no confirma. El health-check solo toca `app.rindete.cl` (no otros sitios del hosting).
 
 ```bash
+export RINDETE_API_KEY=...          # obligatorio (token cPanel; no commitear)
+# opcionales:
+# export RINDETE_CPANEL_HOST=...
+# export RINDETE_CPANEL_USER=...
+# export RINDETE_CPANEL_HOME=...
+# export RINDETE_SSL_CA_FILE=/path/to/ca-or-pin.pem
 python3 deploy/cpanel.py
 ```
 
