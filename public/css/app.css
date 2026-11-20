@@ -30,7 +30,16 @@ a { color: var(--accent); }
 
 .marca { font-weight: 700; text-decoration: none; color: var(--ink); }
 
-nav { display: flex; flex-wrap: wrap; gap: 1rem; }
+nav { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; }
+
+nav form.salir button {
+    background: none;
+    border: 0;
+    padding: 0;
+    font: inherit;
+    color: var(--accent);
+    cursor: pointer;
+}
 
 main { max-width: 56rem; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
 

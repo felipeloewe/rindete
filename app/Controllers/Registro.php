@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Libraries\AltaEmpresa;
+use App\Libraries\AuthThrottle;
 use App\Libraries\Paises;
 use App\Libraries\Sesion;
 
@@ -30,6 +31,16 @@ class Registro extends BaseController
 
     public function store()
     {
+        $email    = strtolower(trim((string) $this->request->getPost('email')));
+        $ip       = $this->request->getIPAddress();
+        $throttle = new AuthThrottle();
+
+        if ($throttle->registroBloqueado($ip, $email)) {
+            return redirect()->back()->withInput()->with('errores', [$throttle->mensajeBloqueo()]);
+        }
+
+        $throttle->registrarIntentoRegistro($ip, $email);
+
         $input = [
             'pais'      => (string) $this->request->getPost('pais'),
             'empresa'   => (string) $this->request->getPost('empresa'),

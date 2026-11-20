@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Libraries\AuthThrottle;
 use App\Libraries\IdFiscal;
 use App\Libraries\Sesion;
 use App\Models\UsuarioModel;
@@ -23,12 +24,22 @@ class Auth extends BaseController
     {
         $email    = strtolower(trim((string) $this->request->getPost('email')));
         $password = (string) $this->request->getPost('password');
-        $usuario  = model(UsuarioModel::class)->where('email', $email)->first();
+        $ip       = $this->request->getIPAddress();
+        $throttle = new AuthThrottle();
+
+        if ($throttle->loginBloqueado($ip, $email)) {
+            return redirect()->back()->withInput()->with('error', $throttle->mensajeBloqueo());
+        }
+
+        $usuario = model(UsuarioModel::class)->where('email', $email)->first();
 
         if (! IdFiscal::emailValido($email) || ! is_array($usuario) || (int) $usuario['activo'] !== 1 || ! password_verify($password, (string) $usuario['password'])) {
+            $throttle->registrarFalloLogin($ip, $email);
+
             return redirect()->back()->withInput()->with('error', 'Correo o contraseña incorrectos.');
         }
 
+        $throttle->limpiarLogin($ip, $email);
         (new Sesion())->entrar($usuario);
 
         return redirect()->to('/panel');
