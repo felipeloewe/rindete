@@ -38,7 +38,8 @@ class Registro extends BaseController
             'id_fiscal' => (string) $this->request->getPost('id_fiscal'),
             'nombre'    => (string) $this->request->getPost('nombre'),
             'email'     => (string) $this->request->getPost('email'),
-            'password'  => (string) $this->request->getPost('password'),
+            'password'        => (string) $this->request->getPost('password'),
+            'acepta_politica' => (string) $this->request->getPost('acepta_politica'),
         ];
         $alta = (new AltaEmpresa())->registrar($input);
         if (! $alta['ok']) {

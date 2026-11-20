@@ -180,6 +180,7 @@ final class GastosTest extends CIUnitTestCase
             'nombre'    => 'Ana Pérez',
             'email'     => 'ana@acme.test',
             'password'  => 'clave-segura',
+            'acepta_politica' => '1',
         ];
     }
 }

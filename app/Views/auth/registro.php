@@ -35,6 +35,7 @@
         <label>Contraseña
             <input type="password" name="password" minlength="8" required autocomplete="new-password">
         </label>
+        <?= view('politicas/apartado', ['texto' => 'Acepto las condiciones de uso y los efectos que se indican para cada ley.'], ['saveData' => false]) ?>
         <button class="boton" type="submit">Crear empresa</button>
     </form>
 </section>

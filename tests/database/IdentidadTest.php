@@ -29,6 +29,7 @@ final class IdentidadTest extends CIUnitTestCase
             'nombre'    => 'Ana Pérez',
             'email'     => 'ana@acme.test',
             'password'  => 'clave-segura',
+            'acepta_politica' => '1',
         ]);
 
         $operacion = db_connect()->table('usuarios')->get()->getRowArray();
@@ -61,6 +62,7 @@ final class IdentidadTest extends CIUnitTestCase
         $login = $this->postForm('login', [
             'email'    => 'ana@acme.test',
             'password' => 'clave-segura',
+            'acepta_politica' => '1',
         ]);
         $login->assertRedirectTo(site_url('panel'));
 

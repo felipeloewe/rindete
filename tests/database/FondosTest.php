@@ -116,6 +116,7 @@ final class FondosTest extends CIUnitTestCase
             'nombre'    => 'Ana Pérez',
             'email'     => 'ana@acme.test',
             'password'  => 'clave-segura',
+            'acepta_politica' => '1',
             $seguridad->getTokenName() => $seguridad->getHash(),
         ]);
         $ana = model(UsuarioModel::class)->porEmail('ana@acme.test');
@@ -136,7 +137,7 @@ final class FondosTest extends CIUnitTestCase
             'rol'        => 'rendidor',
             'activo'     => 1,
             'creado'     => date('Y-m-d H:i:s'),
-        ], true);
+        ] + \App\Libraries\PoliticaDatos::marca(), true);
 
         return model(UsuarioModel::class)->find($id);
     }

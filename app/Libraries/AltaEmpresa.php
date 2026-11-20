@@ -42,6 +42,9 @@ class AltaEmpresa
         if (strlen($password) < 8) {
             $errores[] = 'La contraseña debe tener al menos 8 caracteres.';
         }
+        if ((string) ($input['acepta_politica'] ?? '') !== '1') {
+            $errores[] = 'Acepta las condiciones de uso y los efectos que se indican para crear la cuenta.';
+        }
         if ($errores !== []) {
             return ['ok' => false, 'errores' => $errores];
         }
@@ -68,7 +71,7 @@ class AltaEmpresa
                 'pais'      => $pais,
                 'id_fiscal' => $fiscal['valor'],
                 'creado'    => $ahora,
-            ] + Planes::alta(), true);
+            ] + Planes::alta() + PoliticaDatos::marca(), true);
             $usuarioId = $usuarios->insert([
                 'empresa_id' => $empresaId,
                 'nombre'     => $nombre,
@@ -78,7 +81,7 @@ class AltaEmpresa
                 'activo'                      => 1,
                 'puede_rendir_sin_solicitud' => 1,
                 'creado'                      => $ahora,
-            ], true);
+            ] + PoliticaDatos::marca(), true);
             CategoriasBase::sembrar((int) $empresaId, Paises::pais($pais)['moneda']);
             ParametrosBase::sembrar(['id' => (int) $empresaId, 'pais' => $pais]);
             $db->transComplete();

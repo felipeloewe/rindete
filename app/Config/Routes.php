@@ -9,6 +9,8 @@ $routes->post('login', 'Auth::attempt');
 $routes->get('logout', 'Auth::logout');
 $routes->get('registro', 'Registro::index');
 $routes->post('registro', 'Registro::store');
+$routes->get('politicas', 'Politicas::ver');
+$routes->get('condiciones', 'Politicas::condiciones');
 
 $routes->post('webhooks/global66/(:segment)', 'Webhooks::global66/$1');
 $routes->post('webhooks/mach/(:segment)', 'Webhooks::mach/$1');
@@ -22,6 +24,8 @@ $routes->group('api/v1', static function (RouteCollection $routes): void {
 
 $routes->group('', ['filter' => 'auth'], static function (RouteCollection $routes): void {
     $routes->get('panel', 'Home::panel');
+    $routes->get('politicas/aceptar', 'Politicas::aceptar');
+    $routes->post('politicas/aceptar', 'Politicas::registrar');
     $routes->get('cuenta', 'Cuenta::index');
     $routes->post('cuenta', 'Cuenta::update');
     $routes->get('empresa', 'Empresa::index');

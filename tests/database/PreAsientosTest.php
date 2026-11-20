@@ -37,6 +37,7 @@ final class PreAsientosTest extends CIUnitTestCase
             'nombre'    => 'Luis Soto',
             'email'     => 'luis@acme.test',
             'password'  => 'clave-segura',
+            'acepta_politica' => '1',
             'id_fiscal' => '22.222.222-2',
         ]);
         $this->assertTrue($luis['ok'], implode(' ', $luis['errores']));
@@ -193,6 +194,7 @@ final class PreAsientosTest extends CIUnitTestCase
             'nombre'   => 'Luis Soto',
             'email'    => 'luis@acme.test',
             'password' => 'clave-segura',
+            'acepta_politica' => '1',
         ]);
         $luis = model(UsuarioModel::class)->find($luis['id']);
         $gasto = $this->cuenta($empresa, '5101', 'Alimentación');
@@ -270,6 +272,7 @@ final class PreAsientosTest extends CIUnitTestCase
             'nombre'    => 'Luis Soto',
             'email'     => 'luis@acme.test',
             'password'  => 'clave-segura',
+            'acepta_politica' => '1',
             'id_fiscal' => '22.222.222-2',
         ]);
         $this->assertTrue($alta['ok'], implode(' ', $alta['errores']));
@@ -400,6 +403,7 @@ final class PreAsientosTest extends CIUnitTestCase
             'nombre'    => 'Ana Pérez',
             'email'     => 'ana@acme.test',
             'password'  => 'clave-segura',
+            'acepta_politica' => '1',
             $seguridad->getTokenName() => $seguridad->getHash(),
         ]);
         $ana = model(UsuarioModel::class)->porEmail('ana@acme.test');
