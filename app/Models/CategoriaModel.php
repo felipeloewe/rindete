@@ -12,5 +12,5 @@ class CategoriaModel extends Model
     protected $primaryKey       = 'id';
     protected $useAutoIncrement = true;
     protected $returnType       = 'array';
-    protected $allowedFields    = ['empresa_id', 'nombre', 'detalle', 'tope', 'activa'];
+    protected $allowedFields    = ['empresa_id', 'nombre', 'concepto', 'detalle', 'tope', 'activa'];
 }

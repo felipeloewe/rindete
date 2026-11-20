@@ -263,6 +263,130 @@ final class PreAsientosTest extends CIUnitTestCase
         $lista->assertSee('Incluidos');
     }
 
+    public function testElViaticoPasaALaLiquidacionDeQuienRinde(): void
+    {
+        [$ana, $empresa, $alimentacion, $transporte] = $this->base();
+        $alta = (new PersonaServicio())->crear($empresa, [
+            'nombre'    => 'Luis Soto',
+            'email'     => 'luis@acme.test',
+            'password'  => 'clave-segura',
+            'id_fiscal' => '22.222.222-2',
+        ]);
+        $this->assertTrue($alta['ok'], implode(' ', $alta['errores']));
+        $luis = model(UsuarioModel::class)->find($alta['id']);
+        (new PersonaServicio())->guardar($ana, $ana, ['id_fiscal' => '12.345.678-5', 'activo' => '1']);
+        $ana = model(UsuarioModel::class)->find($ana['id']);
+
+        $gasto = $this->cuenta($empresa, '5101', 'Alimentación');
+        $fondo = $this->cuenta($empresa, '2101', 'Fondos por rendir');
+        $banco = $this->cuenta($empresa, '1101', 'Banco');
+        $general = $this->remuneracion($empresa, '6101', 'Viático general', 'viatico', null);
+        $propia = $this->remuneracion($empresa, '6103', 'Viático de Luis', 'viatico', (int) $luis['id']);
+        $sueldo = $this->cuenta($empresa, '2150', 'Liquidación de sueldo');
+        db_connect()->table('categoria_cuentas')->insert([
+            'categoria_id' => $alimentacion['id'],
+            'cuenta_id'    => $gasto,
+        ]);
+        db_connect()->table('categoria_cuentas')->insert([
+            'categoria_id' => $transporte['id'],
+            'cuenta_id'    => $this->cuenta($empresa, '5102', 'Transporte'),
+        ]);
+        model(CategoriaModel::class)->update($alimentacion['id'], ['concepto' => 'viatico']);
+        $this->rendir($ana, $alimentacion, 'Viático de Ana', 5000, '2026-11-04');
+        $this->rendir($luis, $alimentacion, 'Viático de Luis', 7000, '2026-11-18');
+        $this->rendir($ana, $transporte, 'Taxi', 3000, '2026-11-20');
+
+        $empresa['preasiento_agrupacion'] = 'mes';
+        $empresa['preasiento_auxiliar'] = 0;
+        $empresa['preasiento_cuenta_id'] = $fondo;
+        $empresa['preasiento_salida_id'] = $banco;
+        $empresa['preasiento_liquidacion_id'] = null;
+        $sinCuenta = (new PreAsientoChile())->armar($empresa, 2026, 11);
+        $this->assertTrue($sinCuenta['ok'], implode(' ', $sinCuenta['errores']));
+        $this->assertStringContainsString('liquidación de sueldo', implode(' ', $sinCuenta['avisos']));
+        $this->assertSame([], array_values(array_filter(
+            (new PreAsientoChile())->leer((int) $empresa['id'], 2026, 11),
+            static fn (array $fila): bool => $fila['tipo'] === 'liquidacion',
+        )));
+
+        $empresa['preasiento_liquidacion_id'] = $sueldo;
+        $armada = (new PreAsientoChile())->armar($empresa, 2026, 11);
+        $this->assertTrue($armada['ok'], implode(' ', $armada['errores']));
+        $comprobantes = (new PreAsientoChile())->leer((int) $empresa['id'], 2026, 11);
+        $liquidacion = null;
+        $central = null;
+        foreach ($comprobantes as $comprobante) {
+            if ($comprobante['tipo'] === 'liquidacion') {
+                $liquidacion = $comprobante;
+            }
+            if ($comprobante['tipo'] === 'traspaso') {
+                $central = $comprobante;
+            }
+        }
+        $this->assertNotNull($liquidacion);
+        $this->assertNotNull($central);
+        $this->assertSame('2026-11-30', $liquidacion['fecha']);
+        $this->assertSame('Traspaso a liquidación de sueldo, noviembre 2026', $liquidacion['glosa']);
+        $this->assertEquals(12000, $liquidacion['debe']);
+        $this->assertEquals(12000, $liquidacion['haber']);
+        $this->assertEquals(15000, $central['debe']);
+        $debe = [];
+        $haber = [];
+        foreach ($liquidacion['lineas'] as $linea) {
+            if ((float) $linea['debe'] > 0) {
+                $debe[$linea['codigo']] = (float) $linea['debe'];
+                $this->assertSame('Viático', $linea['glosa']);
+            } else {
+                $haber[$linea['codigo']] = (float) $linea['haber'];
+                $this->assertSame('', $linea['auxiliar']);
+            }
+        }
+        $this->assertEquals(5000, $debe['6101']);
+        $this->assertEquals(7000, $debe['6103']);
+        $this->assertEquals(12000, $haber['2150']);
+        $this->assertNotSame($general, $propia);
+
+        model(CuentaModel::class)->update($general, ['activa' => 0]);
+        $sinGeneral = (new PreAsientoChile())->armar($empresa, 2026, 11);
+        $this->assertStringContainsString('Ana Pérez', implode(' ', $sinGeneral['avisos']));
+        $this->assertStringContainsString('viático', implode(' ', $sinGeneral['avisos']));
+        $soloLuis = (new PreAsientoChile())->leer((int) $empresa['id'], 2026, 11);
+        $queda = array_values(array_filter($soloLuis, static fn (array $fila): bool => $fila['tipo'] === 'liquidacion'));
+        $this->assertCount(1, $queda);
+        $this->assertEquals(7000, $queda[0]['debe']);
+
+        model(CuentaModel::class)->update($general, ['activa' => 1]);
+        $empresa['preasiento_agrupacion'] = 'usuario';
+        $empresa['preasiento_auxiliar'] = 1;
+        (new PreAsientoChile())->armar($empresa, 2026, 11);
+        $porPersona = [];
+        foreach ((new PreAsientoChile())->leer((int) $empresa['id'], 2026, 11) as $comprobante) {
+            if ($comprobante['tipo'] === 'liquidacion') {
+                $porPersona[(int) $comprobante['usuario_id']] = $comprobante;
+            }
+        }
+        $this->assertEquals(5000, $porPersona[(int) $ana['id']]['debe']);
+        $this->assertEquals(7000, $porPersona[(int) $luis['id']]['debe']);
+        $this->assertSame(['12345678-5'], array_values(array_unique(array_column($porPersona[(int) $ana['id']]['lineas'], 'auxiliar'))));
+        $this->assertSame(['22222222-2'], array_values(array_unique(array_column($porPersona[(int) $luis['id']]['lineas'], 'auxiliar'))));
+
+        model(EmpresaModel::class)->update($empresa['id'], [
+            'preasiento_agrupacion'     => 'mes',
+            'preasiento_auxiliar'       => 0,
+            'preasiento_cuenta_id'      => $fondo,
+            'preasiento_salida_id'      => $banco,
+            'preasiento_liquidacion_id' => $sueldo,
+        ]);
+        (new PreAsientoChile())->armar(model(EmpresaModel::class)->find($empresa['id']), 2026, 11);
+        Modulos::contratar((int) $empresa['id'], 'preasientos');
+        $pagina = $this->withSession(['usuario_id' => $ana['id']])->get('informes/preasientos?anio=2026&mes=11');
+        $pagina->assertOK();
+        $pagina->assertSee('Liquidación');
+        $pagina->assertSee('Traspaso a liquidación de sueldo, noviembre 2026');
+        $pagina->assertSee('6101');
+        $pagina->assertSee('2150');
+    }
+
     /**
      * @return array{0: array<string, mixed>, 1: array<string, mixed>, 2: array<string, mixed>, 3: array<string, mixed>}
      */
@@ -287,6 +411,25 @@ final class PreAsientosTest extends CIUnitTestCase
             model(CategoriaModel::class)->where('nombre', 'Alimentación')->first(),
             model(CategoriaModel::class)->where('nombre', 'Transporte')->first(),
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $empresa
+     */
+    /**
+     * @param array<string, mixed> $empresa
+     */
+    private function remuneracion(array $empresa, string $codigo, string $nombre, string $concepto, ?int $usuarioId): int
+    {
+        return (int) model(CuentaModel::class)->insert([
+            'empresa_id' => $empresa['id'],
+            'clase'      => 'remuneracion',
+            'codigo'     => $codigo,
+            'nombre'     => $nombre,
+            'concepto'   => $concepto,
+            'usuario_id' => $usuarioId,
+            'activa'     => 1,
+        ], true);
     }
 
     /**

@@ -21,7 +21,7 @@ final class RendicionDirecta
      * @param array<string, mixed> $usuario
      * @param array<string, mixed> $empresa
      *
-     * @return array{monto: float, propio: bool, viatico: array<string, mixed>|null, asignacion: array<string, mixed>|null}
+     * @return array{monto: float, propio: bool, viatico: array<string, mixed>|null, asignacion: array<string, mixed>|null, bien: array<string, mixed>|null}
      */
     public static function de(array $usuario, array $empresa): array
     {
@@ -33,6 +33,7 @@ final class RendicionDirecta
             'propio'     => $usaPropio,
             'viatico'    => self::concepto((int) $empresa['id'], (int) $usuario['id'], 'viatico'),
             'asignacion' => self::concepto((int) $empresa['id'], (int) $usuario['id'], 'asignacion'),
+            'bien'       => self::concepto((int) $empresa['id'], (int) $usuario['id'], 'bien'),
         ];
     }
 
@@ -50,9 +51,11 @@ final class RendicionDirecta
     }
 
     /**
+     * La cuenta del concepto es la de la persona si existe, y si no la de la empresa.
+     *
      * @return array<string, mixed>|null
      */
-    private static function concepto(int $empresaId, int $usuarioId, string $concepto): ?array
+    public static function concepto(int $empresaId, int $usuarioId, string $concepto): ?array
     {
         $propia = model(CuentaModel::class)
             ->where('empresa_id', $empresaId)

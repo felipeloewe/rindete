@@ -41,7 +41,7 @@ class Parametros extends BaseController
         ],
         'clasificacion' => [
             'titulo' => 'Clasificación',
-            'bajada' => 'Al confirmar un gasto, Rindete propone el preasiento en la cuenta genérica de su categoría. Espera la centralización del mes.',
+            'bajada' => 'Al confirmar un gasto, Rindete propone el preasiento en la cuenta genérica de su categoría. Si la categoría es viático, asignación o bien, el cierre del mes lo pasa a la liquidación de sueldo.',
         ],
         'conexiones' => [
             'titulo' => 'Conexiones',
@@ -65,7 +65,7 @@ class Parametros extends BaseController
         ],
         'preasientos' => [
             'titulo' => 'Preasientos',
-            'bajada' => 'En Chile el preasiento del mes junta la salida del dinero y el paso al gasto. Queda por persona o en un solo comprobante, antes de ingresarlo al ERP.',
+            'bajada' => 'En Chile el preasiento del mes junta la salida del dinero, el paso al gasto y el traspaso de viático, asignación y bien a la liquidación de sueldo.',
         ],
     ];
 
@@ -248,20 +248,28 @@ class Parametros extends BaseController
         $agrupacion = (string) $this->request->getPost('agrupacion') === 'usuario' ? 'usuario' : 'mes';
         $cuentaId = (int) $this->request->getPost('cuenta_id');
         $salidaId = (int) $this->request->getPost('salida_id');
+        $liquidacionId = (int) $this->request->getPost('liquidacion_id');
         if ($cuentaId > 0 && $this->fila(CuentaModel::class, $cuentaId, (int) $empresa['id']) === null) {
             return redirect()->to('/parametros/preasientos')->with('error', 'Elige una cuenta de la empresa.');
         }
         if ($salidaId > 0 && $this->fila(CuentaModel::class, $salidaId, (int) $empresa['id']) === null) {
             return redirect()->to('/parametros/preasientos')->with('error', 'Elige una cuenta de la empresa.');
         }
+        if ($liquidacionId > 0 && $this->fila(CuentaModel::class, $liquidacionId, (int) $empresa['id']) === null) {
+            return redirect()->to('/parametros/preasientos')->with('error', 'Elige una cuenta de la empresa.');
+        }
         if ($cuentaId > 0 && $cuentaId === $salidaId) {
             return redirect()->to('/parametros/preasientos')->with('error', 'Elige otra cuenta para la salida. El fondo por rendir ya está en la contrapartida.');
         }
+        if ($liquidacionId > 0 && ($liquidacionId === $cuentaId || $liquidacionId === $salidaId)) {
+            return redirect()->to('/parametros/preasientos')->with('error', 'La liquidación de sueldo es otra cuenta.');
+        }
         model(\App\Models\EmpresaModel::class)->update($empresa['id'], [
-            'preasiento_agrupacion' => $agrupacion,
-            'preasiento_auxiliar'   => $this->request->getPost('auxiliar') ? 1 : 0,
-            'preasiento_cuenta_id'  => $cuentaId > 0 ? $cuentaId : null,
-            'preasiento_salida_id'  => $salidaId > 0 ? $salidaId : null,
+            'preasiento_agrupacion'     => $agrupacion,
+            'preasiento_auxiliar'       => $this->request->getPost('auxiliar') ? 1 : 0,
+            'preasiento_cuenta_id'      => $cuentaId > 0 ? $cuentaId : null,
+            'preasiento_salida_id'      => $salidaId > 0 ? $salidaId : null,
+            'preasiento_liquidacion_id' => $liquidacionId > 0 ? $liquidacionId : null,
         ]);
 
         return redirect()->to('/parametros/preasientos')->with('ok', 'Preasiento guardado.');
@@ -276,9 +284,14 @@ class Parametros extends BaseController
         $categoria = $this->fila(CategoriaModel::class, (int) $this->request->getPost('categoria_id'), (int) $empresa['id']);
         $cuentaId  = (int) $this->request->getPost('cuenta_id');
         $cuenta    = $cuentaId > 0 ? $this->fila(CuentaModel::class, $cuentaId, (int) $empresa['id']) : null;
+        $concepto = (string) $this->request->getPost('concepto');
+        if (! in_array($concepto, ['', 'viatico', 'asignacion', 'bien'], true)) {
+            return redirect()->to('/parametros/clasificacion')->with('error', 'Elige viático, asignación o bien.');
+        }
         if ($categoria === null || ($cuentaId > 0 && ($cuenta === null || $cuenta['clase'] !== 'generica'))) {
             return redirect()->to('/parametros/clasificacion')->with('error', 'Elige una categoría y una cuenta genérica.');
         }
+        model(CategoriaModel::class)->update($categoria['id'], ['concepto' => $concepto]);
         $db = db_connect();
         $db->table('categoria_cuentas')->where('categoria_id', $categoria['id'])->delete();
         if ($cuentaId > 0) {
