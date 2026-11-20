@@ -24,6 +24,12 @@ final class GastosTest extends CIUnitTestCase
     protected $namespace = 'App';
     protected $refresh   = true;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        cache()->clean();
+    }
+
     public function testElAltaCreaLasCategorias(): void
     {
         $this->postForm('registro', $this->cuenta());

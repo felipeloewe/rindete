@@ -18,7 +18,10 @@
                 <?php endif ?>
                 <a href="<?= base_url('empresa') ?>">Empresa</a>
                 <a href="<?= base_url('cuenta') ?>">Cuenta</a>
-                <a href="<?= base_url('logout') ?>">Salir</a>
+                <form class="plano salir" method="post" action="<?= base_url('logout') ?>">
+                    <?= csrf_field() ?>
+                    <button type="submit">Salir</button>
+                </form>
             <?php else : ?>
                 <a href="<?= base_url('login') ?>">Entrar</a>
                 <a href="<?= base_url('registro') ?>">Crear empresa</a>

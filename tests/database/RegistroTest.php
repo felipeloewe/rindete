@@ -21,6 +21,12 @@ final class RegistroTest extends CIUnitTestCase
     protected $namespace   = 'App';
     protected $refresh     = true;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        cache()->clean();
+    }
+
     public function testRegistroCreaEmpresaYAdministrador(): void
     {
         $resultado = $this->postForm('registro', $this->datos());
@@ -50,7 +56,7 @@ final class RegistroTest extends CIUnitTestCase
     public function testLoginEntraAlPanel(): void
     {
         $this->postForm('registro', $this->datos());
-        $this->get('logout');
+        $this->postForm('logout', []);
 
         $login = $this->postForm('login', [
             'email'    => 'ana@acme.test',
