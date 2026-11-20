@@ -60,6 +60,21 @@ class ConexionErp
         return $fila;
     }
 
+    public function hayAsientos(int $empresaId): bool
+    {
+        $filas = model(ConexionModel::class)
+            ->where('empresa_id', $empresaId)
+            ->where('vigente', 1)
+            ->findAll();
+        foreach ($filas as $fila) {
+            if ($this->sirve($fila, 'asientos')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public function sirve(array $conexion, string $destino): bool
     {
         $actual = (string) ($conexion['destino'] ?? '');

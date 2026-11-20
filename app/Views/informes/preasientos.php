@@ -8,7 +8,10 @@
         <h1>Preasientos</h1>
         <p>Preasientos del mes, antes de ingresarlos al ERP. Al entregar un fondo sale el dinero y nace el fondo por rendir. Al rendir, ese fondo pasa al gasto. El mes queda por persona o en un solo comprobante. No hay uno por rendición ni por fondo.</p>
     </div>
-    <a class="boton" href="<?= base_url('informes?anio=' . $anio . '&mes=' . $mes) ?>">Volver</a>
+    <div class="lado">
+        <a class="boton claro" href="<?= base_url('informes/contabilizados?anio=' . $anio . '&mes=' . $mes) ?>">Asientos contabilizados</a>
+        <a class="boton" href="<?= base_url('informes?anio=' . $anio . '&mes=' . $mes) ?>">Volver</a>
+    </div>
 </header>
 <section class="bloque">
     <form class="filtros" method="get" action="<?= base_url('informes/preasientos') ?>">
@@ -39,7 +42,9 @@
             Sale de <?= esc($salida['codigo']) ?> <?= esc($salida['nombre']) ?>
             y el fondo es <?= esc($cuenta['codigo']) ?> <?= esc($cuenta['nombre']) ?>.
         </p>
-        <?php if ($tomado) : ?>
+        <?php if ($tomado && $manual) : ?>
+            <p>Este mes está cerrado y no hay una API vigente. Marca el preasiento cuando ya lo contabilizaste en el ERP. Ahí queda como asiento contabilizado.</p>
+        <?php elseif ($tomado) : ?>
             <p>Este mes está cerrado. El ERP puede tomarlo. Cuando lo hace, el preasiento pasa a ser asiento.</p>
         <?php else : ?>
             <form method="post" action="<?= base_url('informes/preasientos') ?>">
@@ -66,7 +71,8 @@
     <section class="bloque">
         <div class="cabeza">
             <h2><?= esc($comprobante['glosa']) ?></h2>
-            <span><?= esc(\App\Libraries\Estados::comprobante((string) ($comprobante['estado'] ?? 'propuesto'))) ?> · <?= ($comprobante['tipo'] ?? '') === 'salida' ? 'Salida' : 'Traspaso' ?> · <?= esc(date('d/m/Y', strtotime((string) $comprobante['fecha']))) ?><?= ($comprobante['erp_ref'] ?? '') !== '' ? ' · ' . esc((string) $comprobante['erp_ref']) : '' ?></span>
+            <?php $estadoComprobante = (string) ($comprobante['estado'] ?? 'propuesto'); ?>
+            <span><?= esc(\App\Libraries\Estados::comprobante($estadoComprobante)) ?><?= $estadoComprobante === 'asiento' ? ' · ' . esc(\App\Libraries\Estados::contabilizacion((string) ($comprobante['origen'] ?? ''), (string) ($comprobante['erp_ref'] ?? ''))) : '' ?> · <?= ($comprobante['tipo'] ?? '') === 'salida' ? 'Salida' : 'Traspaso' ?> · <?= esc(date('d/m/Y', strtotime((string) $comprobante['fecha']))) ?></span>
         </div>
         <table class="tabla">
             <thead><tr><th>Cuenta</th><th>Glosa</th><th>Auxiliar</th><th>Debe</th><th>Haber</th></tr></thead>
@@ -88,7 +94,19 @@
                     <td><?= esc(\App\Libraries\Montos::formato((float) $comprobante['haber'], (string) $comprobante['moneda'])) ?></td>
                 </tr>
             </tbody>
-        </table>
+            </table>
+        <?php if ($manual && $estadoComprobante === 'cerrado') : ?>
+            <form method="post" action="<?= base_url('informes/preasientos/contabilizar') ?>">
+                <?= csrf_field() ?>
+                <input type="hidden" name="anio" value="<?= esc((string) $anio) ?>">
+                <input type="hidden" name="mes" value="<?= esc((string) $mes) ?>">
+                <label class="cheque">
+                    <input type="checkbox" name="ids[]" value="<?= esc((string) $comprobante['id']) ?>" required>
+                    Contabilizado en el ERP
+                </label>
+                <button class="boton claro" type="submit">Dejarlo contabilizado</button>
+            </form>
+        <?php endif ?>
     </section>
 <?php endforeach ?>
 <?= $this->endSection() ?>

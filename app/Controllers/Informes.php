@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Libraries\ConexionErp;
 use App\Libraries\InformeServicio;
 use App\Libraries\Modulos;
 use App\Libraries\Paises;
@@ -185,6 +186,54 @@ class Informes extends BaseController
         return redirect()->to($vuelta)->with('ok', 'Mes cerrado. El ERP ya puede tomar estos preasientos.');
     }
 
+    public function contabilizar()
+    {
+        [$usuario, $empresa, $anio, $mes] = $this->adminPeriodo(true);
+        if ($usuario === null || $empresa === null) {
+            return $this->fueraPreasiento($empresa);
+        }
+        if (! Modulos::activo($empresa, 'preasientos')) {
+            return redirect()->to('/modulos')->with('error', Modulos::aviso('preasientos'));
+        }
+        $ids = $this->request->getPost('ids');
+        if (! is_array($ids)) {
+            $ids = $ids === null || $ids === '' ? [] : [$ids];
+        }
+        $resultado = (new PreAsientoChile())->contabilizar((int) $empresa['id'], $ids);
+        $vuelta = '/informes/preasientos?anio=' . $anio . '&mes=' . $mes;
+        if (! $resultado['ok']) {
+            return redirect()->to($vuelta)->with('errores', $resultado['errores']);
+        }
+
+        return redirect()->to('/informes/contabilizados?anio=' . $anio . '&mes=' . $mes)
+            ->with('ok', 'Quedó contabilizado. Es el cierre en el ERP externo.');
+    }
+
+    public function contabilizados()
+    {
+        [$usuario, $empresa, $anio, $mes] = $this->adminPeriodo(false);
+        if ($usuario === null || $empresa === null) {
+            return $this->fueraPreasiento($empresa);
+        }
+        if (! Modulos::activo($empresa, 'preasientos')) {
+            return $this->modulo('preasientos');
+        }
+        if ($mes < 1 || $mes > 12) {
+            $mes = (int) date('n');
+        }
+        $movimientos = (new PreAsientoChile())->contabilizados((int) $empresa['id'], $anio, $mes);
+
+        return view('informes/contabilizados', [
+            'anio'         => $anio,
+            'mes'          => $mes,
+            'meses'        => self::MESES,
+            'anios'        => range((int) date('Y') + 1, (int) date('Y') - 4),
+            'movimientos'  => $movimientos,
+            'manual'       => ! (new ConexionErp())->hayAsientos((int) $empresa['id']),
+            'moneda'       => Paises::pais((string) $empresa['pais'])['moneda'] ?? 'CLP',
+        ]);
+    }
+
     /**
      * @param array<string, mixed> $empresa
      *
@@ -212,6 +261,7 @@ class Informes extends BaseController
             'salida'       => is_array($salida) ? $salida : null,
             'comprobantes' => (new PreAsientoChile())->leer((int) $empresa['id'], $anio, $mes),
             'tomado'       => (new PreAsientoChile())->tomado((int) $empresa['id'], $anio, $mes),
+            'manual'       => ! (new ConexionErp())->hayAsientos((int) $empresa['id']),
             'moneda'       => Paises::pais((string) $empresa['pais'])['moneda'] ?? 'CLP',
         ];
     }

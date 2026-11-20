@@ -55,6 +55,8 @@ $routes->group('', ['filter' => 'auth'], static function (RouteCollection $route
     $routes->get('informes/preasientos', 'Informes::preasientos');
     $routes->post('informes/preasientos', 'Informes::armarPreasientos');
     $routes->post('informes/preasientos/cerrar', 'Informes::cerrarPreasientos');
+    $routes->post('informes/preasientos/contabilizar', 'Informes::contabilizar');
+    $routes->get('informes/contabilizados', 'Informes::contabilizados');
     $routes->get('informes/(:segment)', 'Informes::ver/$1');
 
     $routes->get('rendiciones', 'Rendiciones::index');

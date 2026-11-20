@@ -201,12 +201,99 @@ class PreAsientoChile
             'estado'    => 'asiento',
             'erp_ref'   => $referencia,
             'consumido' => date('Y-m-d H:i:s'),
+            'origen'    => 'api',
         ]);
         $asiento = $this->uno($empresaId, $id);
 
         return is_array($asiento)
             ? ['ok' => true, 'errores' => [], 'comprobante' => $asiento]
             : ['ok' => false, 'errores' => ['No encontramos ese preasiento.']];
+    }
+
+    /**
+     * Marca preasientos cerrados como asientos contabilizados en el ERP externo.
+     * Solo cuando la empresa no tiene una API vigente para los preasientos.
+     *
+     * @param list<mixed> $ids
+     *
+     * @return array{ok: bool, errores: list<string>}
+     */
+    public function contabilizar(int $empresaId, array $ids): array
+    {
+        if ((new ConexionErp())->hayAsientos($empresaId)) {
+            return ['ok' => false, 'errores' => ['La contabilización manual queda para cuando no hay una API vigente.']];
+        }
+        $elegidos = [];
+        foreach ($ids as $id) {
+            $numero = (int) $id;
+            if ($numero > 0) {
+                $elegidos[$numero] = $numero;
+            }
+        }
+        if ($elegidos === []) {
+            return ['ok' => false, 'errores' => ['Marca los preasientos que ya contabilizaste en el ERP.']];
+        }
+        $listos = [];
+        $errores = [];
+        foreach ($elegidos as $id) {
+            $comprobante = $this->uno($empresaId, $id);
+            if ($comprobante === null) {
+                $errores[] = 'No encontramos ese preasiento.';
+                continue;
+            }
+            if ((string) $comprobante['estado'] === 'asiento' && (string) ($comprobante['origen'] ?? '') === 'manual') {
+                continue;
+            }
+            if ((string) $comprobante['estado'] === 'asiento') {
+                $errores[] = 'Ese preasiento ya es un asiento.';
+                continue;
+            }
+            if ((string) $comprobante['estado'] !== 'cerrado') {
+                $errores[] = 'El preasiento se contabiliza cuando el mes está cerrado.';
+                continue;
+            }
+            if (abs((float) $comprobante['debe'] - (float) $comprobante['haber']) >= 0.001) {
+                $errores[] = 'Un preasiento no cuadra y no se contabiliza.';
+                continue;
+            }
+            $listos[] = $id;
+        }
+        if ($errores !== []) {
+            return ['ok' => false, 'errores' => $errores];
+        }
+        if ($listos !== []) {
+            db_connect()->table('preasiento_comprobantes')->whereIn('id', $listos)->update([
+                'estado'    => 'asiento',
+                'origen'    => 'manual',
+                'consumido' => date('Y-m-d H:i:s'),
+            ]);
+        }
+
+        return ['ok' => true, 'errores' => []];
+    }
+
+    /**
+     * Líneas de los preasientos que ya quedaron contabilizados en el ERP.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function contabilizados(int $empresaId, int $anio, int $mes): array
+    {
+        $consulta = db_connect()->table('preasiento_lineas')
+            ->select('preasiento_lineas.glosa, preasiento_lineas.debe, preasiento_lineas.haber, preasiento_lineas.auxiliar, preasiento_lineas.orden, cuentas.codigo, cuentas.nombre, preasiento_comprobantes.id as comprobante_id, preasiento_comprobantes.fecha, preasiento_comprobantes.glosa as comprobante, preasiento_comprobantes.tipo, preasiento_comprobantes.origen, preasiento_comprobantes.erp_ref, preasiento_comprobantes.moneda')
+            ->join('preasiento_comprobantes', 'preasiento_comprobantes.id = preasiento_lineas.comprobante_id')
+            ->join('cuentas', 'cuentas.id = preasiento_lineas.cuenta_id')
+            ->where('preasiento_comprobantes.empresa_id', $empresaId)
+            ->where('preasiento_comprobantes.estado', 'asiento')
+            ->where('preasiento_comprobantes.anio', $anio)
+            ->orderBy('preasiento_comprobantes.fecha', 'ASC')
+            ->orderBy('preasiento_comprobantes.id', 'ASC')
+            ->orderBy('preasiento_lineas.orden', 'ASC');
+        if ($mes >= 1 && $mes <= 12) {
+            $consulta->where('preasiento_comprobantes.mes', $mes);
+        }
+
+        return $consulta->get()->getResultArray();
     }
 
     /**
