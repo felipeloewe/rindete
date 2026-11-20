@@ -13,6 +13,17 @@ class CapaIdentidades extends Migration
         $forge = \Config\Database::forge('identidad');
         $db    = \Config\Database::connect('identidad');
 
+        if (! $db->tableExists('personas')) {
+            $this->crearPersonas($forge);
+        }
+        if (! $db->tableExists('organizaciones')) {
+            $this->crearOrganizaciones($forge);
+        }
+        $this->copiarYSoltar($db);
+    }
+
+    private function crearPersonas($forge): void
+    {
         $forge->addField([
             'usuario_id'    => ['type' => 'INT', 'unsigned' => true],
             'empresa_id'    => ['type' => 'INT', 'unsigned' => true],
@@ -26,7 +37,10 @@ class CapaIdentidades extends Migration
         $forge->addPrimaryKey('usuario_id');
         $forge->addUniqueKey('email');
         $forge->createTable('personas');
+    }
 
+    private function crearOrganizaciones($forge): void
+    {
         $forge->addField([
             'empresa_id'   => ['type' => 'INT', 'unsigned' => true],
             'pais'         => ['type' => 'CHAR', 'constraint' => 2],
@@ -37,12 +51,23 @@ class CapaIdentidades extends Migration
         $forge->addPrimaryKey('empresa_id');
         $forge->addUniqueKey(['pais', 'id_fiscal']);
         $forge->createTable('organizaciones');
+    }
 
+    private function copiarYSoltar($db): void
+    {
         $this->alteracionAntigua(true);
+        $personas = [];
+        foreach ($db->table('personas')->select('usuario_id')->get()->getResultArray() as $fila) {
+            $personas[(int) $fila['usuario_id']] = true;
+        }
         if ($this->db->fieldExists('email', 'usuarios')) {
             foreach ($this->db->table('usuarios')->get()->getResultArray() as $fila) {
+                $id = (int) $fila['id'];
+                if (isset($personas[$id])) {
+                    continue;
+                }
                 $db->table('personas')->insert([
-                    'usuario_id'    => (int) $fila['id'],
+                    'usuario_id'    => $id,
                     'empresa_id'    => (int) $fila['empresa_id'],
                     'nombre'        => (string) $fila['nombre'],
                     'email'         => strtolower(trim((string) $fila['email'])),
@@ -52,6 +77,9 @@ class CapaIdentidades extends Migration
                     'password'      => (string) $fila['password'],
                 ]);
             }
+            foreach (['email', 'id_fiscal'] as $columna) {
+                $this->soltarIndice('usuarios', $columna);
+            }
             foreach (['nombre', 'email', 'id_fiscal', 'cuenta_banco', 'banco_destino', 'password'] as $columna) {
                 if ($this->db->fieldExists($columna, 'usuarios')) {
                     $this->forge->dropColumn('usuarios', $columna);
@@ -59,16 +87,25 @@ class CapaIdentidades extends Migration
             }
         }
 
+        $organizaciones = [];
+        foreach ($db->table('organizaciones')->select('empresa_id')->get()->getResultArray() as $fila) {
+            $organizaciones[(int) $fila['empresa_id']] = true;
+        }
         if ($this->db->fieldExists('id_fiscal', 'empresas')) {
             foreach ($this->db->table('empresas')->get()->getResultArray() as $fila) {
+                $id = (int) $fila['id'];
+                if (isset($organizaciones[$id])) {
+                    continue;
+                }
                 $db->table('organizaciones')->insert([
-                    'empresa_id'   => (int) $fila['id'],
+                    'empresa_id'   => $id,
                     'pais'         => (string) $fila['pais'],
                     'nombre'       => (string) $fila['nombre'],
                     'id_fiscal'    => (string) $fila['id_fiscal'],
                     'cuenta_cargo' => (string) ($fila['cuenta_cargo'] ?? ''),
                 ]);
             }
+            $this->soltarIndice('empresas', 'id_fiscal');
             foreach (['nombre', 'id_fiscal', 'cuenta_cargo'] as $columna) {
                 if ($this->db->fieldExists($columna, 'empresas')) {
                     $this->forge->dropColumn('empresas', $columna);
@@ -76,6 +113,23 @@ class CapaIdentidades extends Migration
             }
         }
         $this->alteracionAntigua(false);
+    }
+
+    private function soltarIndice(string $tabla, string $columna): void
+    {
+        if ($this->db->DBDriver === 'SQLite3') {
+            return;
+        }
+        foreach ($this->db->getIndexData($tabla) as $indice) {
+            $campos = $indice->fields ?? [];
+            if (($indice->type ?? '') === 'PRIMARY' || ! in_array($columna, $campos, true)) {
+                continue;
+            }
+            $this->db->query(
+                'ALTER TABLE ' . $this->db->prefixTable($tabla)
+                . ' DROP INDEX ' . $this->db->escapeIdentifiers($indice->name)
+            );
+        }
     }
 
     public function down(): void
