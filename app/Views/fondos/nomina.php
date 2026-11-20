@@ -28,6 +28,21 @@
         </label>
         <button class="boton" type="submit">Ver</button>
     </form>
+    <?php if ($repetidas !== []) : ?>
+        <p>Hay solicitudes repetidas. Queda la primera y el resto no entra a la planilla.</p>
+        <table class="tabla">
+            <thead><tr><th>Persona</th><th>Motivo</th><th>Monto</th></tr></thead>
+            <tbody>
+                <?php foreach ($repetidas as $solicitud) : ?>
+                    <tr>
+                        <td><?= esc($nombres[(int) $solicitud['usuario_id']] ?? '') ?></td>
+                        <td><?= esc($solicitud['motivo']) ?></td>
+                        <td><?= esc(\App\Libraries\Montos::formato((float) $solicitud['monto'], (string) $solicitud['moneda'])) ?></td>
+                    </tr>
+                <?php endforeach ?>
+            </tbody>
+        </table>
+    <?php endif ?>
     <?php if ($pendientes === []) : ?>
         <p>No hay solicitudes aceptadas de este mes fuera de una nómina.</p>
     <?php else : ?>

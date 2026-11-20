@@ -19,7 +19,9 @@
             'cartola'     => 'losa-fondos',
             'gastos'      => 'losa-gastos',
             'asientos'    => 'losa-parametros',
-            'tipos'       => 'losa-categorias',
+            'tipos'          => 'losa-categorias',
+            'pendientes'     => 'losa-rendiciones',
+            'remuneraciones' => 'losa-fondos',
         ];
     ?>
     <?php

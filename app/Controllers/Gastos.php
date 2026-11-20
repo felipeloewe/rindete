@@ -77,9 +77,15 @@ class Gastos extends BaseController
             return redirect()->to('/login');
         }
         (new GastoServicio())->asegurarCategorias($empresa);
-        $resultado = (new GastoServicio())->crear($usuario, $empresa, $this->request->getPost() ?? [], $this->request->getFile('comprobante'));
+        $archivo = $this->request->getFile('comprobante');
+        [$post, $leidos] = $this->completarLectura($this->request->getPost() ?? [], $archivo);
+        $resultado = (new GastoServicio())->crear($usuario, $empresa, $post, $archivo);
         if (! $resultado['ok']) {
             return redirect()->back()->withInput()->with('errores', $resultado['errores']);
+        }
+        if ($leidos !== []) {
+            return redirect()->to('/gastos/' . $resultado['gasto']['id'] . '/editar')
+                ->with('ok', 'Leímos el comprobante y completamos ' . implode(', ', $leidos) . '. Confirma o corrige.');
         }
 
         return redirect()->to('/gastos/' . $resultado['gasto']['id'])->with('ok', $this->aviso($resultado['gasto']));
@@ -124,9 +130,15 @@ class Gastos extends BaseController
         if ($gasto === null) {
             return redirect()->to('/gastos')->with('error', 'No encontramos ese gasto.');
         }
-        $resultado = (new GastoServicio())->actualizar($usuario, $empresa, $gasto, $this->request->getPost() ?? [], $this->request->getFile('comprobante'));
+        $archivo = $this->request->getFile('comprobante');
+        [$post, $leidos] = $this->completarLectura($this->request->getPost() ?? [], $archivo);
+        $resultado = (new GastoServicio())->actualizar($usuario, $empresa, $gasto, $post, $archivo);
         if (! $resultado['ok']) {
             return redirect()->back()->withInput()->with('errores', $resultado['errores']);
+        }
+        if ($leidos !== []) {
+            return redirect()->to('/gastos/' . $id . '/editar')
+                ->with('ok', 'Leímos el comprobante y completamos ' . implode(', ', $leidos) . '. Confirma o corrige.');
         }
 
         return redirect()->to('/gastos/' . $id)->with('ok', $this->aviso($resultado['gasto']));
@@ -236,14 +248,43 @@ class Gastos extends BaseController
             }
         }
 
+        $lugares = new \App\Libraries\Lugares();
+
         return [
             'gasto'      => $gasto,
+            'centros'    => $lugares->lista((int) $empresa['id'], 'centro', true),
+            'sucursales' => $lugares->lista((int) $empresa['id'], 'sucursal', true),
+            'conceptos'  => $lugares->lista((int) $empresa['id'], 'concepto', true),
             'pais'       => $pais,
             'moneda'     => (string) ($gasto['moneda'] ?? ($pais['moneda'] ?? 'USD')),
             'valor'      => $valor,
             'categorias' => $categorias,
             'tipos'      => $tipos,
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $post
+     *
+     * @return array{0: array<string, mixed>, 1: list<string>}
+     */
+    private function completarLectura(array $post, $archivo): array
+    {
+        $leido = (new \App\Libraries\LectorComprobante())->leer($archivo);
+        $usados = [];
+        foreach ([
+            'id_fiscal' => 'la identificación',
+            'num_doc'   => 'el número',
+            'fecha'     => 'la fecha',
+            'monto'     => 'el monto',
+        ] as $campo => $etiqueta) {
+            if (trim((string) ($post[$campo] ?? '')) === '' && ($leido[$campo] ?? '') !== '') {
+                $post[$campo] = $leido[$campo];
+                $usados[] = $etiqueta;
+            }
+        }
+
+        return [$post, $usados];
     }
 
     /**

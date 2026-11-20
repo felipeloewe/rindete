@@ -50,6 +50,7 @@ class Fondos extends BaseController
             'meses'       => $this->meses(),
             'anios'       => range((int) date('Y') + 1, (int) date('Y') - 4),
             'pendientes'  => $servicio->pendientes((int) $empresa['id'], $anio, $mes),
+            'repetidas'   => $servicio->repetidas((int) $empresa['id'], $anio, $mes),
             'nominas'     => $servicio->delMes((int) $empresa['id'], $anio, $mes),
             'nombres'      => $this->nombres((int) $empresa['id']),
             'cuentas'      => $this->cuentasBanco((int) $empresa['id']),
@@ -57,6 +58,25 @@ class Fondos extends BaseController
             'bancos'       => BancosChile::CODIGOS,
             'chile'        => (string) $empresa['pais'] === 'CL',
             'cuentaCargo'  => (string) ($empresa['cuenta_cargo'] ?? ''),
+        ]);
+    }
+
+    public function pagos()
+    {
+        [$usuario, $empresa, $anio, $mes] = $this->adminPeriodo(false);
+        if ($usuario === null || $empresa === null) {
+            return $this->soloAdmin();
+        }
+        $meses = $this->meses();
+
+        return view('fondos/pagos', [
+            'anio'     => $anio,
+            'mes'      => $mes,
+            'meses'    => $meses,
+            'anios'    => range((int) date('Y') + 1, (int) date('Y') - 4),
+            'periodo'  => $meses[$mes] . ' ' . $anio,
+            'consulta' => 'anio=' . $anio . '&mes=' . $mes,
+            'filas'    => (new NominaFondos())->tablero((int) $empresa['id'], $anio, $mes),
         ]);
     }
 
@@ -95,7 +115,9 @@ class Fondos extends BaseController
             return redirect()->to($vuelta)->with('errores', $resultado['errores']);
         }
 
-        return redirect()->to($vuelta)->with('ok', 'Nómina creada en el banco. Cada persona queda con su fondo por rendir. El archivo ya se puede descargar.');
+        return redirect()->to($vuelta)
+            ->with('ok', 'Nómina creada en el banco. Cada persona queda con su fondo por rendir. El archivo ya se puede descargar.')
+            ->with('avisos', $resultado['avisos'] ?? []);
     }
 
     public function nueva()

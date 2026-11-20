@@ -114,6 +114,49 @@ final class GastosTest extends CIUnitTestCase
         @unlink($ruta);
     }
 
+    public function testElCentroDeLaEmpresaQuedaEnElGasto(): void
+    {
+        $this->postForm('registro', $this->cuenta());
+        $usuario = model(UsuarioModel::class)->where('email', 'ana@acme.test')->first();
+        $empresa = model(EmpresaModel::class)->find($usuario['empresa_id']);
+        $categoria = model(CategoriaModel::class)->where('nombre', 'Alimentación')->first();
+        $lugares = new \App\Libraries\Lugares();
+        $this->assertTrue($lugares->crear((int) $empresa['id'], 'centro', 'Comercial')['ok']);
+        $centro = (int) $lugares->lista((int) $empresa['id'], 'centro')[0]['id'];
+
+        $resultado = (new GastoServicio())->crear($usuario, $empresa, [
+            'concepto'     => 'Peaje',
+            'proveedor'    => 'Ruta',
+            'fecha'        => '2026-11-09',
+            'monto'        => '4000',
+            'categoria_id' => $categoria['id'],
+            'tipo_doc'     => 'Boleta',
+            'centro_id'    => (string) $centro,
+        ], null);
+        $this->assertTrue($resultado['ok'], implode(' ', $resultado['errores']));
+        $this->assertSame($centro, (int) $resultado['gasto']['centro_id']);
+
+        $ajeno = (new GastoServicio())->crear($usuario, $empresa, [
+            'concepto'     => 'Otro',
+            'proveedor'    => 'Ruta',
+            'fecha'        => '2026-11-12',
+            'monto'        => '1500',
+            'categoria_id' => $categoria['id'],
+            'tipo_doc'     => 'Boleta',
+            'centro_id'    => '999',
+        ], null);
+        $this->assertFalse($ajeno['ok']);
+        $this->assertStringContainsString('Elige un centro de la empresa.', implode(' ', $ajeno['errores']));
+
+        $pagina = $this->withSession(['usuario_id' => $usuario['id']])->get('parametros/lugares');
+        $pagina->assertOK();
+        $pagina->assertSee('Comercial');
+        $formulario = $this->withSession(['usuario_id' => $usuario['id']])->get('gastos/nuevo');
+        $formulario->assertOK();
+        $formulario->assertSee('Centro de costo');
+        $formulario->assertSee('Comercial');
+    }
+
     /**
      * @param array<string, string> $data
      */

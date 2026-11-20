@@ -36,6 +36,14 @@ class Informes extends BaseController
             'titulo' => 'Tipo de gasto',
             'bajada' => 'Nivel de gasto de la compañía en el período, por tipo.',
         ],
+        'pendientes' => [
+            'titulo' => 'Pendientes del mes',
+            'bajada' => 'Rendiciones que el mes no alcanzó a cerrar.',
+        ],
+        'remuneraciones' => [
+            'titulo' => 'Remuneraciones',
+            'bajada' => 'Viático, asignación y bien que pasan a la liquidación.',
+        ],
         'cuentas' => [
             'titulo' => 'Cuentas',
             'bajada' => 'Movimientos de cada cuenta: el fondo nace cuando sale el dinero y pasa al gasto cuando se rinde.',
@@ -93,7 +101,9 @@ class Informes extends BaseController
             'cartola'     => $servicio->cartola((int) $empresa['id'], $filtro['anio'], $filtro['mes'], $persona),
             'gastos'      => $servicio->gastos((int) $empresa['id'], $filtro['anio'], $filtro['mes'], $persona),
             'asientos'    => $servicio->asientos((int) $empresa['id'], $filtro['anio'], $filtro['mes'], $persona),
-            'tipos'       => $servicio->tipos((int) $empresa['id'], $filtro['anio'], $filtro['mes'], $persona),
+            'tipos'          => $servicio->tipos((int) $empresa['id'], $filtro['anio'], $filtro['mes'], $persona),
+            'pendientes'     => $servicio->pendientes((int) $empresa['id'], $filtro['anio'], $filtro['mes'], $persona),
+            'remuneraciones' => $servicio->remuneraciones((int) $empresa['id'], $filtro['anio'], $filtro['mes'], $persona),
             'cuentas'     => (new PreAsientoChile())->mayor((int) $empresa['id'], $filtro['anio'], $filtro['mes']) + [
                 'puedeArmar' => Modulos::activo($empresa, 'preasientos'),
             ],

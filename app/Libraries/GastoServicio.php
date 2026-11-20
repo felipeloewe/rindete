@@ -142,6 +142,19 @@ class GastoServicio
         if (! $this->tipoVigente((int) $empresa['id'], $tipo, $actual, $pais)) {
             $errores[] = 'Ese tipo de documento no está vigente.';
         }
+        $lugares = new Lugares();
+        $centroId = (int) ($input['centro_id'] ?? 0);
+        $sucursalId = (int) ($input['sucursal_id'] ?? 0);
+        $conceptoExtraId = (int) ($input['concepto_extra_id'] ?? 0);
+        if ($centroId > 0 && ! $lugares->activo((int) $empresa['id'], 'centro', $centroId)) {
+            $errores[] = 'Elige un centro de la empresa.';
+        }
+        if ($sucursalId > 0 && ! $lugares->activo((int) $empresa['id'], 'sucursal', $sucursalId)) {
+            $errores[] = 'Elige una sucursal de la empresa.';
+        }
+        if ($conceptoExtraId > 0 && ! $lugares->activo((int) $empresa['id'], 'concepto', $conceptoExtraId)) {
+            $errores[] = 'Elige un concepto de la empresa.';
+        }
         if ($errores !== []) {
             return ['ok' => false, 'errores' => $errores];
         }
@@ -175,8 +188,11 @@ class GastoServicio
         $gasto = [
             'empresa_id'    => (int) $empresa['id'],
             'usuario_id'    => $this->dueno($usuario, $empresa, $actual, $input),
-            'categoria_id'  => (int) $categoria['id'],
-            'concepto'      => $concepto,
+            'categoria_id'       => (int) $categoria['id'],
+            'centro_id'          => $centroId > 0 ? $centroId : null,
+            'sucursal_id'        => $sucursalId > 0 ? $sucursalId : null,
+            'concepto_extra_id'  => $conceptoExtraId > 0 ? $conceptoExtraId : null,
+            'concepto'           => $concepto,
             'proveedor'     => $proveedor,
             'fecha'         => $fecha,
             'monto'         => $monto,

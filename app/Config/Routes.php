@@ -37,6 +37,7 @@ $routes->group('', ['filter' => 'auth'], static function (RouteCollection $route
     $routes->post('gastos/(:num)', 'Gastos::actualizar/$1');
 
     $routes->get('fondos', 'Fondos::index');
+    $routes->get('fondos/pagos', 'Fondos::pagos');
     $routes->get('fondos/nomina', 'Fondos::nomina');
     $routes->post('fondos/nomina', 'Fondos::cerrarNomina');
     $routes->get('fondos/nomina/(:num)/archivo', 'Fondos::archivoNomina/$1');
@@ -80,6 +81,7 @@ $routes->group('', ['filter' => 'auth'], static function (RouteCollection $route
     $routes->get('parametros/aceptados', 'Parametros::ver/aceptados');
     $routes->get('parametros/tipos', 'Parametros::ver/tipos');
     $routes->get('parametros/preasientos', 'Parametros::ver/preasientos');
+    $routes->get('parametros/lugares', 'Parametros::ver/lugares');
     $routes->post('parametros/cuentas', 'Parametros::cuenta');
     $routes->post('parametros/cuentas/(:num)/eliminar', 'Parametros::eliminarCuenta/$1');
     $routes->post('parametros/clasificacion', 'Parametros::clasificacion');
@@ -93,6 +95,8 @@ $routes->group('', ['filter' => 'auth'], static function (RouteCollection $route
     $routes->post('parametros/aceptados', 'Parametros::aceptados');
     $routes->post('parametros/tipos', 'Parametros::tipo');
     $routes->post('parametros/preasientos', 'Parametros::preasiento');
+    $routes->post('parametros/lugares', 'Parametros::lugar');
+    $routes->post('parametros/lugares/quitar', 'Parametros::quitarLugar');
     $routes->post('parametros/tipos/(:num)', 'Parametros::actualizarTipo/$1');
 
     $routes->get('categorias', 'Categorias::index');

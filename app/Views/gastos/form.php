@@ -30,11 +30,37 @@
             </label>
         </div>
         <div class="grid-2">
+            <label>Centro de costo
+                <select name="centro_id">
+                    <option value="">Sin centro</option>
+                    <?php foreach ($centros as $centro) : ?>
+                        <option value="<?= esc((string) $centro['id']) ?>" <?= $valor('centro_id') === (string) $centro['id'] ? 'selected' : '' ?>><?= esc($centro['nombre']) ?></option>
+                    <?php endforeach ?>
+                </select>
+            </label>
+            <label>Sucursal
+                <select name="sucursal_id">
+                    <option value="">Sin sucursal</option>
+                    <?php foreach ($sucursales as $sucursal) : ?>
+                        <option value="<?= esc((string) $sucursal['id']) ?>" <?= $valor('sucursal_id') === (string) $sucursal['id'] ? 'selected' : '' ?>><?= esc($sucursal['nombre']) ?></option>
+                    <?php endforeach ?>
+                </select>
+            </label>
+        </div>
+        <label>Otro concepto
+            <select name="concepto_extra_id">
+                <option value="">Sin otro concepto</option>
+                <?php foreach ($conceptos as $extra) : ?>
+                    <option value="<?= esc((string) $extra['id']) ?>" <?= $valor('concepto_extra_id') === (string) $extra['id'] ? 'selected' : '' ?>><?= esc($extra['nombre']) ?></option>
+                <?php endforeach ?>
+            </select>
+        </label>
+        <div class="grid-2">
             <label>Fecha del gasto
                 <input type="date" name="fecha" required value="<?= esc($valor('fecha', date('Y-m-d'))) ?>">
             </label>
             <label>Monto (<?= esc($moneda) ?>)
-                <input name="monto" inputmode="decimal" required value="<?= esc($valor('monto')) ?>" placeholder="0">
+                <input name="monto" inputmode="decimal" value="<?= esc($valor('monto')) ?>" placeholder="0">
             </label>
         </div>
         <fieldset>
@@ -65,7 +91,7 @@
         </label>
         <label>Comprobante
             <input type="file" name="comprobante" accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf">
-            <small>JPG, PNG, WEBP o PDF. Máximo 5 MB.</small>
+            <small>JPG, PNG, WEBP o PDF. Máximo 5 MB. Si la foto trae fecha, monto, identificación o número, los completamos y te dejamos confirmar.</small>
         </label>
         <?php if (! empty($gasto['comprobante'])) : ?>
             <p><a href="<?= base_url('gastos/' . $gasto['id'] . '/comprobante') ?>">Ver comprobante actual</a></p>

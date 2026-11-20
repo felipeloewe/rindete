@@ -386,6 +386,41 @@ final class ErpCierreTest extends CIUnitTestCase
      * @param array<string, mixed> $usuario
      * @param array<string, mixed> $categoria
      */
+    public function testUnaSolicitudRepetidaNoEntraALaPlanilla(): void
+    {
+        [$ana, $empresa] = $this->empresa();
+        model(UsuarioModel::class)->update($ana['id'], [
+            'id_fiscal'     => '12345678-5',
+            'cuenta_banco'  => '12345678',
+            'banco_destino' => '016',
+        ]);
+        $categoria = model(CategoriaModel::class)->where('empresa_id', $empresa['id'])->first();
+        $primera = $this->solicitud($ana, $categoria, 'Pasajes', 8000, 'aceptada', '2026-11-04 09:00:00');
+        $this->solicitud($ana, $categoria, 'Pasajes', 8000, 'aceptada', '2026-11-05 09:00:00');
+        $this->solicitud($ana, $categoria, 'Movilización', 8000, 'aceptada', '2026-11-06 09:00:00');
+
+        $servicio = new NominaFondos();
+        $this->assertCount(2, $servicio->pendientes((int) $empresa['id'], 2026, 11));
+        $this->assertCount(1, $servicio->repetidas((int) $empresa['id'], 2026, 11));
+        $cierre = $servicio->cerrar((int) $empresa['id'], 2026, 11, '12345678');
+        $this->assertTrue($cierre['ok'], implode(' ', $cierre['errores']));
+        $this->assertStringContainsString('está repetida', implode(' ', $cierre['avisos']));
+        $nomina = $servicio->una((int) $empresa['id'], (int) $cierre['id']);
+        $this->assertCount(2, $nomina['lineas']);
+        $this->assertSame($primera, (int) $nomina['lineas'][0]['solicitud_id']);
+
+        $tablero = $servicio->tablero((int) $empresa['id'], 2026, 11);
+        $estados = [];
+        foreach ($tablero as $fila) {
+            $estados[$fila['motivo'] . '#' . $fila['id']] = $fila['estado'];
+        }
+        $this->assertSame('en_proceso', $estados['Pasajes#' . $primera]);
+        $pagina = $this->withSession(['usuario_id' => $ana['id']])->get('fondos/pagos?anio=2026&mes=11');
+        $pagina->assertOK();
+        $pagina->assertSee('En proceso');
+        $pagina->assertSee('Pendiente');
+    }
+
     private function solicitud(array $usuario, array $categoria, string $motivo, float $monto, string $estado, string $creada): int
     {
         return (int) model(SolicitudModel::class)->insert([
