@@ -13,7 +13,10 @@ class Sesion
     {
         $session = session();
         $session->regenerate(true);
-        $session->set('usuario_id', (int) $usuario['id']);
+        $session->set([
+            'usuario_id' => (int) $usuario['id'],
+            'rol'        => (string) ($usuario['rol'] ?? ''),
+        ]);
     }
 
     /**

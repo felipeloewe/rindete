@@ -13,7 +13,9 @@
             <?php if (session('usuario_id')) : ?>
                 <a href="<?= base_url('panel') ?>">Inicio</a>
                 <a href="<?= base_url('gastos') ?>">Gastos</a>
-                <a href="<?= base_url('categorias') ?>">Categorías</a>
+                <?php if (session('rol') === 'administrador') : ?>
+                    <a href="<?= base_url('categorias') ?>">Categorías</a>
+                <?php endif ?>
                 <a href="<?= base_url('empresa') ?>">Empresa</a>
                 <a href="<?= base_url('cuenta') ?>">Cuenta</a>
                 <form class="plano salir" method="post" action="<?= base_url('logout') ?>">
