@@ -23,8 +23,24 @@
 # app.baseURL = ''
 # If you have trouble with `.`, you could also use `_`.
 # app_baseURL = ''
+#
+# Transport security (audit C1 / A5):
+# With CI_ENVIRONMENT = production, HTTPS is forced and cookies are Secure
+# by default. Local `php spark serve` (development) keeps HTTP working.
+# Production:
+# app.forceGlobalSecureRequests = true
+# Local override if CI_ENVIRONMENT=production but you need plain HTTP:
 # app.forceGlobalSecureRequests = false
 # app.CSPEnabled = false
+
+#--------------------------------------------------------------------
+# COOKIE
+#--------------------------------------------------------------------
+
+# Production: cookie.secure = true
+# Local override: cookie.secure = false
+# cookie.httponly = true
+# cookie.samesite = 'Lax'
 
 #--------------------------------------------------------------------
 # DATABASE

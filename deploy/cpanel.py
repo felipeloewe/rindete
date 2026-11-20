@@ -254,6 +254,8 @@ def env_from_legacy(api: Cpanel) -> str | None:
     return "\n".join([
         "CI_ENVIRONMENT = production",
         "app.baseURL = 'https://app.rindete.cl/'",
+        "app.forceGlobalSecureRequests = true",
+        "cookie.secure = true",
         f"database.default.hostname = {values['db_host'] or 'localhost'}",
         f"database.default.database = {values['db_name']}",
         f"database.default.username = {values['db_user']}",

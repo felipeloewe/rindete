@@ -156,8 +156,12 @@ class App extends BaseConfig
      * made via a secure connection (HTTPS). If the incoming request is not
      * secure, the user will be redirected to a secure version of the page
      * and the HTTP Strict Transport Security (HSTS) header will be set.
+     *
+     * Default: on in production (app.rindete.cl). Local `php spark serve` and
+     * PHPUnit use development/testing, so HTTP keeps working. Override with
+     * `app.forceGlobalSecureRequests` in `.env` if needed.
      */
-    public bool $forceGlobalSecureRequests = false;
+    public bool $forceGlobalSecureRequests = (ENVIRONMENT === 'production');
 
     /**
      * --------------------------------------------------------------------------
