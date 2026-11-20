@@ -33,7 +33,7 @@ final class RendicionesTest extends CIUnitTestCase
     public function testSoloEntraUnGastoLegalizadoYEnviarLoCierra(): void
     {
         $this->postForm('registro', $this->cuenta());
-        $usuario   = model(UsuarioModel::class)->where('email', 'ana@acme.test')->first();
+        $usuario   = model(UsuarioModel::class)->porEmail('ana@acme.test');
         $empresa   = model(EmpresaModel::class)->find($usuario['empresa_id']);
         $categoria = model(CategoriaModel::class)->where('nombre', 'Alimentación')->first();
         $servicio  = new RendicionServicio();
@@ -79,7 +79,7 @@ final class RendicionesTest extends CIUnitTestCase
     public function testElSaldoPositivoAbreOtraYElCeroCierra(): void
     {
         $this->postForm('registro', $this->cuenta());
-        $usuario  = model(UsuarioModel::class)->where('email', 'ana@acme.test')->first();
+        $usuario  = model(UsuarioModel::class)->porEmail('ana@acme.test');
         $empresa  = model(EmpresaModel::class)->find($usuario['empresa_id']);
         $servicio = new RendicionServicio();
         $fondo    = $this->fondo($usuario, 20000);
@@ -132,7 +132,7 @@ final class RendicionesTest extends CIUnitTestCase
     public function testElCierreNegativoRecorreElFlujoYSePuedeRechazar(): void
     {
         $this->postForm('registro', $this->cuenta());
-        $ana     = model(UsuarioModel::class)->where('email', 'ana@acme.test')->first();
+        $ana     = model(UsuarioModel::class)->porEmail('ana@acme.test');
         $empresa = model(EmpresaModel::class)->find($ana['empresa_id']);
         $luis    = model(UsuarioModel::class)->insert([
             'empresa_id' => $ana['empresa_id'],
@@ -186,7 +186,7 @@ final class RendicionesTest extends CIUnitTestCase
     public function testQuitarDevuelveElGastoALegalizado(): void
     {
         $this->postForm('registro', $this->cuenta());
-        $usuario   = model(UsuarioModel::class)->where('email', 'ana@acme.test')->first();
+        $usuario   = model(UsuarioModel::class)->porEmail('ana@acme.test');
         $empresa   = model(EmpresaModel::class)->find($usuario['empresa_id']);
         $categoria = model(CategoriaModel::class)->where('nombre', 'Alimentación')->first();
         $servicio  = new RendicionServicio();

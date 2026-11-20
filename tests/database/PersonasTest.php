@@ -51,7 +51,7 @@ final class PersonasTest extends CIUnitTestCase
         $this->assertFalse($lleno['ok']);
         $this->assertSame('El plan Free admite 4 usuarios.', $lleno['errores'][0]);
 
-        $luis = model(UsuarioModel::class)->where('email', 'luis@acme.test')->first();
+        $luis = model(UsuarioModel::class)->porEmail('luis@acme.test');
         $this->assertSame(0, (int) $luis['puede_rendir_sin_solicitud']);
         $categorias = model(CategoriaModel::class)->where('empresa_id', $empresa['id'])->countAllResults();
         $aceptados = db_connect()->table('gastos_aceptados')->where('usuario_id', $luis['id'])->countAllResults();
@@ -127,7 +127,7 @@ final class PersonasTest extends CIUnitTestCase
             'password'                      => 'clave-segura',
             $security->getTokenName()       => $security->getHash(),
         ]);
-        $ana = model(UsuarioModel::class)->where('email', 'ana@acme.test')->first();
+        $ana = model(UsuarioModel::class)->porEmail('ana@acme.test');
 
         return [$ana, model(EmpresaModel::class)->find($ana['empresa_id'])];
     }

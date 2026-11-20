@@ -33,8 +33,8 @@ class Cuenta extends BaseController
         if (! IdFiscal::emailValido($email)) {
             $errores[] = 'El correo no es válido.';
         } else {
-            $otro = model(UsuarioModel::class)->where('email', $email)->where('id !=', $actual['id'])->first();
-            if ($otro !== null) {
+            $otro = model(UsuarioModel::class)->porEmail($email);
+            if (is_array($otro) && (int) $otro['id'] !== (int) $actual['id']) {
                 $errores[] = 'Ese correo ya tiene una cuenta.';
             }
         }

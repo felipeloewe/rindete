@@ -48,12 +48,8 @@ class Empresa extends BaseController
         if (! $fiscal['ok']) {
             $errores[] = $fiscal['error'];
         } else {
-            $otra = model(EmpresaModel::class)
-                ->where('pais', $pais)
-                ->where('id_fiscal', $fiscal['valor'])
-                ->where('id !=', $empresa['id'])
-                ->first();
-            if ($otra !== null) {
+            $otra = model(EmpresaModel::class)->porFiscal($pais, $fiscal['valor']);
+            if (is_array($otra) && (int) $otra['id'] !== (int) $empresa['id']) {
                 $errores[] = 'Ese ' . Paises::pais($pais)['id_fiscal'] . ' ya tiene una cuenta.';
             }
         }

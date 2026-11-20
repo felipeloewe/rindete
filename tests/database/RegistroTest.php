@@ -26,13 +26,13 @@ final class RegistroTest extends CIUnitTestCase
         $resultado = $this->postForm('registro', $this->datos());
 
         $resultado->assertRedirectTo(site_url('panel'));
-        $empresa = model(EmpresaModel::class)->where('id_fiscal', '12345678-5')->first();
+        $empresa = model(EmpresaModel::class)->porFiscal('CL', '12345678-5');
         $this->assertIsArray($empresa);
         $this->assertSame('free', $empresa['plan']);
         $this->assertSame(4, (int) $empresa['cupo_usuarios']);
         $this->assertSame(2 * 1024 * 1024 * 1024, (int) $empresa['cupo_bytes']);
 
-        $usuario = model(UsuarioModel::class)->where('email', 'ana@acme.test')->first();
+        $usuario = model(UsuarioModel::class)->porEmail('ana@acme.test');
         $this->assertIsArray($usuario);
         $this->assertSame('administrador', $usuario['rol']);
         $this->assertSame(6, model(CategoriaModel::class)->where('empresa_id', $usuario['empresa_id'])->countAllResults());
@@ -62,7 +62,7 @@ final class RegistroTest extends CIUnitTestCase
         ]);
 
         $login->assertRedirectTo(site_url('panel'));
-        $usuario = model(UsuarioModel::class)->where('email', 'ana@acme.test')->first();
+        $usuario = model(UsuarioModel::class)->porEmail('ana@acme.test');
         $panel = $this->withSession(['usuario_id' => $usuario['id']])->get('panel');
         $panel->assertOK();
         $panel->assertSee('Acme SpA');

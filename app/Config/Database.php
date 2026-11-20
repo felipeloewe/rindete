@@ -162,6 +162,38 @@ class Database extends Config
      *
      * @var array<string, mixed>
      */
+    /**
+     * Datos privados de personas y empresas. La operación guarda el id.
+     *
+     * @var array<string, mixed>
+     */
+    public array $identidad = [
+        'DSN'          => '',
+        'hostname'     => 'localhost',
+        'username'     => '',
+        'password'     => '',
+        'database'     => '',
+        'DBDriver'     => 'MySQLi',
+        'DBPrefix'     => '',
+        'pConnect'     => false,
+        'DBDebug'      => true,
+        'charset'      => 'utf8mb4',
+        'DBCollat'     => 'utf8mb4_general_ci',
+        'swapPre'      => '',
+        'encrypt'      => false,
+        'compress'     => false,
+        'strictOn'     => true,
+        'failover'     => [],
+        'port'         => 3306,
+        'numberNative' => false,
+        'foundRows'    => false,
+        'dateFormat'   => [
+            'date'     => 'Y-m-d',
+            'datetime' => 'Y-m-d H:i:s',
+            'time'     => 'H:i:s',
+        ],
+    ];
+
     public array $tests = [
         'DSN'         => '',
         'hostname'    => '127.0.0.1',
@@ -199,6 +231,18 @@ class Database extends Config
         // we don't overwrite live data on accident.
         if (ENVIRONMENT === 'testing') {
             $this->defaultGroup = 'tests';
+            $this->identidad    = $this->tests;
+            $this->identidad['database'] = ':memory:';
+
+            return;
+        }
+
+        if (($this->identidad['database'] ?? '') === '' && ($this->default['DBDriver'] ?? '') === 'SQLite3') {
+            $this->identidad['DBDriver']    = 'SQLite3';
+            $this->identidad['database']    = '/tmp/rindete-identidad.db';
+            $this->identidad['DBPrefix']    = '';
+            $this->identidad['foreignKeys'] = true;
+            $this->identidad['busyTimeout'] = 1000;
         }
     }
 }

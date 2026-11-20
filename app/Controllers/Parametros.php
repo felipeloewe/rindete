@@ -132,7 +132,8 @@ class Parametros extends BaseController
     private function contexto(array $empresa): array
     {
         $empresaId  = (int) $empresa['id'];
-        $usuarios   = model(UsuarioModel::class)->where('empresa_id', $empresaId)->orderBy('nombre', 'ASC')->findAll();
+        $usuarios   = model(UsuarioModel::class)->where('empresa_id', $empresaId)->findAll();
+        usort($usuarios, static fn (array $a, array $b): int => strcasecmp((string) ($a['nombre'] ?? ''), (string) ($b['nombre'] ?? '')));
         $categorias = model(CategoriaModel::class)->where('empresa_id', $empresaId)->orderBy('nombre', 'ASC')->findAll();
         $cuentas    = model(CuentaModel::class)->where('empresa_id', $empresaId)->orderBy('codigo', 'ASC')->findAll();
         $persona    = (int) ($this->request->getGet('persona') ?? 0);
