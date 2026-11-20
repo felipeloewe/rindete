@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Libraries;
 
 use CodeIgniter\HTTP\Files\UploadedFile;
+use finfo;
 
 class Comprobante
 {
@@ -31,16 +32,26 @@ class Comprobante
             return ['ok' => false, 'nombre' => '', 'error' => 'El comprobante supera 5 MB.'];
         }
 
-        $ext = strtolower($archivo->getExtension());
+        $ext = strtolower($archivo->getClientExtension());
         if (! isset(self::EXT[$ext])) {
             return ['ok' => false, 'nombre' => '', 'error' => 'Usa JPG, PNG, WEBP o PDF.'];
         }
-        $mime = (string) $archivo->getMimeType();
-        $aceptados = [self::EXT[$ext], 'application/octet-stream'];
-        if ($ext === 'jpg' || $ext === 'jpeg') {
-            $aceptados[] = 'image/jpg';
+
+        $origen = $archivo->getTempName();
+        if ($origen === '' || ! is_file($origen)) {
+            return ['ok' => false, 'nombre' => '', 'error' => 'No se pudo subir el comprobante.'];
         }
-        if ($mime !== '' && ! in_array($mime, $aceptados, true)) {
+
+        $detectado = $this->detectarMime($origen);
+        if ($detectado === null || $detectado === 'application/octet-stream') {
+            return ['ok' => false, 'nombre' => '', 'error' => 'El archivo no coincide con su tipo.'];
+        }
+
+        $esperados = [self::EXT[$ext]];
+        if ($ext === 'jpg' || $ext === 'jpeg') {
+            $esperados[] = 'image/jpg';
+        }
+        if (! in_array($detectado, $esperados, true)) {
             return ['ok' => false, 'nombre' => '', 'error' => 'El archivo no coincide con su tipo.'];
         }
 
@@ -49,7 +60,6 @@ class Comprobante
             return ['ok' => false, 'nombre' => '', 'error' => 'No se pudo guardar el comprobante.'];
         }
         $nombre = $empresaId . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
-        $origen = $archivo->getTempName();
         if (is_uploaded_file($origen)) {
             $archivo->move($dir, $nombre, true);
         } elseif (ENVIRONMENT === 'testing' && is_file($origen)) {
@@ -84,5 +94,17 @@ class Comprobante
         $ext = strtolower(pathinfo($nombre, PATHINFO_EXTENSION));
 
         return self::EXT[$ext] ?? 'application/octet-stream';
+    }
+
+    private function detectarMime(string $ruta): ?string
+    {
+        if (! class_exists(finfo::class)) {
+            return null;
+        }
+
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mime  = $finfo->file($ruta);
+
+        return is_string($mime) && $mime !== '' ? $mime : null;
     }
 }
