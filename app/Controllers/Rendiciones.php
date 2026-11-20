@@ -8,6 +8,7 @@ use App\Libraries\Montos;
 use App\Libraries\Paises;
 use App\Libraries\RendicionDirecta;
 use App\Libraries\RendicionServicio;
+use App\Libraries\SaldoRendicion;
 use App\Libraries\Sesion;
 use App\Models\CuentaModel;
 use App\Models\GastoModel;
@@ -25,16 +26,22 @@ class Rendiciones extends BaseController
 
         $consulta = model(RendicionModel::class)->where('empresa_id', $empresa['id']);
         if ($usuario['rol'] === 'rendidor') {
-            $consulta->where('usuario_id', $usuario['id']);
+            $consulta->groupStart()
+                ->where('usuario_id', $usuario['id'])
+                ->orWhere('turno_usuario_id', $usuario['id'])
+                ->groupEnd();
         }
         $items = $consulta->orderBy('id', 'DESC')->findAll();
+        $monedaEmpresa = Paises::pais((string) $empresa['pais'])['moneda'] ?? 'CLP';
         $totales = [];
         foreach ($items as $item) {
             $gastos = model(GastoModel::class)->where('rendicion_id', $item['id'])->findAll();
+            $monto = array_sum(array_map(static fn (array $gasto): float => (float) $gasto['monto'], $gastos));
             $totales[(int) $item['id']] = [
                 'cantidad' => count($gastos),
-                'monto'    => array_sum(array_map(static fn (array $gasto): float => (float) $gasto['monto'], $gastos)),
-                'moneda'   => $gastos[0]['moneda'] ?? (Paises::pais((string) $empresa['pais'])['moneda'] ?? 'CLP'),
+                'monto'    => $monto,
+                'saldo'    => round((float) ($item['monto_por_rendir'] ?? 0) - $monto, 2),
+                'moneda'   => $gastos[0]['moneda'] ?? $monedaEmpresa,
             ];
         }
 
@@ -68,6 +75,8 @@ class Rendiciones extends BaseController
             'tope'       => $this->tope($reglas, $moneda),
             'viatico'    => RendicionDirecta::etiqueta($reglas['viatico']),
             'asignacion' => RendicionDirecta::etiqueta($reglas['asignacion']),
+            'fondos'     => (new SaldoRendicion())->fondosLibres((int) $empresa['id'], (int) $usuario['id']),
+            'moneda'     => $moneda,
         ]);
     }
 
@@ -82,6 +91,7 @@ class Rendiciones extends BaseController
             $usuario,
             (string) $this->request->getPost('titulo'),
             (string) $this->request->getPost('nota'),
+            (int) $this->request->getPost('fondo_id'),
         );
         if (! $resultado['ok']) {
             return redirect()->to('/rendiciones/nueva')->with('errores', $resultado['errores'])->withInput();
@@ -110,6 +120,13 @@ class Rendiciones extends BaseController
         }
         $moneda = $gastos[0]['moneda'] ?? (Paises::pais((string) $empresa['pais'])['moneda'] ?? 'CLP');
         $directa = (string) ($rendicion['origen'] ?? '') === 'directa';
+        $saldo = (new SaldoRendicion())->de($rendicion);
+        $turnoId = (int) ($rendicion['turno_usuario_id'] ?? 0);
+        $turno = $turnoId > 0 ? model(UsuarioModel::class)->find($turnoId) : null;
+        $previa = (int) ($rendicion['rendicion_previa_id'] ?? 0) > 0
+            ? model(RendicionModel::class)->find((int) $rendicion['rendicion_previa_id'])
+            : null;
+        $hija = model(RendicionModel::class)->where('rendicion_previa_id', $rendicion['id'])->first();
 
         return view('rendiciones/ver', [
             'rendicion'   => $rendicion,
@@ -118,6 +135,11 @@ class Rendiciones extends BaseController
             'total'       => array_sum(array_map(static fn (array $gasto): float => (float) $gasto['monto'], $gastos)),
             'moneda'      => $moneda,
             'abierta'     => (string) $rendicion['estado'] === 'abierta',
+            'saldo'       => $saldo,
+            'puedeAceptar'=> $usuario !== null && (string) $rendicion['estado'] === 'cierre_pedido' && $turnoId === (int) $usuario['id'],
+            'turnoNombre' => is_array($turno) ? (string) $turno['nombre'] : '',
+            'previa'      => is_array($previa) ? $previa : null,
+            'hija'        => is_array($hija) ? $hija : null,
             'directa'     => $directa,
             'tope'        => (float) ($rendicion['monto_maximo'] ?? 0) > 0
                 ? Montos::formato((float) $rendicion['monto_maximo'], $moneda)
@@ -169,12 +191,64 @@ class Rendiciones extends BaseController
         if ($rendicion === null) {
             return redirect()->to('/rendiciones')->with('error', 'No encontramos esa rendición.');
         }
-        $resultado = (new RendicionServicio())->enviar($rendicion);
+        $resultado = (new SaldoRendicion())->cerrar($rendicion, (string) $this->request->getPost('monto_adicional'));
+        if (! $resultado['ok']) {
+            return redirect()->to('/rendiciones/' . $id)->with('errores', $resultado['errores']);
+        }
+        $destino = ($resultado['nueva'] ?? 0) > 0 ? '/rendiciones/' . $resultado['nueva'] : '/rendiciones/' . $id;
+        $mensaje = match ($resultado['caso'] ?? '') {
+            'negativo' => 'Cierre pedido. El saldo es negativo y espera aceptación.',
+            'positivo' => 'Rendición cerrada. El saldo quedó en una rendición nueva.',
+            default    => 'Rendición cerrada. El saldo cuadra.',
+        };
+
+        return redirect()->to($destino)->with('ok', $mensaje);
+    }
+
+    public function aceptar(int $id)
+    {
+        [$usuario, $empresa, $rendicion] = $this->visible($id);
+        if ($usuario === null || $rendicion === null) {
+            return redirect()->to('/rendiciones')->with('error', 'No encontramos esa rendición.');
+        }
+        $resultado = (new SaldoRendicion())->aceptar($rendicion, $usuario);
+        if (! $resultado['ok']) {
+            return redirect()->to('/rendiciones/' . $id)->with('errores', $resultado['errores']);
+        }
+        $queda = model(RendicionModel::class)->find($id);
+        $mensaje = is_array($queda) && (string) $queda['estado'] === 'cerrada'
+            ? 'Cierre aceptado. La rendición quedó cerrada.'
+            : 'Cierre aceptado. Sigue en el flujo.';
+
+        return redirect()->to('/rendiciones/' . $id)->with('ok', $mensaje);
+    }
+
+    public function rechazar(int $id)
+    {
+        [$usuario, $empresa, $rendicion] = $this->visible($id);
+        if ($usuario === null || $rendicion === null) {
+            return redirect()->to('/rendiciones')->with('error', 'No encontramos esa rendición.');
+        }
+        $resultado = (new SaldoRendicion())->rechazar($rendicion, $usuario, (string) $this->request->getPost('detalle'));
         if (! $resultado['ok']) {
             return redirect()->to('/rendiciones/' . $id)->with('errores', $resultado['errores']);
         }
 
-        return redirect()->to('/rendiciones/' . $id)->with('ok', 'Rendición enviada.');
+        return redirect()->to('/rendiciones/' . $id)->with('ok', 'Cierre rechazado. La rendición volvió a quedar abierta.');
+    }
+
+    public function sumar(int $id)
+    {
+        [$usuario, $empresa, $rendicion] = $this->visible($id);
+        if ($rendicion === null) {
+            return redirect()->to('/rendiciones')->with('error', 'No encontramos esa rendición.');
+        }
+        $resultado = (new SaldoRendicion())->sumar($rendicion, (string) $this->request->getPost('monto'));
+        if (! $resultado['ok']) {
+            return redirect()->to('/rendiciones/' . $id)->with('errores', $resultado['errores']);
+        }
+
+        return redirect()->to('/rendiciones/' . $id)->with('ok', 'El monto adicional quedó dentro de lo que hay que rendir.');
     }
 
     public function eliminar(int $id)
@@ -241,7 +315,9 @@ class Rendiciones extends BaseController
         if (! is_array($rendicion) || (int) $rendicion['empresa_id'] !== (int) $empresa['id']) {
             return [$usuario, $empresa, null];
         }
-        if ($usuario['rol'] === 'rendidor' && (int) $rendicion['usuario_id'] !== (int) $usuario['id']) {
+        $propia = (int) $rendicion['usuario_id'] === (int) $usuario['id'];
+        $turno  = (int) ($rendicion['turno_usuario_id'] ?? 0) === (int) $usuario['id'];
+        if ($usuario['rol'] === 'rendidor' && ! $propia && ! $turno) {
             return [$usuario, $empresa, null];
         }
 

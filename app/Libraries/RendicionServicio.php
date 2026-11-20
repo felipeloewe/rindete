@@ -15,7 +15,7 @@ class RendicionServicio
      *
      * @return array{ok: bool, errores: list<string>, id?: int}
      */
-    public function crear(array $usuario, string $titulo, string $nota): array
+    public function crear(array $usuario, string $titulo, string $nota, int $fondoId = 0): array
     {
         $titulo = trim($titulo);
         $nota   = trim($nota);
@@ -32,7 +32,12 @@ class RendicionServicio
         if (! is_array($empresa)) {
             return ['ok' => false, 'errores' => ['No encontramos la empresa.']];
         }
-        $reglas = RendicionDirecta::de($usuario, $empresa);
+        $reglas  = RendicionDirecta::de($usuario, $empresa);
+        $elegido = (new SaldoRendicion())->fondoDe($usuario, $fondoId);
+        if (! $elegido['ok']) {
+            return $elegido;
+        }
+        $fondo = $elegido['fondo'] ?? null;
 
         $id = model(RendicionModel::class)->insert([
             'empresa_id'           => (int) $usuario['empresa_id'],
@@ -43,6 +48,8 @@ class RendicionServicio
             'creada'               => date('Y-m-d H:i:s'),
             'enviada'              => null,
             'origen'               => 'directa',
+            'fondo_id'             => is_array($fondo) ? (int) $fondo['id'] : null,
+            'monto_por_rendir'     => is_array($fondo) ? (float) $fondo['monto'] : 0,
             'monto_maximo'         => $reglas['monto'],
             'cuenta_viatico_id'    => isset($reglas['viatico']) ? (int) $reglas['viatico']['id'] : null,
             'cuenta_asignacion_id' => isset($reglas['asignacion']) ? (int) $reglas['asignacion']['id'] : null,
@@ -60,7 +67,7 @@ class RendicionServicio
     public function agregar(array $rendicion, array $gasto): array
     {
         if ((string) $rendicion['estado'] !== 'abierta') {
-            return ['ok' => false, 'errores' => ['Esta rendición ya se envió.']];
+            return ['ok' => false, 'errores' => ['Esta rendición ya no está abierta.']];
         }
         if ((int) $gasto['empresa_id'] !== (int) $rendicion['empresa_id'] || (int) $gasto['usuario_id'] !== (int) $rendicion['usuario_id']) {
             return ['ok' => false, 'errores' => ['Ese gasto no pertenece a quien arma la rendición.']];
@@ -86,7 +93,7 @@ class RendicionServicio
     public function quitar(array $rendicion, array $gasto): array
     {
         if ((string) $rendicion['estado'] !== 'abierta') {
-            return ['ok' => false, 'errores' => ['Esta rendición ya se envió.']];
+            return ['ok' => false, 'errores' => ['Esta rendición ya no está abierta.']];
         }
         if ((int) ($gasto['rendicion_id'] ?? 0) !== (int) $rendicion['id']) {
             return ['ok' => false, 'errores' => ['Ese gasto no está en esta rendición.']];
@@ -106,22 +113,12 @@ class RendicionServicio
      *
      * @return array{ok: bool, errores: list<string>}
      */
-    public function enviar(array $rendicion): array
+    /**
+     * @return array{ok: bool, errores: list<string>, caso?: string, nueva?: int, saldo?: float}
+     */
+    public function enviar(array $rendicion, string $adicional = ''): array
     {
-        if ((string) $rendicion['estado'] !== 'abierta') {
-            return ['ok' => false, 'errores' => ['Esta rendición ya se envió.']];
-        }
-        $cantidad = model(GastoModel::class)->where('rendicion_id', $rendicion['id'])->countAllResults();
-        if ($cantidad < 1) {
-            return ['ok' => false, 'errores' => ['Agrega al menos un gasto legalizado.']];
-        }
-
-        model(RendicionModel::class)->update($rendicion['id'], [
-            'estado'  => 'enviada',
-            'enviada' => date('Y-m-d H:i:s'),
-        ]);
-
-        return ['ok' => true, 'errores' => []];
+        return (new SaldoRendicion())->cerrar($rendicion, $adicional);
     }
 
     /**

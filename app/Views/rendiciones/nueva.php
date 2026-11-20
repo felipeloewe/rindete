@@ -22,6 +22,17 @@
         <label>Nombre
             <input name="titulo" required maxlength="140" value="<?= esc(old('titulo', '')) ?>" placeholder="Viaje a Santiago, noviembre">
         </label>
+        <?php if ($fondos !== []) : ?>
+            <label>Fondo por rendir
+                <select name="fondo_id">
+                    <option value="0">Sin fondo entregado</option>
+                    <?php foreach ($fondos as $fondo) : ?>
+                        <option value="<?= esc($fondo['id']) ?>"<?= (string) old('fondo_id') === (string) $fondo['id'] ? ' selected' : '' ?>><?= esc($fondo['motivo']) ?> · <?= esc(\App\Libraries\Montos::formato((float) $fondo['monto'], (string) $moneda)) ?></option>
+                    <?php endforeach ?>
+                </select>
+            </label>
+            <p>Si eliges un fondo, lo entregado es lo que hay que rendir.</p>
+        <?php endif ?>
         <label>Nota
             <textarea name="nota" maxlength="500" placeholder="Para quién la envías y qué cubre."><?= esc(old('nota', '')) ?></textarea>
         </label>

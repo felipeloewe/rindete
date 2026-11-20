@@ -65,6 +65,9 @@ $routes->group('', ['filter' => 'auth'], static function (RouteCollection $route
     $routes->post('rendiciones/(:num)/agregar', 'Rendiciones::agregar/$1');
     $routes->post('rendiciones/(:num)/quitar/(:num)', 'Rendiciones::quitar/$1/$2');
     $routes->post('rendiciones/(:num)/enviar', 'Rendiciones::enviar/$1');
+    $routes->post('rendiciones/(:num)/aceptar', 'Rendiciones::aceptar/$1');
+    $routes->post('rendiciones/(:num)/rechazar', 'Rendiciones::rechazar/$1');
+    $routes->post('rendiciones/(:num)/sumar', 'Rendiciones::sumar/$1');
     $routes->post('rendiciones/(:num)/eliminar', 'Rendiciones::eliminar/$1');
     $routes->get('rendiciones/(:num)', 'Rendiciones::ver/$1');
 

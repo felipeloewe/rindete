@@ -17,6 +17,7 @@
         <div><dt>Rendido</dt><dd><?= esc(\App\Libraries\Montos::formato((float) $rendido, $moneda)) ?></dd></div>
         <div><dt>Saldo del período</dt><dd><?= esc(\App\Libraries\Montos::formato((float) $saldo, $moneda)) ?></dd></div>
         <div><dt>Por rendir, fondos abiertos</dt><dd><?= esc(\App\Libraries\Montos::formato((float) $por_rendir, $moneda)) ?></dd></div>
+        <div><dt>Por rendir, rendiciones abiertas</dt><dd><?= esc(\App\Libraries\Montos::formato((float) $por_rendir_abiertas, $moneda)) ?></dd></div>
     </dl>
 </section>
 <?php if ($movimientos === []) : ?>
