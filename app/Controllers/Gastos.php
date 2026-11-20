@@ -163,7 +163,7 @@ class Gastos extends BaseController
 
         return $this->response
             ->setHeader('Content-Type', (new Comprobante())->mime((string) $gasto['comprobante']))
-            ->setHeader('Content-Disposition', 'inline; filename="' . basename($ruta) . '"')
+            ->setHeader('Content-Disposition', 'attachment; filename="' . basename($ruta) . '"')
             ->setBody(file_get_contents($ruta) ?: '');
     }
 

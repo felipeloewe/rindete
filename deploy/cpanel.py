@@ -1,8 +1,18 @@
 #!/usr/bin/env python3
 """Publish this tree to app.rindete.cl through the cPanel API.
 
-Reads RINDETE_API_KEY from the environment. The cPanel user is rindete on
-170.239.64.192. pidetufactura.com is never contacted.
+Required:
+  RINDETE_API_KEY — cPanel API token (never logged in full)
+
+Optional:
+  RINDETE_CPANEL_HOST — cPanel host (default: 170.239.64.192)
+  RINDETE_CPANEL_USER — cPanel user (default: rindete)
+  RINDETE_CPANEL_HOME — account home (default: /home/<user>)
+  RINDETE_SSL_CA_FILE — PEM bundle to trust instead of the system CA store
+                        (use this to pin a known CA / intermediate)
+
+TLS verification is always on. The deploy fails if certificate verification
+fails. pidetufactura.com is never contacted.
 """
 
 from __future__ import annotations
@@ -15,20 +25,39 @@ import shutil
 import ssl
 import subprocess
 import tempfile
+import time
+import urllib.error
 import urllib.parse
 import urllib.request
 import zipfile
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-HOST = "170.239.64.192"
-USER = "rindete"
-HOME = "/home/rindete"
+HOST = os.environ.get("RINDETE_CPANEL_HOST", "170.239.64.192").strip() or "170.239.64.192"
+USER = os.environ.get("RINDETE_CPANEL_USER", "rindete").strip() or "rindete"
+HOME = os.environ.get("RINDETE_CPANEL_HOME", f"/home/{USER}").strip() or f"/home/{USER}"
 APP_DIR = f"{HOME}/public_html/app.rindete.cl"
 DOCROOT = "public_html/app.rindete.cl/public"
 BASE = f"https://{HOST}:2083"
 ROOT = Path(__file__).resolve().parents[1]
 SKIP_DIRS = {".git", "tests", "build", ".phpunit.cache"}
 SKIP_FILES = {".env", ".env.local"}
+MIGRATE_WRAPPER = "rindete-migrate.sh"
+MIGRATE_LOG = "rindete-migrate.txt"
+MIGRATE_LOCK = "rindete-migrate.lock"
+MIGRATE_DONE = "rindete-migrate.done"
+PHP_BIN = "/opt/cpanel/ea-php85/root/usr/bin/php"
+
+
+def tls_context() -> ssl.SSLContext:
+    """System CA trust by default; optional CA file for a documented pin."""
+    ca_file = os.environ.get("RINDETE_SSL_CA_FILE", "").strip() or None
+    if ca_file is not None and not Path(ca_file).is_file():
+        raise SystemExit(f"RINDETE_SSL_CA_FILE no existe: {ca_file}")
+    ctx = ssl.create_default_context(cafile=ca_file)
+    ctx.check_hostname = True
+    ctx.verify_mode = ssl.CERT_REQUIRED
+    return ctx
 
 
 def main() -> None:
@@ -81,7 +110,7 @@ def zip_tree(source: Path, archive: Path) -> None:
 class Cpanel:
     def __init__(self, token: str) -> None:
         self.token = token
-        self.ctx = ssl._create_unverified_context()
+        self.ctx = tls_context()
 
     def call(self, path: str, params: dict | None = None, method: str = "GET", data: bytes | None = None, headers: dict | None = None, timeout: int = 120):
         url = BASE + path
@@ -98,6 +127,10 @@ class Cpanel:
         try:
             with urllib.request.urlopen(request, context=self.ctx, timeout=timeout) as response:
                 raw = response.read().decode()
+        except ssl.SSLError as error:
+            raise SystemExit(f"TLS verification failed talking to cPanel: {error}") from error
+        except urllib.error.HTTPError as error:
+            raw = error.read().decode("utf-8", "replace")
         except Exception as error:
             raw = error.read().decode("utf-8", "replace") if hasattr(error, "read") else str(error)
         raw = raw.replace(self.token, "***")
@@ -183,7 +216,7 @@ def publish(token: str, archive: Path) -> None:
     api.write(
         f"{APP_DIR}/public",
         ".user.ini",
-        'error_log = "/home/rindete/logs/php.error.log"\nlog_errors = On\n',
+        f'error_log = "{HOME}/logs/php.error.log"\nlog_errors = On\n',
     )
     for relative in ("writable", "writable/cache", "writable/logs", "writable/session", "writable/uploads"):
         api.fileop(op="chmod", sourcefiles=f"public_html/app.rindete.cl/{relative}", metadata="0775")
@@ -221,6 +254,8 @@ def env_from_legacy(api: Cpanel) -> str | None:
     return "\n".join([
         "CI_ENVIRONMENT = production",
         "app.baseURL = 'https://app.rindete.cl/'",
+        "app.forceGlobalSecureRequests = true",
+        "cookie.secure = true",
         f"database.default.hostname = {values['db_host'] or 'localhost'}",
         f"database.default.database = {values['db_name']}",
         f"database.default.username = {values['db_user']}",
@@ -234,18 +269,71 @@ def env_from_legacy(api: Cpanel) -> str | None:
     ])
 
 
-def migrate(api: Cpanel) -> None:
-    """spark refuses to run under PHP-FPM, so the cPanel cron runs it once."""
-    import time
+def migrate_wrapper_script() -> str:
+    log = f"{HOME}/tmp/{MIGRATE_LOG}"
+    lock = f"{HOME}/tmp/{MIGRATE_LOCK}"
+    done = f"{HOME}/tmp/{MIGRATE_DONE}"
+    return "\n".join([
+        "#!/bin/bash",
+        "set -eu",
+        f'DONE="{done}"',
+        f'LOCK="{lock}"',
+        f'LOG="{log}"',
+        'if [ -f "$DONE" ]; then',
+        "  exit 0",
+        "fi",
+        'if mkdir "$LOCK" 2>/dev/null; then',
+        '  trap \'rmdir "$LOCK" 2>/dev/null || true\' EXIT',
+        f'  {PHP_BIN} {APP_DIR}/spark migrate -n App > "$LOG" 2>&1 || true',
+        '  if grep -q "Migrations complete" "$LOG" 2>/dev/null; then',
+        '    touch "$DONE"',
+        "  fi",
+        "fi",
+        "",
+    ])
 
-    log = "/home/rindete/tmp/rindete-migrate.txt"
-    command = (
-        "/opt/cpanel/ea-php85/root/usr/bin/php "
-        f"{APP_DIR}/spark migrate -n App > {log} 2>&1"
-    )
+
+def cleanup_migrate_artifacts(api: Cpanel) -> None:
+    for name in (MIGRATE_LOG, MIGRATE_LOCK, MIGRATE_DONE, MIGRATE_WRAPPER):
+        api.fileop(op="trash", sourcefiles=f"tmp/{name}")
+
+
+def remove_migrate_cron(api: Cpanel, linekey: str = "") -> None:
+    if linekey:
+        api.api2("Cron", "remove_line", {"linekey": linekey})
+    listed = api.api2("Cron", "fetchcron")
+    try:
+        rows = listed["cpanelresult"]["data"]
+    except (KeyError, TypeError):
+        return
+    marker = f"{HOME}/tmp/{MIGRATE_WRAPPER}"
+    for row in rows:
+        command = str(row.get("command", ""))
+        key = str(row.get("linekey", ""))
+        if key and (marker in command or "spark migrate -n App" in command):
+            api.api2("Cron", "remove_line", {"linekey": key})
+
+
+def migrate(api: Cpanel) -> None:
+    """Run spark once via a short-lived cron + lockfile; fail if not confirmed.
+
+    spark refuses to run under PHP-FPM, so cPanel cron is the available runner.
+    The job is limited to the next few UTC minutes (not * * * * *), guarded by
+    an mkdir lock and a done marker so it cannot re-fire after success.
+    """
+    cleanup_migrate_artifacts(api)
+    remove_migrate_cron(api)
+
+    api.write(f"{HOME}/tmp", MIGRATE_WRAPPER, migrate_wrapper_script())
+    api.fileop(op="chmod", sourcefiles=f"tmp/{MIGRATE_WRAPPER}", metadata="0755")
+
+    now = datetime.now(timezone.utc)
+    minutes = sorted({(now + timedelta(minutes=offset)).minute for offset in (0, 1, 2)})
+    minute_field = ",".join(str(minute) for minute in minutes)
+    command = f"/bin/bash {HOME}/tmp/{MIGRATE_WRAPPER}"
     added = api.api2("Cron", "add_line", {
         "command": command,
-        "minute": "*",
+        "minute": minute_field,
         "hour": "*",
         "day": "*",
         "month": "*",
@@ -256,19 +344,29 @@ def migrate(api: Cpanel) -> None:
         linekey = str(added["cpanelresult"]["data"][0].get("linekey", ""))
     except (KeyError, IndexError, TypeError):
         linekey = ""
+
     text = ""
-    for _ in range(8):
-        time.sleep(10)
-        current = api.read(f"{HOME}/tmp", "rindete-migrate.txt")
-        if current and "Migrations complete" in current:
+    confirmed = False
+    try:
+        for _ in range(9):
+            time.sleep(10)
+            current = api.read(f"{HOME}/tmp", MIGRATE_LOG) or ""
             text = current
-            break
-        text = current or ""
-    if linekey:
-        api.api2("Cron", "remove_line", {"linekey": linekey})
-    limpiar_cron_vacio(api)
-    api.fileop(op="trash", sourcefiles="tmp/rindete-migrate.txt")
-    print("migrate ok" if "Migrations complete" in text else "migrate pending")
+            # done marker is only written after grep finds "Migrations complete"
+            done = api.read(f"{HOME}/tmp", MIGRATE_DONE)
+            if "Migrations complete" in current or done is not None:
+                confirmed = True
+                break
+    finally:
+        remove_migrate_cron(api, linekey)
+        limpiar_cron_vacio(api)
+        cleanup_migrate_artifacts(api)
+
+    if not confirmed:
+        snippet = (text or "").strip().replace("\n", " ")[:200]
+        detail = f" log={snippet!r}" if snippet else ""
+        raise SystemExit(f"Migrate no confirmó 'Migrations complete'; deploy abortado.{detail}")
+    print("migrate ok")
 
 
 def limpiar_cron_vacio(api: Cpanel) -> None:
@@ -287,20 +385,29 @@ def limpiar_cron_vacio(api: Cpanel) -> None:
 
 
 def check_site() -> None:
-    ctx = ssl._create_unverified_context()
-    for url in (
+    """Health-check only app.rindete.cl (TLS verified). Does not touch other sites."""
+    ctx = tls_context()
+    urls = (
         "https://app.rindete.cl/",
         "https://app.rindete.cl/registro",
         "https://app.rindete.cl/login",
-        "https://pidetufactura.com/",
-    ):
+    )
+    failures: list[str] = []
+    for url in urls:
         try:
             with urllib.request.urlopen(url, context=ctx, timeout=25) as response:
                 body = response.read(120).decode("utf-8", "replace").replace("\n", " ")
                 print(f"{response.status} {url} {body[:80]}")
+                if response.status >= 400:
+                    failures.append(f"{response.status} {url}")
+        except ssl.SSLError as error:
+            raise SystemExit(f"TLS verification failed for {url}: {error}") from error
         except Exception as error:
             code = getattr(error, "code", "ERR")
             print(f"{code} {url}")
+            failures.append(f"{code} {url}")
+    if failures:
+        raise SystemExit("Health-check falló: " + "; ".join(failures))
 
 
 if __name__ == "__main__":
