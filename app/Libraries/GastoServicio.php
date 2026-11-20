@@ -13,6 +13,9 @@ class GastoServicio
 {
     public const CUPO_MENSUAL = 50;
 
+    /** @var list<int> */
+    private array $ultimasEscrituras = [];
+
     public function asegurarCategorias(array $empresa): void
     {
         $pais = Paises::pais((string) $empresa['pais']);
@@ -65,31 +68,75 @@ class GastoServicio
 
         (new Comprobante())->borrar((string) $gasto['comprobante']);
         model(GastoModel::class)->delete($gasto['id']);
-        $this->reevaluar((int) $gasto['empresa_id']);
+        $this->reevaluar((int) $gasto['empresa_id'], null, $gasto);
 
         return ['ok' => true, 'errores' => []];
     }
 
-    public function reevaluar(int $empresaId): void
+    /**
+     * Reevaluates policy flags. With $ancla/$previo, only the touched expense and duplicate
+     * candidates are rewritten. With $categoriaId alone, only expenses in that category.
+     * A bare empresa id still reevaluates the whole company (legacy / full refresh).
+     *
+     * @param array<string, mixed>|null $ancla  Gasto after create/update (still in DB)
+     * @param array<string, mixed>|null $previo Snapshot before update/delete
+     *
+     * @return int Number of gasto rows written
+     */
+    public function reevaluar(int $empresaId, ?array $ancla = null, ?array $previo = null, ?int $categoriaId = null): int
     {
-        $empresa = model(\App\Models\EmpresaModel::class)->find($empresaId);
+        $this->ultimasEscrituras = [];
+        $empresa                 = model(\App\Models\EmpresaModel::class)->find($empresaId);
         if (! is_array($empresa)) {
-            return;
+            return 0;
         }
-        $gastos     = model(GastoModel::class)->where('empresa_id', $empresaId)->findAll();
+
         $categorias = $this->indiceCategorias($empresaId);
         $evaluador  = new GastoEvaluador();
-        foreach ($gastos as $gasto) {
+
+        if ($ancla !== null || $previo !== null) {
+            $aEvaluar = $this->gastosAfectados($empresaId, $empresa, $ancla, $previo);
+            $universo = $this->universoDuplicados($empresaId, $empresa, $aEvaluar);
+        } elseif ($categoriaId !== null) {
+            $aEvaluar = model(GastoModel::class)
+                ->where('empresa_id', $empresaId)
+                ->where('categoria_id', $categoriaId)
+                ->findAll();
+            // Need company-wide peers so duplicate flags are not cleared by a tope-only pass.
+            $universo = model(GastoModel::class)->where('empresa_id', $empresaId)->findAll();
+        } else {
+            $aEvaluar = model(GastoModel::class)->where('empresa_id', $empresaId)->findAll();
+            $universo = $aEvaluar;
+        }
+
+        $cambios = [];
+        foreach ($aEvaluar as $gasto) {
             $categoria = $categorias[(int) $gasto['categoria_id']] ?? null;
-            $nuevo     = $evaluador->evaluar($gasto, $empresa, $categoria, $gastos, (int) $gasto['id']);
-            model(GastoModel::class)->update($gasto['id'], [
+            $nuevo     = $evaluador->evaluar($gasto, $empresa, $categoria, $universo, (int) $gasto['id']);
+            $campos    = [
                 'estado'            => $nuevo['estado'],
                 'duplicado'         => $nuevo['duplicado'],
                 'fuera_politica'    => $nuevo['fuera_politica'],
                 'sin_comprobante'   => $nuevo['sin_comprobante'],
                 'fiscal_incompleto' => $nuevo['fiscal_incompleto'],
-            ]);
+            ];
+            if ($this->flagsDistintos($gasto, $campos)) {
+                $campos['id'] = (int) $gasto['id'];
+                $cambios[]    = $campos;
+            }
         }
+
+        return $this->aplicarCambios($cambios);
+    }
+
+    /**
+     * IDs written by the last reevaluar() call (for tests).
+     *
+     * @return list<int>
+     */
+    public function ultimasEscrituras(): array
+    {
+        return $this->ultimasEscrituras;
     }
 
     public function bloqueado(array $gasto): bool
@@ -169,8 +216,9 @@ class GastoServicio
             'estado'        => (string) ($actual['estado'] ?? 'legalizado'),
             'creado'        => (string) ($actual['creado'] ?? date('Y-m-d H:i:s')),
         ];
-        $otros = model(GastoModel::class)->where('empresa_id', $empresa['id'])->findAll();
-        $gasto = (new GastoEvaluador())->evaluar($gasto, $empresa, $categoria, $otros, $actual === null ? null : (int) $actual['id']);
+        $excepto = $actual === null ? null : (int) $actual['id'];
+        $otros   = $this->candidatosDe($empresa, $gasto, $excepto);
+        $gasto   = (new GastoEvaluador())->evaluar($gasto, $empresa, $categoria, $otros, $excepto);
 
         $model = model(GastoModel::class);
         if ($actual === null) {
@@ -180,11 +228,15 @@ class GastoServicio
             unset($gasto['creado']);
             $model->update($id, $gasto);
         }
-        $this->reevaluar((int) $empresa['id']);
         $guardado = $model->find($id);
+        if (! is_array($guardado)) {
+            return ['ok' => false, 'errores' => ['No pudimos guardar el gasto.']];
+        }
+        $this->reevaluar((int) $empresa['id'], $guardado, $actual);
+        $frescos = $model->find($id);
 
-        return is_array($guardado)
-            ? ['ok' => true, 'errores' => [], 'gasto' => $guardado]
+        return is_array($frescos)
+            ? ['ok' => true, 'errores' => [], 'gasto' => $frescos]
             : ['ok' => false, 'errores' => ['No pudimos guardar el gasto.']];
     }
 
@@ -252,5 +304,191 @@ class GastoServicio
         }
 
         return $indice;
+    }
+
+    /**
+     * @param array<string, mixed>                $empresa
+     * @param array<string, mixed>|null           $ancla
+     * @param array<string, mixed>|null           $previo
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function gastosAfectados(int $empresaId, array $empresa, ?array $ancla, ?array $previo): array
+    {
+        $porId = [];
+        if ($ancla !== null && isset($ancla['id'])) {
+            $vivo = model(GastoModel::class)->find((int) $ancla['id']);
+            if (is_array($vivo) && (int) $vivo['empresa_id'] === $empresaId) {
+                $porId[(int) $vivo['id']] = $vivo;
+            }
+        }
+
+        $semillas = array_values(array_filter([$ancla, $previo], static fn ($g) => is_array($g)));
+        foreach ($this->candidatosDeVarios($empresaId, $empresa, $semillas) as $candidato) {
+            $porId[(int) $candidato['id']] = $candidato;
+        }
+
+        return array_values($porId);
+    }
+
+    /**
+     * Peers needed so duplicate flags stay correct when a neighbor also matches a third expense.
+     *
+     * @param array<string, mixed>         $empresa
+     * @param list<array<string, mixed>>   $afectados
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function universoDuplicados(int $empresaId, array $empresa, array $afectados): array
+    {
+        $porId = [];
+        foreach ($afectados as $gasto) {
+            $porId[(int) $gasto['id']] = $gasto;
+        }
+        foreach ($this->candidatosDeVarios($empresaId, $empresa, $afectados) as $candidato) {
+            $porId[(int) $candidato['id']] = $candidato;
+        }
+
+        return array_values($porId);
+    }
+
+    /**
+     * @param array<string, mixed> $empresa
+     * @param array<string, mixed> $gasto
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function candidatosDe(array $empresa, array $gasto, ?int $exceptoId = null): array
+    {
+        return $this->candidatosDeVarios((int) $empresa['id'], $empresa, [$gasto], $exceptoId);
+    }
+
+    /**
+     * @param array<string, mixed>       $empresa
+     * @param list<array<string, mixed>> $gastos
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function candidatosDeVarios(int $empresaId, array $empresa, array $gastos, ?int $exceptoId = null): array
+    {
+        if ((int) ($empresa['detectar_duplicados'] ?? 1) !== 1 || $gastos === []) {
+            return [];
+        }
+
+        $dias      = (int) ($empresa['dias_duplicado'] ?? 3);
+        $evaluador = new GastoEvaluador();
+        $brutos    = $this->buscarCandidatosBrutos($empresaId, $gastos, $dias, $exceptoId);
+        $porId     = [];
+
+        foreach ($gastos as $gasto) {
+            foreach ($brutos as $candidato) {
+                $id = (int) $candidato['id'];
+                if ($exceptoId !== null && $id === $exceptoId) {
+                    continue;
+                }
+                if (isset($gasto['id']) && $id === (int) $gasto['id']) {
+                    continue;
+                }
+                if ($evaluador->esDuplicadoDe($gasto, $candidato, $dias)) {
+                    $porId[$id] = $candidato;
+                }
+            }
+        }
+
+        return array_values($porId);
+    }
+
+    /**
+     * Wide DB fetch; precise duplicate matching happens in PHP via GastoEvaluador.
+     *
+     * @param list<array<string, mixed>> $gastos
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function buscarCandidatosBrutos(int $empresaId, array $gastos, int $dias, ?int $exceptoId): array
+    {
+        $porId = [];
+
+        foreach ($gastos as $gasto) {
+            $numDoc = trim((string) ($gasto['num_doc'] ?? ''));
+            if ($numDoc !== '') {
+                $consulta = db_connect()->table('gastos')
+                    ->where('empresa_id', $empresaId)
+                    ->where('num_doc !=', '');
+                if ($exceptoId !== null) {
+                    $consulta->where('id !=', $exceptoId);
+                }
+                if (isset($gasto['id'])) {
+                    $consulta->where('id !=', (int) $gasto['id']);
+                }
+                foreach ($consulta->get()->getResultArray() as $fila) {
+                    if (Montos::texto((string) $fila['num_doc']) === Montos::texto($numDoc)
+                        && Montos::texto((string) $fila['id_fiscal']) === Montos::texto((string) ($gasto['id_fiscal'] ?? ''))) {
+                        $porId[(int) $fila['id']] = $fila;
+                    }
+                }
+            }
+
+            $fechaTs = strtotime((string) ($gasto['fecha'] ?? '')) ?: 0;
+            if ($fechaTs === 0) {
+                continue;
+            }
+            $desde = date('Y-m-d', $fechaTs - ($dias * 86400));
+            $hasta = date('Y-m-d', $fechaTs + ($dias * 86400));
+            $monto = (float) ($gasto['monto'] ?? 0);
+
+            $consulta = db_connect()->table('gastos')
+                ->where('empresa_id', $empresaId)
+                ->where('fecha >=', $desde)
+                ->where('fecha <=', $hasta)
+                ->where('monto >=', $monto - 0.001)
+                ->where('monto <=', $monto + 0.001);
+            if ($exceptoId !== null) {
+                $consulta->where('id !=', $exceptoId);
+            }
+            if (isset($gasto['id'])) {
+                $consulta->where('id !=', (int) $gasto['id']);
+            }
+            foreach ($consulta->get()->getResultArray() as $fila) {
+                if (Montos::texto((string) $fila['proveedor']) === Montos::texto((string) ($gasto['proveedor'] ?? ''))) {
+                    $porId[(int) $fila['id']] = $fila;
+                }
+            }
+        }
+
+        return array_values($porId);
+    }
+
+    /**
+     * @param array<string, mixed> $actual
+     * @param array<string, mixed> $campos
+     */
+    private function flagsDistintos(array $actual, array $campos): bool
+    {
+        foreach (['estado', 'duplicado', 'fuera_politica', 'sin_comprobante', 'fiscal_incompleto'] as $campo) {
+            if ((string) ($actual[$campo] ?? '') !== (string) $campos[$campo]) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $cambios
+     */
+    private function aplicarCambios(array $cambios): int
+    {
+        if ($cambios === []) {
+            $this->ultimasEscrituras = [];
+
+            return 0;
+        }
+
+        $model = model(GastoModel::class);
+        $model->updateBatch($cambios, 'id');
+        $this->ultimasEscrituras = array_map(static fn (array $fila): int => (int) $fila['id'], $cambios);
+
+        return count($cambios);
     }
 }
