@@ -9,6 +9,8 @@ $routes->post('login', 'Auth::attempt');
 $routes->get('logout', 'Auth::logout');
 $routes->get('registro', 'Registro::index');
 $routes->post('registro', 'Registro::store');
+$routes->get('invitar/(:segment)', 'Invitar::show/$1');
+$routes->post('invitar/(:segment)', 'Invitar::aceptar/$1');
 
 $routes->group('', ['filter' => 'auth'], static function (RouteCollection $routes): void {
     $routes->get('panel', 'Home::panel');
@@ -16,6 +18,11 @@ $routes->group('', ['filter' => 'auth'], static function (RouteCollection $route
     $routes->post('cuenta', 'Cuenta::update');
     $routes->get('empresa', 'Empresa::index');
     $routes->post('empresa', 'Empresa::update');
+
+    $routes->get('usuarios', 'Usuarios::index');
+    $routes->post('usuarios/invitar', 'Usuarios::invitar');
+    $routes->post('usuarios/(:num)/desactivar', 'Usuarios::desactivar/$1');
+    $routes->post('usuarios/(:num)/activar', 'Usuarios::activar/$1');
 
     $routes->get('gastos', 'Gastos::index');
     $routes->get('gastos/nuevo', 'Gastos::nuevo');

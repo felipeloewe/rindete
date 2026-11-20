@@ -61,10 +61,14 @@ class AltaEmpresa
         $db    = db_connect();
         $db->transException(true)->transStart();
         $empresaId = $empresas->insert([
-            'nombre'    => $empresa,
-            'pais'      => $pais,
-            'id_fiscal' => $fiscal['valor'],
-            'creado'    => $ahora,
+            'nombre'              => $empresa,
+            'pais'                => $pais,
+            'id_fiscal'           => $fiscal['valor'],
+            'detectar_duplicados' => 1,
+            'dias_duplicado'      => 3,
+            'comprobante_desde'   => 1,
+            'timezone'            => ZonaHoraria::DEFAULT,
+            'creado'              => $ahora,
         ], true);
         $usuarioId = $usuarios->insert([
             'empresa_id' => $empresaId,

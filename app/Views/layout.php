@@ -11,9 +11,13 @@
         <a class="marca" href="<?= base_url(session('usuario_id') ? 'panel' : '/') ?>">Rindete</a>
         <nav>
             <?php if (session('usuario_id')) : ?>
+                <?php $navUsuario = (new \App\Libraries\Sesion())->usuario(); ?>
                 <a href="<?= base_url('panel') ?>">Inicio</a>
                 <a href="<?= base_url('gastos') ?>">Gastos</a>
                 <a href="<?= base_url('categorias') ?>">Categorías</a>
+                <?php if (is_array($navUsuario) && ($navUsuario['rol'] ?? '') === 'administrador') : ?>
+                    <a href="<?= base_url('usuarios') ?>">Personas</a>
+                <?php endif ?>
                 <a href="<?= base_url('empresa') ?>">Empresa</a>
                 <a href="<?= base_url('cuenta') ?>">Cuenta</a>
                 <a href="<?= base_url('logout') ?>">Salir</a>

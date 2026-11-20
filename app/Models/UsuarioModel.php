@@ -12,5 +12,15 @@ class UsuarioModel extends Model
     protected $primaryKey       = 'id';
     protected $useAutoIncrement = true;
     protected $returnType       = 'array';
-    protected $allowedFields    = ['empresa_id', 'nombre', 'email', 'password', 'rol', 'activo', 'creado'];
+    protected $allowedFields    = [
+        'empresa_id',
+        'nombre',
+        'email',
+        'password',
+        'rol',
+        'activo',
+        'invite_token',
+        'invite_expires',
+        'creado',
+    ];
 }

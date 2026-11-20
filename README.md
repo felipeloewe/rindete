@@ -16,6 +16,23 @@ php spark serve
 
 En `.env`, completa la base MySQL y `app.baseURL`.
 
+### Correo (invitaciones de rendidores)
+
+Opcional. Sin SMTP la app igual crea la invitación y muestra el enlace al administrador para compartirlo a mano.
+
+```
+email.fromEmail = noreply@tu-dominio.cl
+email.fromName  = Rindete
+email.protocol  = smtp
+email.SMTPHost  = smtp.tu-proveedor.cl
+email.SMTPUser  = ...
+email.SMTPPass  = ...
+email.SMTPPort  = 587
+email.SMTPCrypto = tls
+```
+
+La zona horaria por defecto es `America/Santiago` (configurable por empresa en Empresa → Políticas).
+
 ## Deploy
 
 `deploy/cpanel.py` publica esta rama en `app.rindete.cl` con la API de cPanel. Usa la cuenta `rindete` y la variable `RINDETE_API_KEY`. No toca `pidetufactura.com`.
