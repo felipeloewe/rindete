@@ -18,19 +18,12 @@ class GastoEvaluador
     {
         $duplicado = false;
         if ((int) ($empresa['detectar_duplicados'] ?? 1) === 1) {
-            $dias   = (int) ($empresa['dias_duplicado'] ?? 3);
-            $fecha  = strtotime((string) $gasto['fecha']) ?: 0;
+            $dias = (int) ($empresa['dias_duplicado'] ?? 3);
             foreach ($otros as $otro) {
                 if ($exceptoId !== null && (int) $otro['id'] === $exceptoId) {
                     continue;
                 }
-                $mismoDocumento = trim((string) $gasto['num_doc']) !== ''
-                    && Montos::texto((string) $otro['num_doc']) === Montos::texto((string) $gasto['num_doc'])
-                    && Montos::texto((string) $otro['id_fiscal']) === Montos::texto((string) $gasto['id_fiscal']);
-                $mismaCuenta = Montos::texto((string) $otro['proveedor']) === Montos::texto((string) $gasto['proveedor'])
-                    && abs((float) $otro['monto'] - (float) $gasto['monto']) < 0.001
-                    && abs((strtotime((string) $otro['fecha']) ?: 0) - $fecha) <= ($dias * 86400);
-                if ($mismoDocumento || $mismaCuenta) {
+                if ($this->esDuplicadoDe($gasto, $otro, $dias)) {
                     $duplicado = true;
                     break;
                 }
@@ -55,5 +48,22 @@ class GastoEvaluador
         $gasto['estado']             = $estado;
 
         return $gasto;
+    }
+
+    /**
+     * @param array<string, mixed> $gasto
+     * @param array<string, mixed> $otro
+     */
+    public function esDuplicadoDe(array $gasto, array $otro, int $dias): bool
+    {
+        $mismoDocumento = trim((string) $gasto['num_doc']) !== ''
+            && Montos::texto((string) $otro['num_doc']) === Montos::texto((string) $gasto['num_doc'])
+            && Montos::texto((string) $otro['id_fiscal']) === Montos::texto((string) $gasto['id_fiscal']);
+        $fecha       = strtotime((string) $gasto['fecha']) ?: 0;
+        $mismaCuenta = Montos::texto((string) $otro['proveedor']) === Montos::texto((string) $gasto['proveedor'])
+            && abs((float) $otro['monto'] - (float) $gasto['monto']) < 0.001
+            && abs((strtotime((string) $otro['fecha']) ?: 0) - $fecha) <= ($dias * 86400);
+
+        return $mismoDocumento || $mismaCuenta;
     }
 }

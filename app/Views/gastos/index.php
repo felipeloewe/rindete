@@ -50,5 +50,10 @@
             <?php endforeach ?>
         </tbody>
     </table>
+    <?php if ($pager->getPageCount() > 1) : ?>
+        <nav class="paginacion" aria-label="Páginas de gastos">
+            <?= $pager->links() ?>
+        </nav>
+    <?php endif ?>
 <?php endif ?>
 <?= $this->endSection() ?>

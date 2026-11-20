@@ -76,7 +76,7 @@ class Categorias extends BaseController
             'tope'    => $datos['tope'],
             'activa'  => $this->request->getPost('activa') ? 1 : 0,
         ]);
-        (new GastoServicio())->reevaluar((int) $empresa['id']);
+        (new GastoServicio())->reevaluar((int) $empresa['id'], null, null, $id);
 
         return redirect()->to('/categorias')->with('ok', 'Categoría actualizada. Volvimos a leer los gastos con el nuevo tope.');
     }
