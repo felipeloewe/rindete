@@ -53,8 +53,12 @@ class Cookie extends BaseConfig
      * --------------------------------------------------------------------------
      *
      * Cookie will only be set if a secure HTTPS connection exists.
+     *
+     * Default: on in production so session/CSRF cookies never go over plain
+     * HTTP. Local/dev/testing stay off so `php spark serve` can set cookies.
+     * Override with `cookie.secure` in `.env`.
      */
-    public bool $secure = false;
+    public bool $secure = (ENVIRONMENT === 'production');
 
     /**
      * --------------------------------------------------------------------------
