@@ -24,21 +24,22 @@ class Gastos extends BaseController
         }
         (new GastoServicio())->asegurarCategorias($empresa);
 
-        $q          = trim((string) $this->request->getGet('q'));
-        $estado     = (string) $this->request->getGet('estado');
-        $categoria  = (string) $this->request->getGet('categoria');
-        $consulta   = model(GastoModel::class)->where('empresa_id', $empresa['id']);
+        $q         = trim((string) $this->request->getGet('q'));
+        $estado    = (string) $this->request->getGet('estado');
+        $categoria = (string) $this->request->getGet('categoria');
+        $modelo    = model(GastoModel::class);
+        $modelo->where('empresa_id', $empresa['id']);
         if ($usuario['rol'] === 'rendidor') {
-            $consulta->where('usuario_id', $usuario['id']);
+            $modelo->where('usuario_id', $usuario['id']);
         }
         if ($estado !== '') {
-            $consulta->where('estado', $estado);
+            $modelo->where('estado', $estado);
         }
         if ($categoria !== '') {
-            $consulta->where('categoria_id', $categoria);
+            $modelo->where('categoria_id', $categoria);
         }
         if ($q !== '') {
-            $consulta->groupStart()
+            $modelo->groupStart()
                 ->like('concepto', $q)
                 ->orLike('proveedor', $q)
                 ->orLike('id_fiscal', $q)
@@ -46,10 +47,13 @@ class Gastos extends BaseController
                 ->orLike('codigo_fiscal', $q)
                 ->groupEnd();
         }
-        $items = $consulta->orderBy('fecha', 'DESC')->orderBy('id', 'DESC')->findAll();
+        $items = $modelo->orderBy('fecha', 'DESC')->orderBy('id', 'DESC')->paginate(20);
+        $pager = $modelo->pager;
+        $pager->only(['q', 'estado', 'categoria']);
 
         return view('gastos/index', [
             'items'      => $items,
+            'pager'      => $pager,
             'q'          => $q,
             'estado'     => $estado,
             'categoria'  => $categoria,
@@ -159,7 +163,7 @@ class Gastos extends BaseController
 
         return $this->response
             ->setHeader('Content-Type', (new Comprobante())->mime((string) $gasto['comprobante']))
-            ->setHeader('Content-Disposition', 'inline; filename="' . basename($ruta) . '"')
+            ->setHeader('Content-Disposition', 'attachment; filename="' . basename($ruta) . '"')
             ->setBody(file_get_contents($ruta) ?: '');
     }
 

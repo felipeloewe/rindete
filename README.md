@@ -14,7 +14,20 @@ php spark migrate
 php spark serve
 ```
 
-En `.env`, completa la base MySQL y `app.baseURL`.
+En `.env`, completa la base MySQL y `app.baseURL` (p. ej. `http://localhost:8080/`).
+
+Con `CI_ENVIRONMENT` en `development` o `testing`, la app no fuerza HTTPS ni marca cookies `Secure`, así que `php spark serve` sigue funcionando por HTTP.
+
+## HTTPS y cookies (producción)
+
+En producción (`CI_ENVIRONMENT = production`, `app.baseURL` con `https://`):
+
+- `app.forceGlobalSecureRequests` queda en `true` (redirige HTTP→HTTPS y activa HSTS en la app).
+- `cookie.secure` queda en `true` (sesión y CSRF solo por HTTPS; se mantienen `HttpOnly` y `SameSite=Lax`).
+- `public/.htaccess` redirige HTTP→HTTPS (excepto localhost) y envía HSTS (`max-age=31536000`, sin preload).
+- Filtros `secureheaders` + `hsts`: `X-Frame-Options`, `X-Content-Type-Options`, etc.
+
+Se pueden forzar o apagar con `.env` (`app.forceGlobalSecureRequests`, `cookie.secure`). No se activa CSP todavía (vistas/error pages).
 
 ### Correo (invitaciones de rendidores)
 
@@ -35,10 +48,21 @@ La zona horaria por defecto es `America/Santiago` (configurable por empresa en E
 
 ## Deploy
 
-`deploy/cpanel.py` publica esta rama en `app.rindete.cl` con la API de cPanel. Usa la cuenta `rindete` y la variable `RINDETE_API_KEY`. No toca `pidetufactura.com`.
+`deploy/cpanel.py` publica esta rama en `app.rindete.cl` con la API de cPanel. Verifica TLS contra el almacén de CAs del sistema (o un PEM en `RINDETE_SSL_CA_FILE` para pin documentado). Las migraciones corren una sola vez vía cron acotado + lockfile; el deploy falla si migrate no confirma. El health-check solo toca `app.rindete.cl` (no otros sitios del hosting).
 
 ```bash
+export RINDETE_API_KEY=...          # obligatorio (token cPanel; no commitear)
+# opcionales:
+# export RINDETE_CPANEL_HOST=...
+# export RINDETE_CPANEL_USER=...
+# export RINDETE_CPANEL_HOME=...
+# export RINDETE_SSL_CA_FILE=/path/to/ca-or-pin.pem
 python3 deploy/cpanel.py
 ```
 
-La clave de la base y `encryption.key` quedan en el `.env` del servidor, fuera de Git. Un deploy siguiente conserva ese archivo.
+La clave de la base y `encryption.key` quedan en el `.env` del servidor, fuera de Git. Un deploy siguiente conserva ese archivo. Con `CI_ENVIRONMENT = production` el endurecimiento de transporte aplica sin claves extra; conviene dejar explícito en el `.env` del server:
+
+```
+app.forceGlobalSecureRequests = true
+cookie.secure = true
+```

@@ -6,7 +6,7 @@ use CodeIgniter\Router\RouteCollection;
 $routes->get('/', 'Home::index');
 $routes->get('login', 'Auth::login');
 $routes->post('login', 'Auth::attempt');
-$routes->get('logout', 'Auth::logout');
+$routes->post('logout', 'Auth::logout');
 $routes->get('registro', 'Registro::index');
 $routes->post('registro', 'Registro::store');
 $routes->get('invitar/(:segment)', 'Invitar::show/$1');

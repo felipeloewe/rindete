@@ -1,2 +1,9 @@
 User-agent: *
-Disallow: 
+Disallow: /login
+Disallow: /registro
+Disallow: /panel
+Disallow: /gastos
+Disallow: /categorias
+Disallow: /empresa
+Disallow: /cuenta
+Disallow: /logout
