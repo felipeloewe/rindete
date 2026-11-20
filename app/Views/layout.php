@@ -15,6 +15,7 @@
                 <a href="<?= base_url('gastos') ?>">Gastos</a>
                 <?php if (session('rol') === 'administrador') : ?>
                     <a href="<?= base_url('categorias') ?>">Categorías</a>
+                    <a href="<?= base_url('usuarios') ?>">Personas</a>
                 <?php endif ?>
                 <a href="<?= base_url('empresa') ?>">Empresa</a>
                 <a href="<?= base_url('cuenta') ?>">Cuenta</a>

@@ -12,5 +12,14 @@ class EmpresaModel extends Model
     protected $primaryKey       = 'id';
     protected $useAutoIncrement = true;
     protected $returnType       = 'array';
-    protected $allowedFields    = ['nombre', 'pais', 'id_fiscal', 'creado'];
+    protected $allowedFields    = [
+        'nombre',
+        'pais',
+        'id_fiscal',
+        'detectar_duplicados',
+        'dias_duplicado',
+        'comprobante_desde',
+        'timezone',
+        'creado',
+    ];
 }

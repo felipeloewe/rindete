@@ -287,10 +287,22 @@ class GastoServicio
 
     private function cupo(int $empresaId): int
     {
+        $empresa = model(\App\Models\EmpresaModel::class)->find($empresaId);
+
         return model(GastoModel::class)
             ->where('empresa_id', $empresaId)
-            ->where('creado >=', date('Y-m-01 00:00:00'))
+            ->where('creado >=', ZonaHoraria::inicioMesCupo(is_array($empresa) ? $empresa : null))
             ->countAllResults();
+    }
+
+    /**
+     * Exposed for tests: gastos que cuentan para el cupo del mes en la TZ de la empresa.
+     *
+     * @param array<string, mixed> $empresa
+     */
+    public function cupoUsado(array $empresa): int
+    {
+        return $this->cupo((int) $empresa['id']);
     }
 
     /**

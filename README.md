@@ -29,6 +29,23 @@ En producción (`CI_ENVIRONMENT = production`, `app.baseURL` con `https://`):
 
 Se pueden forzar o apagar con `.env` (`app.forceGlobalSecureRequests`, `cookie.secure`). No se activa CSP todavía (vistas/error pages).
 
+### Correo (invitaciones de rendidores)
+
+Opcional. Sin SMTP la app igual crea la invitación y muestra el enlace al administrador para compartirlo a mano.
+
+```
+email.fromEmail = noreply@tu-dominio.cl
+email.fromName  = Rindete
+email.protocol  = smtp
+email.SMTPHost  = smtp.tu-proveedor.cl
+email.SMTPUser  = ...
+email.SMTPPass  = ...
+email.SMTPPort  = 587
+email.SMTPCrypto = tls
+```
+
+La zona horaria por defecto es `America/Santiago` (configurable por empresa en Empresa → Políticas).
+
 ## Deploy
 
 `deploy/cpanel.py` publica esta rama en `app.rindete.cl` con la API de cPanel. Verifica TLS contra el almacén de CAs del sistema (o un PEM en `RINDETE_SSL_CA_FILE` para pin documentado). Las migraciones corren una sola vez vía cron acotado + lockfile; el deploy falla si migrate no confirma. El health-check solo toca `app.rindete.cl` (no otros sitios del hosting).
