@@ -10,6 +10,7 @@ $routes->get('logout', 'Auth::logout');
 $routes->get('registro', 'Registro::index');
 $routes->post('registro', 'Registro::store');
 $routes->get('politicas', 'Politicas::ver');
+$routes->get('condiciones', 'Politicas::condiciones');
 
 $routes->post('webhooks/global66/(:segment)', 'Webhooks::global66/$1');
 $routes->post('webhooks/mach/(:segment)', 'Webhooks::mach/$1');

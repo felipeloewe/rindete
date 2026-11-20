@@ -35,8 +35,8 @@ final class RegistroTest extends CIUnitTestCase
         $usuario = model(UsuarioModel::class)->porEmail('ana@acme.test');
         $this->assertIsArray($usuario);
         $this->assertSame('administrador', $usuario['rol']);
-        $this->assertSame('2026-11-20', $usuario['politica_version']);
-        $this->assertSame('2026-11-20', $empresa['politica_version']);
+        $this->assertSame(\App\Libraries\PoliticaDatos::VERSION, $usuario['politica_version']);
+        $this->assertSame(\App\Libraries\PoliticaDatos::VERSION, $empresa['politica_version']);
         $this->assertSame(6, model(CategoriaModel::class)->where('empresa_id', $usuario['empresa_id'])->countAllResults());
         $this->assertTrue(password_verify('clave-segura', $usuario['password']));
     }
@@ -46,6 +46,21 @@ final class RegistroTest extends CIUnitTestCase
         $resultado = $this->postForm('registro', $this->datos(['acepta_politica' => '']));
         $resultado->assertRedirect();
         $this->assertSame(0, model(EmpresaModel::class)->countAllResults());
+    }
+
+    public function testCondicionesDeUsoExplicanElEfectoDeCadaLey(): void
+    {
+        $condiciones = $this->get('condiciones');
+        $condiciones->assertOK();
+        $condiciones->assertSee('Condiciones de uso del software');
+        $condiciones->assertSee('Ley N° 19.628');
+        $condiciones->assertSee('Ley N° 21.719');
+        $condiciones->assertSee('4 usuarios y 2 GB');
+
+        $registro = $this->get('registro');
+        $registro->assertOK();
+        $registro->assertSee('Infórmate más');
+        $registro->assertSee('Acepto las condiciones de uso y los efectos que se indican para cada ley.');
     }
 
     public function testNoRepiteCorreoNiIdentificacion(): void

@@ -43,7 +43,7 @@ class AltaEmpresa
             $errores[] = 'La contraseña debe tener al menos 8 caracteres.';
         }
         if ((string) ($input['acepta_politica'] ?? '') !== '1') {
-            $errores[] = 'Acepta la política de tratamiento de datos personales para crear la cuenta.';
+            $errores[] = 'Acepta las condiciones de uso y los efectos que se indican para crear la cuenta.';
         }
         if ($errores !== []) {
             return ['ok' => false, 'errores' => $errores];

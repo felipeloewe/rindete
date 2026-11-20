@@ -33,8 +33,10 @@ final class PersonasTest extends CIUnitTestCase
         $pagina->assertOK();
         $pagina->assertSee('Dar de alta');
         $pagina->assertSee('Aceptación de políticas');
+        $pagina->assertSee('Infórmate más');
         $pagina->assertSee('Ley N° 19.628');
         $pagina->assertSee('Ley N° 21.719');
+        $pagina->assertSee('Quedan fuera la evaluación de crédito');
         $pagina->assertSee('1 de 4');
 
         $servicio = new PersonaServicio();

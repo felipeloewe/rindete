@@ -6,7 +6,7 @@ namespace App\Libraries;
 
 class PoliticaDatos
 {
-    public const VERSION = '2026-11-20';
+    public const VERSION = '2026-11-20b';
 
     /**
      * @param array<string, mixed>|null $fila

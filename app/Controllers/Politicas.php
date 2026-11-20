@@ -12,7 +12,12 @@ class Politicas extends BaseController
 {
     public function ver()
     {
-        return view('politicas/ver');
+        return view('politicas/ver', ['titulo' => 'Política de tratamiento']);
+    }
+
+    public function condiciones()
+    {
+        return view('politicas/condiciones', ['titulo' => 'Condiciones de uso']);
     }
 
     public function aceptar()
@@ -32,7 +37,7 @@ class Politicas extends BaseController
             return redirect()->to('/login');
         }
         if ((string) $this->request->getPost('acepta_politica') !== '1') {
-            return redirect()->back()->with('error', 'Acepta la política de tratamiento de datos personales para usar tu cuenta.');
+            return redirect()->back()->with('error', 'Acepta las condiciones de uso y los efectos que se indican para usar tu cuenta.');
         }
 
         model(UsuarioModel::class)->update((int) $usuario['id'], PoliticaDatos::marca());

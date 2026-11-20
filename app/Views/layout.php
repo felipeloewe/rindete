@@ -45,7 +45,7 @@
         $seccion = 'personas';
     } elseif ($ruta === 'empresa' || str_starts_with($ruta, 'empresa/')) {
         $seccion = 'empresa';
-    } elseif ($ruta === 'politicas' || str_starts_with($ruta, 'politicas/')) {
+    } elseif ($ruta === 'politicas' || str_starts_with($ruta, 'politicas/') || $ruta === 'condiciones') {
         $seccion = 'cuenta';
     } elseif ($ruta === 'cuenta' || str_starts_with($ruta, 'cuenta/')) {
         $seccion = 'cuenta';

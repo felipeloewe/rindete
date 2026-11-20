@@ -226,8 +226,13 @@ h2.seccion { margin: 1.6rem 0 0.2rem; }
 
 label { display: block; margin: 0 0 0.9rem; font-size: 0.92rem; }
 .politica { margin-top: 0.4rem; padding-top: 0.2rem; }
-.politica ul { margin: 0.4rem 0 0.8rem; padding-left: 1.15rem; }
-.politica li { margin: 0.28rem 0; }
+.politica .enlaces { margin: 0.4rem 0 0.8rem; }
+.efectos h3 { margin: 1rem 0 0.25rem; font-family: var(--display); font-size: 1.02rem; color: var(--titulo); }
+.efectos p { margin: 0.2rem 0 0.35rem; }
+.efectos ul { margin: 0.2rem 0 0.8rem; padding-left: 1.15rem; }
+.efectos li { margin: 0.28rem 0; }
+details.informate { margin: 0.7rem 0 1rem; border-top: 1px solid var(--line); padding-top: 0.7rem; }
+details.informate summary { cursor: pointer; font-family: var(--display); font-weight: 600; color: var(--titulo); }
 label.cheque { display: flex; align-items: flex-start; gap: 0.5rem; }
 label.cheque input { width: auto; margin: 0; }
 

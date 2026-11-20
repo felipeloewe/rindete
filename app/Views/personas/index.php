@@ -53,7 +53,7 @@
                 <input type="checkbox" name="puede_rendir_sin_solicitud" value="1" <?= old('puede_rendir_sin_solicitud') ? 'checked' : '' ?>>
                 Puede rendir sin solicitud
             </label>
-            <?= view('politicas/apartado', ['texto' => 'La persona acepta la política de tratamiento de datos personales para rendir en esta empresa.'], ['saveData' => false]) ?>
+            <?= view('politicas/apartado', ['texto' => 'La persona acepta las condiciones de uso y los efectos que se indican para cada ley.'], ['saveData' => false]) ?>
             <button class="boton" type="submit">Agregar persona</button>
         </form>
     </section>
@@ -68,9 +68,9 @@
         </div>
         <p><?= esc($persona['email']) ?><?= ($persona['id_fiscal'] ?? '') !== '' && $persona['id_fiscal'] !== null ? ' · ' . esc($persona['id_fiscal']) : '' ?></p>
         <?php if (\App\Libraries\PoliticaDatos::aceptada($persona)) : ?>
-            <p>Aceptó la política de tratamiento.</p>
+            <p>Aceptó las condiciones de uso.</p>
         <?php else : ?>
-            <p>Falta la aceptación de la política de tratamiento.</p>
+            <p>Falta aceptar las condiciones de uso.</p>
         <?php endif ?>
         <form method="post" action="<?= base_url('personas/' . $persona['id']) ?>">
             <?= csrf_field() ?>
