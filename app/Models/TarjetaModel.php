@@ -12,5 +12,8 @@ class TarjetaModel extends Model
     protected $primaryKey       = 'id';
     protected $useAutoIncrement = true;
     protected $returnType       = 'array';
-    protected $allowedFields    = ['empresa_id', 'nombre', 'personal', 'monto_aceptado', 'activa'];
+    protected $allowedFields    = [
+        'empresa_id', 'nombre', 'ultimos4', 'emisor', 'referencia', 'billetera',
+        'titular_id', 'exclusiva', 'personal', 'monto_aceptado', 'activa',
+    ];
 }

@@ -28,7 +28,11 @@
     </a>
     <a class="losa losa-empresa" href="<?= base_url('parametros/tarjetas') ?>">
         <strong>Tarjetas</strong>
-        <span>Personas, gastos y monto.</span>
+        <span>Identificación y exclusividad de quien rinde.</span>
+    </a>
+    <a class="losa losa-empresa" href="<?= base_url('parametros/medios') ?>">
+        <strong>Global66 y MACH</strong>
+        <span>Webhook de la cuenta y pagos de comercio.</span>
     </a>
     <a class="losa losa-aceptados" href="<?= base_url('parametros/aceptados') ?>">
         <strong>Gastos aceptados</strong>

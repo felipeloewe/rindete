@@ -10,6 +10,9 @@ $routes->get('logout', 'Auth::logout');
 $routes->get('registro', 'Registro::index');
 $routes->post('registro', 'Registro::store');
 
+$routes->post('webhooks/global66/(:segment)', 'Webhooks::global66/$1');
+$routes->post('webhooks/mach/(:segment)', 'Webhooks::mach/$1');
+
 $routes->group('api/v1', static function (RouteCollection $routes): void {
     $routes->get('preasientos', 'Erp::preasientos');
     $routes->post('preasientos/(:num)/consumir', 'Erp::consumirPreasiento/$1');
@@ -96,6 +99,7 @@ $routes->group('', ['filter' => 'auth'], static function (RouteCollection $route
     $routes->get('parametros/preasientos', 'Parametros::ver/preasientos');
     $routes->get('parametros/lugares', 'Parametros::ver/lugares');
     $routes->get('parametros/formas', 'Parametros::ver/formas');
+    $routes->get('parametros/medios', 'Parametros::ver/medios');
     $routes->post('parametros/formas', 'Parametros::forma');
     $routes->post('parametros/cuentas', 'Parametros::cuenta');
     $routes->post('parametros/cuentas/(:num)/eliminar', 'Parametros::eliminarCuenta/$1');
@@ -106,7 +110,11 @@ $routes->group('', ['filter' => 'auth'], static function (RouteCollection $route
     $routes->post('parametros/aceptadores', 'Parametros::aceptador');
     $routes->post('parametros/aceptadores/(:num)/eliminar', 'Parametros::eliminarAceptador/$1');
     $routes->post('parametros/tarjetas', 'Parametros::tarjeta');
+    $routes->post('parametros/tarjetas/(:num)/sincronizar', 'Parametros::sincronizarTarjeta/$1');
     $routes->post('parametros/tarjetas/(:num)/eliminar', 'Parametros::eliminarTarjeta/$1');
+    $routes->post('parametros/medios', 'Parametros::medio');
+    $routes->post('parametros/medios/(:num)/eliminar', 'Parametros::eliminarMedio/$1');
+    $routes->post('informes/medios/(:num)/rendir', 'Informes::rendirMovimiento/$1');
     $routes->post('parametros/aceptados', 'Parametros::aceptados');
     $routes->post('parametros/tipos', 'Parametros::tipo');
     $routes->post('parametros/preasientos', 'Parametros::preasiento');
