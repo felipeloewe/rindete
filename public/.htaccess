@@ -16,6 +16,14 @@ Options -Indexes
 	# http://httpd.apache.org/docs/current/mod/mod_rewrite.html#rewritebase
 	# RewriteBase /
 
+	# HTTP → HTTPS for production hosts (skip localhost / loopback for local Apache).
+	# `php spark serve` ignores .htaccess; CI4 forcehttps also redirects when enabled.
+	RewriteCond %{HTTPS} !=on
+	RewriteCond %{HTTP:X-Forwarded-Proto} !https [NC]
+	RewriteCond %{HTTP_HOST} !^localhost(?::\d+)?$ [NC]
+	RewriteCond %{HTTP_HOST} !^127\.0\.0\.1(?::\d+)?$ [NC]
+	RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
 	# Redirect Trailing Slashes...
 	RewriteCond %{REQUEST_FILENAME} !-d
 	RewriteCond %{REQUEST_URI} (.+)/$
@@ -31,6 +39,11 @@ Options -Indexes
 	# Ensure Authorization header is passed along
 	RewriteCond %{HTTP:Authorization} .
 	RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+</IfModule>
+
+# HSTS on HTTPS responses (1 year, no preload). Complements CI4 hsts filter.
+<IfModule mod_headers.c>
+	Header always set Strict-Transport-Security "max-age=31536000" env=HTTPS
 </IfModule>
 
 <IfModule !mod_rewrite.c>
