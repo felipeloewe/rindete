@@ -38,6 +38,7 @@ class PersonaServicio
         $fiscal = $this->documento($empresa, (string) ($input['id_fiscal'] ?? ''), $errores);
         $banco = $this->cuentaBanco((string) ($input['cuenta_banco'] ?? ''), $errores);
         $destino = $this->bancoDestino((string) ($input['banco_destino'] ?? ''), $errores);
+        $telefono = $this->telefono($empresa, $input, $errores);
         $cupo  = (int) ($empresa['cupo_usuarios'] ?? Planes::USUARIOS);
         $actuales = model(UsuarioModel::class)->where('empresa_id', (int) $empresa['id'])->countAllResults();
         if (! Planes::puedeSumarUsuario($actuales, $cupo)) {
@@ -54,6 +55,7 @@ class PersonaServicio
             'id_fiscal'                   => $fiscal,
             'cuenta_banco'                => $banco,
             'banco_destino'               => $destino,
+            'telefono'                    => $telefono,
             'password'                    => password_hash($password, PASSWORD_DEFAULT),
             'rol'                         => 'rendidor',
             'activo'                      => 1,
@@ -90,6 +92,9 @@ class PersonaServicio
         $destino = array_key_exists('banco_destino', $input)
             ? $this->bancoDestino((string) $input['banco_destino'], $errores)
             : null;
+        $telefono = array_key_exists('telefono', $input)
+            ? $this->telefono($empresa, $input, $errores, (int) $persona['id'])
+            : null;
         $datos   = [
             'puede_rendir_sin_solicitud' => ! empty($input['puede_rendir_sin_solicitud']) ? 1 : 0,
             'monto_maximo_rendicion'     => $monto,
@@ -108,6 +113,9 @@ class PersonaServicio
         if ($destino !== null) {
             $datos['banco_destino'] = $destino;
         }
+        if ($telefono !== null) {
+            $datos['telefono'] = $telefono;
+        }
         if ($errores !== []) {
             return ['ok' => false, 'errores' => $errores];
         }
@@ -120,6 +128,29 @@ class PersonaServicio
     /**
      * @param list<string> $errores
      */
+    /**
+     * @param array<string, mixed> $empresa
+     * @param array<string, mixed> $input
+     * @param list<string> $errores
+     */
+    private function telefono(array $empresa, array $input, array &$errores, int $excepto = 0): string
+    {
+        if (! array_key_exists('telefono', $input)) {
+            return '';
+        }
+        $normal = Identidad::telefono((string) $input['telefono']);
+        if (! Identidad::telefonoValido($normal)) {
+            $errores[] = 'El teléfono de envío no es válido.';
+
+            return '';
+        }
+        if ($normal !== '' && (new Identidad())->telefonoOcupado((int) $empresa['id'], $normal, $excepto)) {
+            $errores[] = 'Ese teléfono ya está en otra persona.';
+        }
+
+        return $normal;
+    }
+
     private function monto(string $raw, array &$errores): ?float
     {
         $raw = trim($raw);

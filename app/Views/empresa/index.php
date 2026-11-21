@@ -26,6 +26,13 @@
         <label>Identificación fiscal
             <input name="id_fiscal" value="<?= esc(old('id_fiscal', $empresa['id_fiscal'] ?? '')) ?>" maxlength="40" required>
         </label>
+        <label>WhatsApp Business, el que recibe
+            <input name="whatsapp" value="<?= esc(old('whatsapp', $empresa['whatsapp'] ?? '')) ?>" maxlength="20" placeholder="+56 9 1111 2222">
+        </label>
+        <p>Quien rinde manda la boleta desde su teléfono de envío. Este número es el WhatsApp Business que la recibe.</p>
+        <label>Correo que recibe boletas y facturas
+            <input name="correo_boletas" type="email" value="<?= esc(old('correo_boletas', $empresa['correo_boletas'] ?? '')) ?>" maxlength="160" placeholder="boletas@empresa.cl">
+        </label>
         <button class="boton" type="submit">Guardar</button>
     </form>
 </section>

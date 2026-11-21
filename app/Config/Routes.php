@@ -14,6 +14,9 @@ $routes->get('condiciones', 'Politicas::condiciones');
 
 $routes->post('webhooks/global66/(:segment)', 'Webhooks::global66/$1');
 $routes->post('webhooks/mach/(:segment)', 'Webhooks::mach/$1');
+$routes->get('webhooks/whatsapp', 'Webhooks::whatsappVerificar');
+$routes->post('webhooks/whatsapp', 'Webhooks::whatsapp');
+$routes->post('webhooks/correo', 'Webhooks::correo');
 
 $routes->group('api/v1', static function (RouteCollection $routes): void {
     $routes->get('preasientos', 'Erp::preasientos');
@@ -36,6 +39,8 @@ $routes->group('', ['filter' => 'auth'], static function (RouteCollection $route
 
     $routes->get('gastos', 'Gastos::index');
     $routes->get('gastos/nuevo', 'Gastos::nuevo');
+    $routes->get('gastos/entradas/(:num)', 'Gastos::entrada/$1');
+    $routes->post('gastos/entradas/(:num)/tomar', 'Gastos::tomarEntrada/$1');
     $routes->post('gastos', 'Gastos::crear');
     $routes->get('gastos/(:num)/editar', 'Gastos::editar/$1');
     $routes->get('gastos/(:num)/comprobante', 'Gastos::comprobante/$1');
@@ -78,6 +83,8 @@ $routes->group('', ['filter' => 'auth'], static function (RouteCollection $route
     $routes->post('informes/preasientos/cerrar', 'Informes::cerrarPreasientos');
     $routes->post('informes/preasientos/contabilizar', 'Informes::contabilizar');
     $routes->get('informes/contabilizados', 'Informes::contabilizados');
+    $routes->get('informes/(:segment)/excel', 'Informes::exportar/$1/excel');
+    $routes->get('informes/(:segment)/pdf', 'Informes::exportar/$1/pdf');
     $routes->get('informes/(:segment)', 'Informes::ver/$1');
 
     $routes->get('rendiciones', 'Rendiciones::index');

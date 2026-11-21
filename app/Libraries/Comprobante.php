@@ -61,6 +61,27 @@ class Comprobante
         return ['ok' => true, 'nombre' => $nombre, 'error' => ''];
     }
 
+    /**
+     * @return array{ok: bool, nombre: string, error: string}
+     */
+    public function guardarBytes(int $empresaId, string $bytes, string $ext): array
+    {
+        $ext = strtolower($ext);
+        if (! isset(self::EXT[$ext]) || $bytes === '' || strlen($bytes) > 5 * 1024 * 1024) {
+            return ['ok' => false, 'nombre' => '', 'error' => 'El comprobante no se pudo guardar.'];
+        }
+        $dir = $this->carpeta();
+        if (! is_dir($dir) && ! mkdir($dir, 0775, true) && ! is_dir($dir)) {
+            return ['ok' => false, 'nombre' => '', 'error' => 'No se pudo guardar el comprobante.'];
+        }
+        $nombre = $empresaId . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
+        if (file_put_contents($dir . $nombre, $bytes) === false) {
+            return ['ok' => false, 'nombre' => '', 'error' => 'No se pudo guardar el comprobante.'];
+        }
+
+        return ['ok' => true, 'nombre' => $nombre, 'error' => ''];
+    }
+
     public function usado(int $empresaId): int
     {
         $total = 0;

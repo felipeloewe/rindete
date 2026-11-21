@@ -26,3 +26,9 @@
     <?php endif ?>
     <button class="boton" type="submit">Ver</button>
 </form>
+<?php if (($clave ?? '') !== '') : ?>
+    <p class="lado">
+        <a class="boton claro" href="<?= base_url('informes/' . $clave . '/excel?' . $consulta) ?>">Excel</a>
+        <a class="boton claro" href="<?= base_url('informes/' . $clave . '/pdf?' . $consulta) ?>">PDF</a>
+    </p>
+<?php endif ?>

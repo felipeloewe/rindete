@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Libraries\ArchivoHoja;
 use App\Libraries\ConexionErp;
+use App\Libraries\HojaInforme;
 use App\Libraries\InformeServicio;
 use App\Libraries\Modulos;
 use App\Libraries\Paises;
@@ -102,6 +104,42 @@ class Informes extends BaseController
 
     public function ver(string $pieza)
     {
+        $datos = $this->prepararInforme($pieza);
+        if (! is_array($datos)) {
+            return $datos;
+        }
+
+        return view('informes/' . $pieza, $datos);
+    }
+
+    public function exportar(string $pieza, string $formato)
+    {
+        if (! in_array($formato, ['excel', 'pdf'], true)) {
+            return redirect()->to('/informes');
+        }
+        $datos = $this->prepararInforme($pieza);
+        if (! is_array($datos)) {
+            return $datos;
+        }
+        $tablas = HojaInforme::tablas($pieza, $datos, (string) $datos['moneda']);
+        $titulo = $datos['pieza']['titulo'] . ' · ' . $datos['periodo'];
+        $binario = $formato === 'pdf' ? ArchivoHoja::pdf($titulo, $tablas) : ArchivoHoja::excel($titulo, $tablas);
+        $nombre = $pieza . '-' . $datos['anio'] . '-' . $datos['mes'] . ($formato === 'pdf' ? '.pdf' : '.xlsx');
+        $tipo = $formato === 'pdf'
+            ? 'application/pdf'
+            : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+        return $this->response
+            ->setHeader('Content-Type', $tipo)
+            ->setHeader('Content-Disposition', 'attachment; filename="' . $nombre . '"')
+            ->setBody($binario);
+    }
+
+    /**
+     * @return array<string, mixed>|\CodeIgniter\HTTP\RedirectResponse|string
+     */
+    private function prepararInforme(string $pieza)
+    {
         [$usuario, $empresa, $filtro] = $this->contexto();
         if ($usuario === null || $empresa === null) {
             return redirect()->to('/login');
@@ -143,10 +181,11 @@ class Informes extends BaseController
             ],
         };
 
-        return view('informes/' . $pieza, $this->comun($usuario, $empresa, $filtro) + $datos + [
+        return $this->comun($usuario, $empresa, $filtro) + $datos + [
             'pieza'  => self::PIEZAS[$pieza],
             'accion' => base_url('informes/' . $pieza),
-        ]);
+            'clave'  => $pieza,
+        ];
     }
 
     /**

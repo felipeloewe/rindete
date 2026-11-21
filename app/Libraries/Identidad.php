@@ -13,10 +13,10 @@ use CodeIgniter\Database\BaseConnection;
 class Identidad
 {
     /** @var list<string> */
-    public const PERSONA = ['nombre', 'email', 'id_fiscal', 'cuenta_banco', 'banco_destino', 'password'];
+    public const PERSONA = ['nombre', 'email', 'id_fiscal', 'cuenta_banco', 'banco_destino', 'telefono', 'password'];
 
     /** @var list<string> */
-    public const EMPRESA = ['nombre', 'id_fiscal', 'cuenta_cargo'];
+    public const EMPRESA = ['nombre', 'id_fiscal', 'cuenta_cargo', 'whatsapp', 'correo_boletas'];
 
     /**
      * @param array<string, mixed> $fila
@@ -113,10 +113,11 @@ class Identidad
             'usuario_id'    => $usuarioId,
             'empresa_id'    => $empresaId,
             'nombre'        => trim((string) ($datos['nombre'] ?? '')),
-            'email'         => $this->correo($datos['email'] ?? ''),
+            'email'         => self::correo((string) ($datos['email'] ?? '')),
             'id_fiscal'     => $this->fiscal($datos['id_fiscal'] ?? null),
             'cuenta_banco'  => trim((string) ($datos['cuenta_banco'] ?? '')),
             'banco_destino' => trim((string) ($datos['banco_destino'] ?? '')),
+            'telefono'      => self::telefono((string) ($datos['telefono'] ?? '')),
             'password'      => (string) ($datos['password'] ?? ''),
         ];
         $this->conexion()->table('personas')->insert($fila);
@@ -141,9 +142,12 @@ class Identidad
             if (! array_key_exists($clave, $datos)) {
                 continue;
             }
-            $cambios[$clave] = $clave === 'id_fiscal'
-                ? $this->fiscal($datos[$clave])
-                : ($clave === 'email' ? $this->correo($datos[$clave]) : $datos[$clave]);
+            $cambios[$clave] = match ($clave) {
+                'id_fiscal' => $this->fiscal($datos[$clave]),
+                'email'     => self::correo((string) $datos[$clave]),
+                'telefono'  => self::telefono((string) $datos[$clave]),
+                default     => $datos[$clave],
+            };
         }
         if ($cambios === []) {
             return;
@@ -164,8 +168,10 @@ class Identidad
             'empresa_id'   => $empresaId,
             'pais'         => (string) $pais,
             'nombre'       => trim((string) ($datos['nombre'] ?? '')),
-            'id_fiscal'    => (string) ($this->fiscal($datos['id_fiscal'] ?? '') ?? ''),
-            'cuenta_cargo' => trim((string) ($datos['cuenta_cargo'] ?? '')),
+            'id_fiscal'      => (string) ($this->fiscal($datos['id_fiscal'] ?? '') ?? ''),
+            'cuenta_cargo'   => trim((string) ($datos['cuenta_cargo'] ?? '')),
+            'whatsapp'       => self::telefono((string) ($datos['whatsapp'] ?? '')),
+            'correo_boletas' => self::correo((string) ($datos['correo_boletas'] ?? '')),
         ]);
     }
 
@@ -188,9 +194,12 @@ class Identidad
             if (! array_key_exists($clave, $datos)) {
                 continue;
             }
-            $cambios[$clave] = $clave === 'id_fiscal'
-                ? (string) ($this->fiscal($datos[$clave]) ?? '')
-                : trim((string) $datos[$clave]);
+            $cambios[$clave] = match ($clave) {
+                'id_fiscal' => (string) ($this->fiscal($datos[$clave]) ?? ''),
+                'whatsapp' => self::telefono((string) $datos[$clave]),
+                'correo_boletas' => self::correo((string) $datos[$clave]),
+                default => trim((string) $datos[$clave]),
+            };
         }
         if (array_key_exists('pais', $datos)) {
             $cambios['pais'] = (string) $datos['pais'];
@@ -222,7 +231,7 @@ class Identidad
      */
     public function personaPorEmail(string $email): ?array
     {
-        $fila = $this->conexion()->table('personas')->where('email', $this->correo($email))->get()->getRowArray();
+        $fila = $this->conexion()->table('personas')->where('email', self::correo($email))->get()->getRowArray();
         if ($fila === null) {
             return null;
         }
@@ -245,6 +254,101 @@ class Identidad
         }
 
         return model(\App\Models\EmpresaModel::class)->find((int) $fila['empresa_id']);
+    }
+
+    public static function telefono(string $valor): string
+    {
+        $digitos = preg_replace('/\D+/', '', $valor) ?? '';
+        if (strlen($digitos) === 9 && str_starts_with($digitos, '9')) {
+            return '56' . $digitos;
+        }
+
+        return $digitos;
+    }
+
+    public static function telefonoValido(string $normalizado): bool
+    {
+        return $normalizado === '' || (strlen($normalizado) >= 8 && strlen($normalizado) <= 15);
+    }
+
+    public static function correo(string $valor): string
+    {
+        return strtolower(trim($valor));
+    }
+
+    public function empresaPorWhatsapp(string $telefono): ?int
+    {
+        $telefono = self::telefono($telefono);
+        if ($telefono === '') {
+            return null;
+        }
+        $fila = $this->conexion()->table('organizaciones')->select('empresa_id')->where('whatsapp', $telefono)->get()->getRowArray();
+
+        return $fila === null ? null : (int) $fila['empresa_id'];
+    }
+
+    public function empresaPorCorreoBoletas(string $correo): ?int
+    {
+        $correo = self::correo($correo);
+        if ($correo === '') {
+            return null;
+        }
+        $fila = $this->conexion()->table('organizaciones')->select('empresa_id')->where('correo_boletas', $correo)->get()->getRowArray();
+
+        return $fila === null ? null : (int) $fila['empresa_id'];
+    }
+
+    public function usuarioPorTelefono(int $empresaId, string $telefono): ?int
+    {
+        $telefono = self::telefono($telefono);
+        if ($empresaId < 1 || $telefono === '') {
+            return null;
+        }
+        $fila = $this->conexion()->table('personas')
+            ->select('usuario_id')
+            ->where('empresa_id', $empresaId)
+            ->where('telefono', $telefono)
+            ->get()
+            ->getRowArray();
+
+        return $fila === null ? null : (int) $fila['usuario_id'];
+    }
+
+    public function usuarioPorCorreoEnEmpresa(int $empresaId, string $correo): ?int
+    {
+        $correo = self::correo($correo);
+        if ($empresaId < 1 || $correo === '') {
+            return null;
+        }
+        $fila = $this->conexion()->table('personas')
+            ->select('usuario_id')
+            ->where('empresa_id', $empresaId)
+            ->where('email', $correo)
+            ->get()
+            ->getRowArray();
+
+        return $fila === null ? null : (int) $fila['usuario_id'];
+    }
+
+    public function telefonoOcupado(int $empresaId, string $telefono, int $exceptoUsuario = 0): bool
+    {
+        $dueno = $this->usuarioPorTelefono($empresaId, $telefono);
+
+        return $dueno !== null && $dueno !== $exceptoUsuario;
+    }
+
+    public function whatsappOcupado(string $telefono, int $exceptoEmpresa = 0): bool
+    {
+        $dueno = $this->empresaPorWhatsapp($telefono);
+
+        return $dueno !== null && $dueno !== $exceptoEmpresa;
+    }
+
+    public function correoBoletasOcupado(string $correo, int $exceptoEmpresa = 0): bool
+    {
+        $dueno = $this->empresaPorCorreoBoletas($correo);
+
+        return $dueno !== null && $dueno !== $exceptoEmpresa;
     }
 
     /**
@@ -346,11 +450,6 @@ class Identidad
         $fila = db_connect()->table('empresas')->select('pais')->where('id', $empresaId)->get()->getRowArray();
 
         return (string) ($fila['pais'] ?? '');
-    }
-
-    private function correo(mixed $valor): string
-    {
-        return strtolower(trim((string) $valor));
     }
 
     private function fiscal(mixed $valor): ?string

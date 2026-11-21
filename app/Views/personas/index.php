@@ -22,6 +22,9 @@
                 <label>Correo
                     <input name="email" type="email" required maxlength="160" value="<?= esc(old('email', '')) ?>">
                 </label>
+                <label>Teléfono de envío
+                    <input name="telefono" maxlength="20" value="<?= esc(old('telefono', '')) ?>" placeholder="+56 9 1234 5678">
+                </label>
             </div>
             <div class="grid-2">
                 <label>Clave inicial
@@ -66,7 +69,7 @@
             <h2><?= esc($persona['nombre']) ?></h2>
             <span><?= $persona['rol'] === 'administrador' ? 'Administrador' : 'Rinde' ?></span>
         </div>
-        <p><?= esc($persona['email']) ?><?= ($persona['id_fiscal'] ?? '') !== '' && $persona['id_fiscal'] !== null ? ' · ' . esc($persona['id_fiscal']) : '' ?></p>
+        <p><?= esc($persona['email']) ?><?= ($persona['telefono'] ?? '') !== '' ? ' · envía desde ' . esc($persona['telefono']) : '' ?><?= ($persona['id_fiscal'] ?? '') !== '' && $persona['id_fiscal'] !== null ? ' · ' . esc($persona['id_fiscal']) : '' ?></p>
         <?php if (\App\Libraries\PoliticaDatos::aceptada($persona)) : ?>
             <p>Aceptó las condiciones de uso.</p>
         <?php else : ?>
@@ -92,6 +95,9 @@
                 </label>
                 <label>Cuenta del banco
                     <input name="cuenta_banco" maxlength="18" value="<?= esc((string) ($persona['cuenta_banco'] ?? '')) ?>" placeholder="Para la nómina de fondos">
+                </label>
+                <label>Teléfono de envío
+                    <input name="telefono" maxlength="20" value="<?= esc((string) ($persona['telefono'] ?? '')) ?>" placeholder="+56 9 1234 5678">
                 </label>
             </div>
             <?php if ($chile) : ?>

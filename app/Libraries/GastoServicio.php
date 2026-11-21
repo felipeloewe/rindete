@@ -184,6 +184,10 @@ class GastoServicio
             }
             $comprobante = $subida['nombre'];
         }
+        $recibido = (string) ($input['comprobante_recibido'] ?? '');
+        if ($comprobante === '' && $recibido !== '' && str_starts_with($recibido, (int) $empresa['id'] . '_') && $archivos->ruta($recibido) !== null) {
+            $comprobante = $recibido;
+        }
 
         $gasto = [
             'empresa_id'    => (int) $empresa['id'],

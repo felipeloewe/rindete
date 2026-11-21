@@ -12,6 +12,13 @@
 <section class="bloque">
     <form method="post" enctype="multipart/form-data" action="<?= base_url($gasto ? 'gastos/' . $gasto['id'] : 'gastos') ?>">
         <?= csrf_field() ?>
+        <?php if (! empty($entrada)) : ?>
+            <p>Esta boleta llegó por <?= $entrada['canal'] === 'correo' ? 'correo' : 'WhatsApp' ?>. Al guardar, el archivo queda como comprobante.</p>
+            <?php if ((string) ($entrada['texto'] ?? '') !== '') : ?>
+                <p><?= esc($entrada['texto']) ?></p>
+            <?php endif ?>
+            <input type="hidden" name="entrada_id" value="<?= (int) $entrada['id'] ?>">
+        <?php endif ?>
         <label>Concepto
             <input name="concepto" required maxlength="140" value="<?= esc($valor('concepto')) ?>" placeholder="Almuerzo con cliente, taxi al aeropuerto…">
         </label>

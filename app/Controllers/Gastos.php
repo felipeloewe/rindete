@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Libraries\Comprobante;
 use App\Libraries\GastoServicio;
+use App\Libraries\Recepcion;
 use App\Libraries\Paises;
 use App\Libraries\Sesion;
 use App\Models\CategoriaModel;
@@ -56,6 +57,8 @@ class Gastos extends BaseController
             'categorias' => $this->categorias((int) $empresa['id']),
             'nombres'    => $this->nombres((int) $empresa['id']),
             'personas'   => $this->personas((int) $empresa['id']),
+            'entradas'   => (new Recepcion())->pendientes($usuario),
+            'yo'         => (int) $usuario['id'],
         ]);
     }
 
@@ -67,7 +70,10 @@ class Gastos extends BaseController
         }
         (new GastoServicio())->asegurarCategorias($empresa);
 
-        return view('gastos/form', $this->formulario($empresa, $usuario, null));
+        $datos = $this->formulario($empresa, $usuario, null);
+        $datos['entrada'] = (new Recepcion())->paraGasto($usuario, (int) $this->request->getGet('entrada'));
+
+        return view('gastos/form', $datos);
     }
 
     public function crear()
@@ -79,16 +85,47 @@ class Gastos extends BaseController
         (new GastoServicio())->asegurarCategorias($empresa);
         $archivo = $this->request->getFile('comprobante');
         [$post, $leidos] = $this->completarLectura($this->request->getPost() ?? [], $archivo);
+        $post = $this->recibido($usuario, $post);
         $resultado = (new GastoServicio())->crear($usuario, $empresa, $post, $archivo);
         if (! $resultado['ok']) {
             return redirect()->back()->withInput()->with('errores', $resultado['errores']);
         }
+        $this->cerrarEntrada($usuario, $post, $resultado['gasto']);
         if ($leidos !== []) {
             return redirect()->to('/gastos/' . $resultado['gasto']['id'] . '/editar')
                 ->with('ok', 'Leímos el comprobante y completamos ' . implode(', ', $leidos) . '. Confirma o corrige.');
         }
 
         return redirect()->to('/gastos/' . $resultado['gasto']['id'])->with('ok', $this->aviso($resultado['gasto']));
+    }
+
+    public function entrada(int $id)
+    {
+        [$usuario] = $this->cuenta();
+        if ($usuario === null) {
+            return redirect()->to('/login');
+        }
+        $entrada = (new Recepcion())->visible($usuario, $id);
+        $ruta = $entrada === null ? null : (new Comprobante())->ruta((string) ($entrada['comprobante'] ?? ''));
+        if ($ruta === null) {
+            return redirect()->to('/gastos')->with('error', 'No encontramos ese archivo.');
+        }
+
+        return $this->response->download($ruta, null)->setFileName('boleta-' . $id . '.' . pathinfo($ruta, PATHINFO_EXTENSION));
+    }
+
+    public function tomarEntrada(int $id)
+    {
+        [$usuario] = $this->cuenta();
+        if ($usuario === null) {
+            return redirect()->to('/login');
+        }
+        $ok = (new Recepcion())->tomar($usuario, $id);
+
+        return redirect()->to('/gastos')->with(
+            $ok ? 'ok' : 'error',
+            $ok ? 'La boleta quedó marcada.' : 'No encontramos esa boleta.',
+        );
     }
 
     public function ver(int $id)
@@ -132,6 +169,7 @@ class Gastos extends BaseController
         }
         $archivo = $this->request->getFile('comprobante');
         [$post, $leidos] = $this->completarLectura($this->request->getPost() ?? [], $archivo);
+        unset($post['comprobante_recibido']);
         $resultado = (new GastoServicio())->actualizar($usuario, $empresa, $gasto, $post, $archivo);
         if (! $resultado['ok']) {
             return redirect()->back()->withInput()->with('errores', $resultado['errores']);
@@ -260,7 +298,45 @@ class Gastos extends BaseController
             'valor'      => $valor,
             'categorias' => $categorias,
             'tipos'      => $tipos,
+            'entrada'    => null,
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $usuario
+     * @param array<string, mixed> $post
+     *
+     * @return array<string, mixed>
+     */
+    private function recibido(array $usuario, array $post): array
+    {
+        unset($post['comprobante_recibido']);
+        $entradaId = (int) ($post['entrada_id'] ?? 0);
+        if ($entradaId < 1) {
+            return $post;
+        }
+        $entrada = (new Recepcion())->paraGasto($usuario, $entradaId);
+        if ($entrada === null) {
+            unset($post['entrada_id']);
+
+            return $post;
+        }
+        $post['comprobante_recibido'] = (string) ($entrada['comprobante'] ?? '');
+
+        return $post;
+    }
+
+    /**
+     * @param array<string, mixed> $usuario
+     * @param array<string, mixed> $post
+     * @param array<string, mixed> $gasto
+     */
+    private function cerrarEntrada(array $usuario, array $post, array $gasto): void
+    {
+        $entradaId = (int) ($post['entrada_id'] ?? 0);
+        if ($entradaId > 0) {
+            (new Recepcion())->adjuntar($usuario, $entradaId, $gasto);
+        }
     }
 
     /**

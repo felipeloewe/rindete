@@ -31,6 +31,36 @@
         <button class="boton claro" type="submit">Filtrar</button>
     </form>
 </section>
+<?php if (($entradas ?? []) !== []) : ?>
+    <section class="bloque">
+        <h2>Boletas por confirmar</h2>
+        <?php foreach ($entradas as $entrada) : ?>
+            <article>
+                <p>
+                    <?= $entrada['canal'] === 'correo' ? 'Llegó al correo desde ' . esc($entrada['emisor']) : 'Llegó por WhatsApp desde ' . esc($entrada['emisor']) ?>.
+                    <?php if ($entrada['usuario_id'] === null) : ?>
+                        El teléfono de origen no está en las personas.
+                    <?php endif ?>
+                </p>
+                <?php if ((string) ($entrada['texto'] ?? '') !== '') : ?>
+                    <p><?= esc($entrada['texto']) ?></p>
+                <?php endif ?>
+                <p class="lado">
+                    <?php if ((string) ($entrada['comprobante'] ?? '') !== '') : ?>
+                        <a class="boton claro" href="<?= base_url('gastos/entradas/' . $entrada['id']) ?>">Ver archivo</a>
+                    <?php endif ?>
+                    <?php if ((int) ($entrada['usuario_id'] ?? 0) === (int) ($yo ?? 0)) : ?>
+                        <a class="boton" href="<?= base_url('gastos/nuevo?entrada=' . $entrada['id']) ?>">Cargar como gasto</a>
+                    <?php endif ?>
+                </p>
+                <form method="post" action="<?= base_url('gastos/entradas/' . $entrada['id'] . '/tomar') ?>">
+                    <?= csrf_field() ?>
+                    <button class="boton claro" type="submit">Ya quedó en un gasto</button>
+                </form>
+            </article>
+        <?php endforeach ?>
+    </section>
+<?php endif ?>
 <?php if ($items === []) : ?>
     <p class="bloque">Todavía no hay gastos con ese filtro.</p>
 <?php else : ?>
