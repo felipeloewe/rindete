@@ -328,6 +328,30 @@ fieldset { border: 1px solid var(--line); border-radius: 10px; margin: 0 0 0.9re
 
 .boton.claro:hover { background: #f3fffd; color: var(--teal); }
 
+input.falta, select.falta, textarea.falta {
+    border-color: var(--bad);
+    outline: 2px solid #f3b4b4;
+}
+
+dialog.popup {
+    border: 0;
+    border-radius: 18px;
+    padding: 1.35rem 1.45rem 1.2rem;
+    max-width: 26rem;
+    color: var(--ink);
+    box-shadow: 0 24px 60px rgba(1, 65, 73, 0.28);
+}
+
+dialog.popup::backdrop { background: rgba(1, 65, 73, 0.45); }
+
+dialog.popup h2 { margin-bottom: 0.35rem; }
+
+dialog.popup p { margin: 0.2rem 0 0.7rem; }
+
+dialog.popup ul { margin: 0 0 1rem; padding-left: 1.15rem; }
+
+dialog.popup li { margin: 0.2rem 0; }
+
 .aviso { padding: 0.7rem 0.85rem; border-radius: 8px; }
 .aviso.ok { background: var(--sage); color: var(--ink); }
 .aviso.mal { background: #fde8e8; color: var(--bad); }

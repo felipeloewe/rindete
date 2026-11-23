@@ -61,6 +61,8 @@ final class RegistroTest extends CIUnitTestCase
         $registro->assertOK();
         $registro->assertSee('Infórmate más');
         $registro->assertSee('Acepto las condiciones de uso y los efectos que se indican para cada ley.');
+        $registro->assertSee('Debe completar toda la información solicitada.');
+        $registro->assertSee('name="acepta_politica" value="1" required');
     }
 
     public function testNoRepiteCorreoNiIdentificacion(): void
