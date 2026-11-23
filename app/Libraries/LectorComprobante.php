@@ -47,6 +47,34 @@ class LectorComprobante
     /**
      * @return array<string, string>
      */
+    public function leerRuta(string $ruta): array
+    {
+        if ($ruta === '' || ! is_file($ruta)) {
+            return [];
+        }
+        $ext = strtolower(pathinfo($ruta, PATHINFO_EXTENSION));
+        if (! in_array($ext, ['jpg', 'jpeg', 'png', 'webp'], true)) {
+            return [];
+        }
+        $base = tempnam(sys_get_temp_dir(), 'ocr');
+        if ($base === false) {
+            return [];
+        }
+        $comando = 'tesseract ' . escapeshellarg($ruta) . ' ' . escapeshellarg($base) . ' -l spa --psm 6';
+        exec($comando, $salida, $codigo);
+        $texto = is_file($base . '.txt') ? (string) file_get_contents($base . '.txt') : '';
+        @unlink($base . '.txt');
+        @unlink($base);
+        if ($codigo !== 0 || trim($texto) === '') {
+            return [];
+        }
+
+        return $this->deTexto($texto);
+    }
+
+    /**
+     * @return array<string, string>
+     */
     public function deTexto(string $texto): array
     {
         $propuesta = [];

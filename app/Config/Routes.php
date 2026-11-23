@@ -94,6 +94,7 @@ $routes->group('', ['filter' => 'auth'], static function (RouteCollection $route
     $routes->post('rendiciones/(:num)/quitar/(:num)', 'Rendiciones::quitar/$1/$2');
     $routes->post('rendiciones/(:num)/enviar', 'Rendiciones::enviar/$1');
     $routes->post('rendiciones/(:num)/aceptar', 'Rendiciones::aceptar/$1');
+    $routes->post('rendiciones/(:num)/devolver', 'Rendiciones::devolver/$1');
     $routes->post('rendiciones/(:num)/rechazar', 'Rendiciones::rechazar/$1');
     $routes->post('rendiciones/(:num)/sumar', 'Rendiciones::sumar/$1');
     $routes->post('rendiciones/(:num)/eliminar', 'Rendiciones::eliminar/$1');

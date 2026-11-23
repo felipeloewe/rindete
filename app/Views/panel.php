@@ -10,6 +10,62 @@
     </div>
     <a class="boton" href="<?= base_url('gastos/nuevo') ?>">Registrar un gasto</a>
 </header>
+<section class="bloque">
+    <h2>Acciones pendientes</h2>
+    <p>Las rendiciones juntan los gastos. Cada flujo queda a la vista hasta cerrarlo.</p>
+    <div class="pendientes">
+        <a href="#abiertas"><strong><?= count($tablero['abiertas']) ?></strong><span>Abiertas</span></a>
+        <a href="#proceso"><strong><?= count($tablero['proceso']) ?></strong><span>En proceso</span></a>
+        <a href="#cerradas"><strong><?= count($tablero['cerradas']) ?></strong><span>Cerradas</span></a>
+        <a href="#duplicados"><strong><?= count($tablero['duplicados']) ?></strong><span>Posible duplicado</span></a>
+    </div>
+    <?php if ($entradas !== []) : ?>
+        <p><a href="<?= base_url('gastos') ?>">Hay <?= count($entradas) ?> boleta<?= count($entradas) === 1 ? '' : 's' ?> por confirmar.</a> Llegaron por WhatsApp o por correo y faltan los datos del gasto.</p>
+    <?php endif ?>
+    <?php
+        $bloques = [
+            'abiertas' => ['id' => 'abiertas', 'titulo' => 'Rendiciones abiertas', 'vacio' => 'No hay rendiciones abiertas.'],
+            'proceso' => ['id' => 'proceso', 'titulo' => 'Rendiciones en proceso', 'vacio' => 'No hay rendiciones esperando la devolución de fondos.'],
+            'cerradas' => ['id' => 'cerradas', 'titulo' => 'Rendiciones cerradas', 'vacio' => 'Todavía no hay un flujo cerrado.'],
+        ];
+    ?>
+    <?php foreach ($bloques as $clave => $bloque) : ?>
+        <h3 id="<?= esc($bloque['id']) ?>"><?= esc($bloque['titulo']) ?></h3>
+        <?php if ($tablero[$clave] === []) : ?>
+            <p><?= esc($bloque['vacio']) ?></p>
+        <?php else : ?>
+            <table class="tabla">
+                <thead><tr><th>Rendición</th><th>Saldo</th><th>Para cerrar el flujo</th></tr></thead>
+                <tbody>
+                    <?php foreach (array_slice($tablero[$clave], 0, 6) as $fila) : ?>
+                        <tr>
+                            <td><a href="<?= base_url('rendiciones/' . $fila['id']) ?>"><?= esc($fila['titulo']) ?></a></td>
+                            <td><?= esc(\App\Libraries\Montos::formato((float) $fila['saldo_calculado'], $moneda)) ?></td>
+                            <td><?= esc($fila['aviso']) ?></td>
+                        </tr>
+                    <?php endforeach ?>
+                </tbody>
+            </table>
+        <?php endif ?>
+    <?php endforeach ?>
+    <h3 id="duplicados">Gasto duplicado o posible error</h3>
+    <?php if ($tablero['duplicados'] === []) : ?>
+        <p>No hay gastos marcados como posible duplicado.</p>
+    <?php else : ?>
+        <table class="tabla">
+            <thead><tr><th>Gasto</th><th>Fecha</th><th>Monto</th></tr></thead>
+            <tbody>
+                <?php foreach (array_slice($tablero['duplicados'], 0, 6) as $gasto) : ?>
+                    <tr>
+                        <td><a href="<?= base_url('gastos/' . $gasto['id']) ?>"><?= esc($gasto['concepto']) ?></a></td>
+                        <td><?= esc((string) $gasto['fecha']) ?></td>
+                        <td><?= esc(\App\Libraries\Montos::formato((float) $gasto['monto'], (string) ($gasto['moneda'] ?? $moneda))) ?></td>
+                    </tr>
+                <?php endforeach ?>
+            </tbody>
+        </table>
+    <?php endif ?>
+</section>
 <div class="mosaico">
     <a class="losa losa-gastos" href="<?= base_url('gastos') ?>">
         <strong>Gastos</strong>

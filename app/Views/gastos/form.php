@@ -17,6 +17,9 @@
             <?php if ((string) ($entrada['texto'] ?? '') !== '') : ?>
                 <p><?= esc($entrada['texto']) ?></p>
             <?php endif ?>
+            <?php if (($lectura ?? []) !== []) : ?>
+                <p>Leímos monto, fecha, RUT o folio de la boleta. Confirma o corrige antes de guardar.</p>
+            <?php endif ?>
             <input type="hidden" name="entrada_id" value="<?= (int) $entrada['id'] ?>">
         <?php endif ?>
         <label>Concepto
