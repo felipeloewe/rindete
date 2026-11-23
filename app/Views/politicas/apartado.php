@@ -8,7 +8,7 @@
         <?= $this->include('politicas/efectos') ?>
     </details>
     <label class="cheque">
-        <input type="checkbox" name="acepta_politica" value="1" <?= old('acepta_politica') ? 'checked' : '' ?>>
+        <input type="checkbox" name="acepta_politica" value="1" required<?= old('acepta_politica') ? ' checked' : '' ?>>
         <?= esc($texto) ?>
     </label>
 </section>

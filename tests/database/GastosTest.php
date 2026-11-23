@@ -155,6 +155,8 @@ final class GastosTest extends CIUnitTestCase
         $formulario->assertOK();
         $formulario->assertSee('Centro de costo');
         $formulario->assertSee('Comercial');
+        $formulario->assertSee('Debe completar toda la información solicitada.');
+        $formulario->assertSee('name="monto" inputmode="decimal" required');
     }
 
     /**

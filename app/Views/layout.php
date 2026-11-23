@@ -115,5 +115,14 @@
         <?php endforeach ?>
         <?= $this->renderSection('content') ?>
     </main>
+    <dialog id="aviso-campos" class="popup">
+        <h2>Falta información</h2>
+        <p>Debe completar toda la información solicitada.</p>
+        <ul></ul>
+        <form method="dialog">
+            <button class="boton" type="submit">Entendido</button>
+        </form>
+    </dialog>
+    <script src="<?= base_url('js/validacion.js') ?>"></script>
 </body>
 </html>
