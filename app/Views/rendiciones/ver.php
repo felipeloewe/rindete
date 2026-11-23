@@ -113,6 +113,12 @@
                 <?php endif ?>
             </form>
         </div>
+    <?php elseif (! empty($puedeDevolver)) : ?>
+        <form method="post" action="<?= base_url('rendiciones/' . $rendicion['id'] . '/devolver') ?>">
+            <?= csrf_field() ?>
+            <p>Esta rendición ya está rendida y la empresa le debe el saldo a la persona. El archivo es la nómina para devolver esos fondos.</p>
+            <button class="boton" type="submit">Devolver los fondos</button>
+        </form>
     <?php elseif ($puedeAceptar) : ?>
         <div class="acciones">
             <form class="plano" method="post" action="<?= base_url('rendiciones/' . $rendicion['id'] . '/rechazar') ?>">

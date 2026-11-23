@@ -146,6 +146,7 @@ class Rendiciones extends BaseController
                 : 'Sin tope',
             'viatico'     => RendicionDirecta::etiqueta($this->cuenta((int) ($rendicion['cuenta_viatico_id'] ?? 0))),
             'asignacion'  => RendicionDirecta::etiqueta($this->cuenta((int) ($rendicion['cuenta_asignacion_id'] ?? 0))),
+            'puedeDevolver' => $usuario !== null && ($usuario['rol'] ?? '') === 'administrador' && (new \App\Libraries\DevolucionFondos())->puede($rendicion),
         ]);
     }
 
@@ -216,11 +217,37 @@ class Rendiciones extends BaseController
             return redirect()->to('/rendiciones/' . $id)->with('errores', $resultado['errores']);
         }
         $queda = model(RendicionModel::class)->find($id);
-        $mensaje = is_array($queda) && (string) $queda['estado'] === 'cerrada'
-            ? 'Cierre aceptado. La rendición quedó cerrada.'
-            : 'Cierre aceptado. Sigue en el flujo.';
+        $mensaje = 'Cierre aceptado. Sigue en el flujo.';
+        if (is_array($queda) && (string) $queda['estado'] === 'cerrada') {
+            $mensaje = (string) ($queda['reembolso'] ?? '') === 'por_devolver'
+                ? 'Cierre aceptado. Falta devolver los fondos para cerrar el flujo.'
+                : 'Cierre aceptado. La rendición quedó cerrada.';
+        }
 
         return redirect()->to('/rendiciones/' . $id)->with('ok', $mensaje);
+    }
+
+    public function devolver(int $id)
+    {
+        [$usuario, $empresa, $rendicion] = $this->visible($id);
+        if ($usuario === null || $empresa === null || $rendicion === null) {
+            return redirect()->to('/rendiciones')->with('error', 'No encontramos esa rendición.');
+        }
+        if (($usuario['rol'] ?? '') !== 'administrador') {
+            return redirect()->to('/rendiciones/' . $id)->with('error', 'La devolución de fondos la hace quien administra la empresa.');
+        }
+        $resultado = (new \App\Libraries\DevolucionFondos())->devolver($empresa, $rendicion);
+        if (! $resultado['ok']) {
+            return redirect()->to('/rendiciones/' . $id)->with('errores', $resultado['errores']);
+        }
+        if ($resultado['contenido'] === '') {
+            return redirect()->to('/rendiciones/' . $id)->with('ok', 'Los fondos quedaron devueltos y la rendición cerró el flujo.');
+        }
+
+        return $this->response
+            ->setHeader('Content-Type', 'text/plain; charset=UTF-8')
+            ->setHeader('Content-Disposition', 'attachment; filename="' . $resultado['nombre'] . '"')
+            ->setBody($resultado['contenido']);
     }
 
     public function rechazar(int $id)

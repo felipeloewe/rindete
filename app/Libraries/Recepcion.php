@@ -62,7 +62,7 @@ class Recepcion
         $usuarioId = $identidad->usuarioPorCorreoEnEmpresa($empresaId, $desde);
         $nombre = $this->archivo($empresaId, $bytes, $ext);
 
-        $this->guardar($empresaId, $usuarioId, 'correo', Identidad::correo($desde), Identidad::correo($hacia), $mensajeId, $texto, $nombre);
+        $this->guardar($empresaId, $usuarioId, 'correo', Identidad::correo($desde), Identidad::correo($hacia), $mensajeId, $texto, $nombre, $this->lectura($nombre));
 
         return true;
     }
@@ -191,10 +191,11 @@ class Recepcion
             (string) ($mensaje['id'] ?? ''),
             $texto,
             $nombre,
+            $this->lectura($nombre),
         );
     }
 
-    private function guardar(int $empresaId, ?int $usuarioId, string $canal, string $emisor, string $receptor, string $mensajeId, string $texto, string $comprobante): void
+    private function guardar(int $empresaId, ?int $usuarioId, string $canal, string $emisor, string $receptor, string $mensajeId, string $texto, string $comprobante, string $lectura = ''): void
     {
         $mensajeId = trim($mensajeId);
         if ($mensajeId !== '') {
@@ -212,9 +213,24 @@ class Recepcion
             'mensaje_id'  => $mensajeId === '' ? null : mb_substr($mensajeId, 0, 191),
             'texto'       => mb_substr($texto, 0, 2000),
             'comprobante' => $comprobante,
+            'lectura'     => $lectura === '' ? null : $lectura,
             'estado'      => 'pendiente',
             'creado'      => date('Y-m-d H:i:s'),
         ]);
+    }
+
+    private function lectura(string $nombre): string
+    {
+        if ($nombre === '') {
+            return '';
+        }
+        $ruta = (new Comprobante())->ruta($nombre);
+        if ($ruta === null) {
+            return '';
+        }
+        $propuesta = (new LectorComprobante())->leerRuta($ruta);
+
+        return $propuesta === [] ? '' : (string) json_encode($propuesta, JSON_UNESCAPED_UNICODE);
     }
 
     private function archivo(int $empresaId, string $bytes, string $ext): string

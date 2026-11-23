@@ -189,12 +189,16 @@ class SaldoRendicion
                 'turno_orden'      => (int) $siguiente['orden'],
             ]);
         } else {
-            model(RendicionModel::class)->update($rendicion['id'], [
+            $cambios = [
                 'estado'           => 'cerrada',
                 'enviada'          => $ahora,
                 'turno_usuario_id' => null,
                 'turno_orden'      => 0,
-            ]);
+            ];
+            if ($this->de($rendicion)['saldo'] < -0.009) {
+                $cambios['reembolso'] = 'por_devolver';
+            }
+            model(RendicionModel::class)->update($rendicion['id'], $cambios);
         }
 
         return ['ok' => true, 'errores' => []];

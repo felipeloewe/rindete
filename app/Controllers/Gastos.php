@@ -71,7 +71,25 @@ class Gastos extends BaseController
         (new GastoServicio())->asegurarCategorias($empresa);
 
         $datos = $this->formulario($empresa, $usuario, null);
-        $datos['entrada'] = (new Recepcion())->paraGasto($usuario, (int) $this->request->getGet('entrada'));
+        $entrada = (new Recepcion())->paraGasto($usuario, (int) $this->request->getGet('entrada'));
+        $datos['entrada'] = $entrada;
+        $leido = [];
+        if (is_array($entrada) && (string) ($entrada['lectura'] ?? '') !== '') {
+            $json = json_decode((string) $entrada['lectura'], true);
+            $leido = is_array($json) ? $json : [];
+        }
+        $datos['lectura'] = $leido;
+        if ($leido !== []) {
+            $base = $datos['valor'];
+            $datos['valor'] = static function (string $campo, string $defecto = '') use ($base, $leido): string {
+                $actual = $base($campo, '');
+                if ($actual !== '') {
+                    return $actual;
+                }
+
+                return (string) ($leido[$campo] ?? $defecto);
+            };
+        }
 
         return view('gastos/form', $datos);
     }
