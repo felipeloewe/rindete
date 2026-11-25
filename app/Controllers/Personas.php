@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Libraries\BancosChile;
+use App\Libraries\CuentaGlobal;
 use App\Libraries\Paises;
 use App\Libraries\PersonaServicio;
 use App\Libraries\Planes;
@@ -34,6 +35,7 @@ class Personas extends BaseController
             'ejemplo'    => $pais['ejemplo'] ?? '',
             'chile'      => (string) $empresa['pais'] === 'CL',
             'bancos'     => BancosChile::CODIGOS,
+            'cuentas'    => (new CuentaGlobal())->delEmpresa((int) $empresa['id']),
         ]);
     }
 
@@ -44,9 +46,17 @@ class Personas extends BaseController
             return $this->fuera($empresa);
         }
 
-        $resultado = (new PersonaServicio())->crear($empresa, $this->request->getPost() ?? []);
+        $post = $this->request->getPost() ?? [];
+        $cuenta = (new CuentaGlobal())->revisar((int) $empresa['id'], 0, $post);
+        if (! $cuenta['ok']) {
+            return redirect()->to('/personas')->with('errores', $cuenta['errores'])->withInput();
+        }
+        $resultado = (new PersonaServicio())->crear($empresa, $post);
         if (! $resultado['ok']) {
             return redirect()->to('/personas')->with('errores', $resultado['errores'])->withInput();
+        }
+        if ($cuenta['aplica']) {
+            (new CuentaGlobal())->asignar((int) $empresa['id'], (int) $resultado['id'], $cuenta['cliente'], $cuenta['billetera']);
         }
 
         return redirect()->to('/personas')->with('ok', 'Persona agregada. Ya puede entrar con su correo.');
@@ -63,9 +73,17 @@ class Personas extends BaseController
         if (! is_array($persona) || (int) $persona['empresa_id'] !== (int) $empresa['id']) {
             return redirect()->to('/personas')->with('error', 'No encontramos a esa persona.');
         }
-        $resultado = (new PersonaServicio())->guardar($usuario, $persona, $this->request->getPost() ?? []);
+        $post = $this->request->getPost() ?? [];
+        $cuenta = (new CuentaGlobal())->revisar((int) $empresa['id'], $id, $post);
+        if (! $cuenta['ok']) {
+            return redirect()->to('/personas')->with('errores', $cuenta['errores']);
+        }
+        $resultado = (new PersonaServicio())->guardar($usuario, $persona, $post);
         if (! $resultado['ok']) {
             return redirect()->to('/personas')->with('errores', $resultado['errores']);
+        }
+        if ($cuenta['aplica']) {
+            (new CuentaGlobal())->asignar((int) $empresa['id'], $id, $cuenta['cliente'], $cuenta['billetera']);
         }
 
         return redirect()->to('/personas')->with('ok', 'Datos de la persona guardados.');

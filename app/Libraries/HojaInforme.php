@@ -111,7 +111,7 @@ class HojaInforme
             ],
             'medios' => [
                 self::detalle('Movimientos', ['Persona', 'Tarjeta', 'Movimiento', 'Sentido', 'Monto', 'Estado'], $filas, static function (array $fila) use ($dinero, $moneda): array {
-                    $estados = ['trazado' => 'Trazado', 'por_rendir' => 'Por rendir', 'en_rendicion' => 'En rendición', 'comercio' => 'Pago de comercio'];
+                    $estados = ['trazado' => 'Trazado', 'por_rendir' => 'Por rendir', 'en_rendicion' => 'En rendición', 'en_cuenta' => 'Llegó con la nómina', 'sin_nomina' => 'Llegó sin nómina', 'comercio' => 'Pago de comercio'];
 
                     return [
                         (string) ($fila['persona'] ?? ''),

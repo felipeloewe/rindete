@@ -6,7 +6,7 @@
 <header class="pagina">
     <div>
         <h1><?= esc($pieza['titulo']) ?></h1>
-        <p><?= esc($periodo) ?>. Una salida de la tarjeta exclusiva de la empresa queda por rendir. MACH queda como pago de comercio.</p>
+        <p><?= esc($periodo) ?>. Cada rendidor tiene su cuenta Global66. El abono confirma que la nómina llegó. El egreso abre la rendición.</p>
     </div>
     <a class="boton" href="<?= base_url('informes?' . $consulta) ?>">Volver</a>
 </header>
@@ -22,6 +22,8 @@
                     'trazado' => 'Trazado',
                     'por_rendir' => 'Por rendir',
                     'en_rendicion' => 'En rendición',
+                    'en_cuenta' => 'Llegó con la nómina',
+                    'sin_nomina' => 'Llegó sin nómina',
                     'comercio' => 'Pago de comercio',
                 ];
             ?>

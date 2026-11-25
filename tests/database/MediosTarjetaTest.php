@@ -125,7 +125,7 @@ final class MediosTarjetaTest extends CIUnitTestCase
         $abono->assertOK();
         $filaAbono = db_connect()->table('movimientos_medio')->where('externo_id', 'g66-abono-34567687')->get()->getRowArray();
         $this->assertSame('abono', $filaAbono['sentido']);
-        $this->assertSame('trazado', $filaAbono['estado']);
+        $this->assertSame('sin_nomina', $filaAbono['estado']);
         $this->assertSame((int) $tarjeta['id'], (int) $filaAbono['tarjeta_id']);
 
         $creada = $this->withBodyFormat('json')
@@ -161,28 +161,19 @@ final class MediosTarjetaTest extends CIUnitTestCase
             ]);
         $exitosa->assertOK();
         $remesa = db_connect()->table('movimientos_medio')->where('externo_id', 'g66-remesa-88')->get()->getRowArray();
-        $this->assertSame('por_rendir', $remesa['estado']);
+        $this->assertSame('en_rendicion', $remesa['estado']);
         $this->assertSame(1, db_connect()->table('movimientos_medio')->where('externo_id', 'g66-remesa-88')->countAllResults());
+        $fondo = model(FondoModel::class)->where('origen', 'tarjeta')->first();
+        $this->assertSame((int) $ana['id'], (int) $fondo['usuario_id']);
 
         $anio = (int) date('Y');
         $mes = (int) date('n');
         $informe = $this->withSession(['usuario_id' => $ana['id']])->get('informes/medios?anio=' . $anio . '&mes=' . $mes);
         $informe->assertOK();
-        $informe->assertSee('Por rendir');
+        $informe->assertSee('En rendición');
+        $informe->assertSee('Llegó sin nómina');
         $informe->assertSee('Viático');
         $informe->assertSee('Acme S.A.');
-
-        $seguridad = service('security');
-        $rendir = $this->withBodyFormat('')->withSession(['usuario_id' => $ana['id']])->post('informes/medios/' . $remesa['id'] . '/rendir', [
-            'categoria_id' => $categoria['id'],
-            'anio'         => $anio,
-            'mes'          => $mes,
-            $seguridad->getTokenName() => $seguridad->getHash(),
-        ]);
-        $rendir->assertSessionHas('ok', 'El movimiento quedó en la rendición de la tarjeta.');
-        $fondo = model(FondoModel::class)->where('origen', 'tarjeta')->first();
-        $this->assertSame((int) $ana['id'], (int) $fondo['usuario_id']);
-        $this->assertSame('en_rendicion', db_connect()->table('movimientos_medio')->where('id', $remesa['id'])->get()->getRowArray()['estado']);
 
         $otra = $this->withBodyFormat('json')
             ->withHeaders(['x-api-key' => 'clave-global'])
@@ -280,7 +271,7 @@ final class MediosTarjetaTest extends CIUnitTestCase
             ],
         ]);
         $this->assertSame(2, $nuevos);
-        $this->assertSame('por_rendir', db_connect()->table('movimientos_medio')->where('externo_id', 'g66-mov-7')->get()->getRowArray()['estado']);
+        $this->assertSame('en_rendicion', db_connect()->table('movimientos_medio')->where('externo_id', 'g66-mov-7')->get()->getRowArray()['estado']);
         $this->assertSame('trazado', db_connect()->table('movimientos_medio')->where('externo_id', 'g66-mov-8')->get()->getRowArray()['estado']);
         $otra = (new TrazadorMedios())->incorporar((int) $empresa['id'], (int) $tarjeta['id'], [
             ['id' => 7, 'amount' => 1500, 'status' => 'PAID', 'type' => 'BANK_TRANSFER', 'typeMovement' => 'WITHDRAWAL', 'currencyCode' => 'CLP'],

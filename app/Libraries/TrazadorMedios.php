@@ -83,11 +83,12 @@ class TrazadorMedios
                 $estado = 'trazado';
             }
             $detalle = trim((string) ($movimiento['comment'] ?? $movimiento['nameCommerce'] ?? $movimiento['type'] ?? 'Movimiento'));
-            $antes = $this->existe($empresaId, 'global66', 'g66-mov-' . $movimiento['id']);
+            $clave = 'g66-mov-' . $movimiento['id'];
+            $antes = $this->existe($empresaId, 'global66', $clave);
             $this->anotar(
                 $empresaId,
                 'global66',
-                'g66-mov-' . $movimiento['id'],
+                $clave,
                 (int) $tarjeta['id'],
                 $tarjeta['titular_id'] !== null ? (int) $tarjeta['titular_id'] : null,
                 $sentido,
@@ -97,6 +98,7 @@ class TrazadorMedios
                 $estado,
                 $this->fecha((string) ($movimiento['date'] ?? '')),
             );
+            $this->adelantar($empresaId, 'global66', $clave);
             if ($antes === null) {
                 $nuevos++;
             }
@@ -187,23 +189,38 @@ class TrazadorMedios
      */
     private function abonoGlobal(int $empresaId, array $data): void
     {
+        $clave = 'g66-abono-' . $data['transactionId'];
+        $ya = $this->existe($empresaId, 'global66', $clave);
+        if (is_array($ya) && (string) $ya['estado'] === 'en_cuenta') {
+            return;
+        }
         $tarjeta = $this->porReferencia($empresaId, 'global66', (string) ($data['customerId'] ?? ''));
         $detalle = trim((string) ($data['thirdPartyClientName'] ?? 'Abono'));
         $estadoPago = (string) ($data['status'] ?? '');
+        $moneda = $this->moneda((string) ($data['originCurrencyCode'] ?? 'CLP'));
+        $estado = 'trazado';
         if (strtoupper($estadoPago) === 'REJECTED') {
             $detalle = 'Abono rechazado';
+        } elseif ($tarjeta !== null && $tarjeta['titular_id'] !== null) {
+            $llego = (new CuentaGlobal())->confirmarLlegada(
+                $empresaId,
+                (int) $tarjeta['titular_id'],
+                (float) ($data['originAmount'] ?? 0),
+                $moneda,
+            );
+            $estado = $llego ? 'en_cuenta' : 'sin_nomina';
         }
         $this->anotar(
             $empresaId,
             'global66',
-            'g66-abono-' . $data['transactionId'],
+            $clave,
             $tarjeta === null ? null : (int) $tarjeta['id'],
             $tarjeta === null || $tarjeta['titular_id'] === null ? null : (int) $tarjeta['titular_id'],
             'abono',
             (float) ($data['originAmount'] ?? 0),
-            $this->moneda((string) ($data['originCurrencyCode'] ?? 'CLP')),
+            $moneda,
             $detalle === '' ? 'Abono' : $detalle,
-            'trazado',
+            $estado,
             date('Y-m-d H:i:s'),
         );
     }
@@ -224,10 +241,11 @@ class TrazadorMedios
         } elseif ($status === 'successful' && $tarjeta !== null && (int) $tarjeta['exclusiva'] === 1 && $monto > 0) {
             $estado = 'por_rendir';
         }
+        $clave = 'g66-remesa-' . $payload['transactionId'];
         $this->anotar(
             $empresaId,
             'global66',
-            'g66-remesa-' . $payload['transactionId'],
+            $clave,
             $tarjeta === null ? null : (int) $tarjeta['id'],
             $tarjeta === null || $tarjeta['titular_id'] === null ? null : (int) $tarjeta['titular_id'],
             'cargo',
@@ -237,6 +255,27 @@ class TrazadorMedios
             $estado,
             $this->fecha((string) ($payload['createdAt'] ?? '')),
         );
+        $this->adelantar($empresaId, 'global66', $clave);
+    }
+
+    /**
+     * El egreso de la cuenta del rendidor abre la rendición con el flujo de la tarjeta.
+     */
+    private function adelantar(int $empresaId, string $proveedor, string $externoId): void
+    {
+        $fila = $this->existe($empresaId, $proveedor, $externoId);
+        if (! is_array($fila) || (string) $fila['estado'] !== 'por_rendir' || (string) $fila['sentido'] !== 'cargo') {
+            return;
+        }
+        $titular = model(UsuarioModel::class)->find((int) ($fila['usuario_id'] ?? 0));
+        if (! is_array($titular) || (int) $titular['empresa_id'] !== $empresaId) {
+            return;
+        }
+        $categoria = model(CategoriaModel::class)->where('empresa_id', $empresaId)->orderBy('id', 'ASC')->first();
+        if (! is_array($categoria)) {
+            return;
+        }
+        $this->rendir($titular, $empresaId, (int) $fila['id'], (int) $categoria['id']);
     }
 
     /**

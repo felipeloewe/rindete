@@ -6,7 +6,7 @@
 <header class="pagina">
     <div>
         <h1>Personas</h1>
-        <p>El plan Free admite <?= esc((string) $cupo) ?> usuarios. Marca quién puede abrir una rendición sin solicitud y, si la tiene, su tope propio.</p>
+        <p>El plan Free admite <?= esc((string) $cupo) ?> usuarios. Cada persona que rinde tiene su cuenta Global66. La nómina deposita ahí y el egreso abre la rendición.</p>
     </div>
 </header>
 <p class="bloque"><?= esc((string) $usadas) ?> de <?= esc((string) $cupo) ?> usuarios.</p>
@@ -41,6 +41,12 @@
                 <label>Cuenta del banco
                     <input name="cuenta_banco" maxlength="18" value="<?= esc(old('cuenta_banco', '')) ?>" placeholder="Para la nómina de fondos">
                 </label>
+                <label>Identificador Global66
+                    <input name="global_cliente" maxlength="80" value="<?= esc(old('global_cliente', '')) ?>" placeholder="Cliente de la cuenta de esta persona">
+                </label>
+                <label>Billetera Global66
+                    <input name="global_billetera" maxlength="40" value="<?= esc(old('global_billetera', '')) ?>" placeholder="Id numérico de la billetera">
+                </label>
             </div>
             <?php if ($chile) : ?>
                 <label>Banco de destino
@@ -70,6 +76,10 @@
             <span><?= $persona['rol'] === 'administrador' ? 'Administrador' : 'Rinde' ?></span>
         </div>
         <p><?= esc($persona['email']) ?><?= ($persona['telefono'] ?? '') !== '' ? ' · envía desde ' . esc($persona['telefono']) : '' ?><?= ($persona['id_fiscal'] ?? '') !== '' && $persona['id_fiscal'] !== null ? ' · ' . esc($persona['id_fiscal']) : '' ?></p>
+        <?php $cuenta = $cuentas[(int) $persona['id']] ?? null; ?>
+        <?php if (is_array($cuenta)) : ?>
+            <p>Cuenta Global66 <?= esc((string) $cuenta['referencia']) ?> · billetera <?= esc((string) $cuenta['billetera']) ?></p>
+        <?php endif ?>
         <?php if (\App\Libraries\PoliticaDatos::aceptada($persona)) : ?>
             <p>Aceptó las condiciones de uso.</p>
         <?php else : ?>
@@ -95,6 +105,12 @@
                 </label>
                 <label>Cuenta del banco
                     <input name="cuenta_banco" maxlength="18" value="<?= esc((string) ($persona['cuenta_banco'] ?? '')) ?>" placeholder="Para la nómina de fondos">
+                </label>
+                <label>Identificador Global66
+                    <input name="global_cliente" maxlength="80" value="<?= esc(is_array($cuenta) ? (string) $cuenta['referencia'] : '') ?>" placeholder="Cliente de la cuenta de esta persona">
+                </label>
+                <label>Billetera Global66
+                    <input name="global_billetera" maxlength="40" value="<?= esc(is_array($cuenta) ? (string) $cuenta['billetera'] : '') ?>" placeholder="Id numérico de la billetera">
                 </label>
                 <label>Teléfono de envío
                     <input name="telefono" maxlength="20" value="<?= esc((string) ($persona['telefono'] ?? '')) ?>" placeholder="+56 9 1234 5678">
