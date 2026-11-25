@@ -13,6 +13,6 @@ class FondoModel extends Model
     protected $useAutoIncrement = true;
     protected $returnType       = 'array';
     protected $allowedFields    = [
-        'empresa_id', 'usuario_id', 'solicitud_id', 'motivo', 'monto', 'saldo', 'moneda', 'estado', 'origen', 'creado',
+        'empresa_id', 'usuario_id', 'solicitud_id', 'motivo', 'monto', 'saldo', 'moneda', 'estado', 'origen', 'en_cuenta', 'creado',
     ];
 }
