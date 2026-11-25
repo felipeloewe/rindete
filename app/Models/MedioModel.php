@@ -12,5 +12,5 @@ class MedioModel extends Model
     protected $primaryKey       = 'id';
     protected $useAutoIncrement = true;
     protected $returnType       = 'array';
-    protected $allowedFields    = ['empresa_id', 'proveedor', 'clave', 'secreto', 'token_consulta', 'vigente'];
+    protected $allowedFields    = ['empresa_id', 'proveedor', 'clave', 'secreto', 'token_consulta', 'credencial', 'client_id', 'client_secret', 'vigente'];
 }
