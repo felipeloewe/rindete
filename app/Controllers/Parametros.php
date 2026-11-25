@@ -555,6 +555,9 @@ class Parametros extends BaseController
             $proveedor,
             (string) $this->request->getPost('secreto'),
             (string) $this->request->getPost('token_consulta'),
+            $this->request->getPost('client_id'),
+            $this->request->getPost('client_secret'),
+            $this->request->getPost('credencial'),
         );
         if (! $resultado['ok']) {
             return redirect()->to('/parametros/medios')->with('error', $resultado['errores'][0]);
@@ -562,6 +565,33 @@ class Parametros extends BaseController
         $nombre = MediosConexion::PROVEEDORES[$proveedor] ?? 'El medio';
 
         return redirect()->to('/parametros/medios')->with('ok', 'Conexión de ' . $nombre . ' guardada.');
+    }
+
+    public function probarMedio(int $id)
+    {
+        [$usuario, $empresa] = $this->admin();
+        if ($usuario === null || $empresa === null) {
+            return $this->fuera($empresa);
+        }
+        $medio = $this->fila(MedioModel::class, $id, (int) $empresa['id']);
+        if ($medio === null || (string) $medio['proveedor'] !== 'global66') {
+            return redirect()->to('/parametros/medios')->with('error', 'Esa conexión no es de Global66.');
+        }
+        $conexion = new MediosConexion();
+        $prueba = (new Global66Cuenta())->probar((string) ($medio['client_id'] ?? ''), $conexion->clientSecret($medio));
+        if (! $prueba['ok']) {
+            return redirect()->to('/parametros/medios')->with('error', $prueba['errores'][0]);
+        }
+        $conexion->guardarConsulta((int) $medio['id'], $prueba['token']);
+        $partes = [];
+        foreach ($prueba['cuentas'] as $cuenta) {
+            $partes[] = trim($cuenta['currency'] . ' ' . $cuenta['walletId']);
+        }
+        $texto = $partes === []
+            ? 'Global66 aceptó la credencial y no tiene cuentas activas.'
+            : 'Global66 aceptó la credencial. Cuentas: ' . implode(', ', array_slice($partes, 0, 6)) . '.';
+
+        return redirect()->to('/parametros/medios')->with('ok', $texto);
     }
 
     public function eliminarMedio(int $id)

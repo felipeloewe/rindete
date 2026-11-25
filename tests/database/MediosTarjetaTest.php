@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Libraries\Global66Cuenta;
+use App\Libraries\MediosConexion;
 use App\Libraries\TarjetaIdentidad;
 use App\Libraries\TrazadorMedios;
 use App\Models\CategoriaModel;
@@ -197,6 +199,69 @@ final class MediosTarjetaTest extends CIUnitTestCase
             $seguridad->getTokenName() => $seguridad->getHash(),
         ]);
         $sinToken->assertSessionHas('error', 'Pega el token de consulta de Global66 para traer los movimientos de la cuenta.');
+    }
+
+    public function testElMantenedorGuardaElClientSecretSinMostrarlo(): void
+    {
+        [$ana] = $this->base();
+        $secreto = 'secreto-de-prueba-g66';
+        $seguridad = service('security');
+        $this->withSession(['usuario_id' => $ana['id']])->post('parametros/medios', [
+            'proveedor'     => 'global66',
+            'secreto'       => 'clave-webhook',
+            'credencial'    => 'Nomina de prueba',
+            'client_id'     => 'cliente-publico-ada9',
+            'client_secret' => $secreto,
+            $seguridad->getTokenName() => $seguridad->getHash(),
+        ])->assertSessionHas('ok', 'Conexión de Global66 guardada.');
+
+        $pagina = $this->withSession(['usuario_id' => $ana['id']])->get('parametros/medios');
+        $pagina->assertOK();
+        $pagina->assertSee('Client ID');
+        $pagina->assertSee('Client Secret');
+        $pagina->assertSee('cliente-publico-ada9');
+        $pagina->assertSee('Nomina de prueba');
+        $pagina->assertSee('Client Secret guardado');
+        $pagina->assertSee('Probar credencial');
+        $pagina->assertDontSee($secreto);
+
+        $medio = model(MedioModel::class)->where('proveedor', 'global66')->first();
+        $this->assertNotSame($secreto, (string) $medio['client_secret']);
+        $this->assertSame($secreto, (new MediosConexion())->clientSecret($medio));
+
+        $seguridad = service('security');
+        $this->withSession(['usuario_id' => $ana['id']])->post('parametros/medios', [
+            'proveedor'  => 'global66',
+            'secreto'    => 'clave-webhook',
+            'credencial' => 'Nomina de prueba',
+            'client_id'  => 'cliente-publico-ada9',
+            $seguridad->getTokenName() => $seguridad->getHash(),
+        ])->assertSessionHas('ok', 'Conexión de Global66 guardada.');
+        $otra = model(MedioModel::class)->where('proveedor', 'global66')->first();
+        $this->assertSame($secreto, (new MediosConexion())->clientSecret($otra));
+
+        $llamadas = [];
+        $cliente = new Global66Cuenta(function (string $metodo, string $ruta, ?string $cuerpo, ?string $token) use (&$llamadas): array {
+            $llamadas[] = [$metodo, $ruta, $cuerpo, $token];
+            if ($ruta === '/b2b/auth') {
+                return ['codigo' => 200, 'json' => ['token' => 'tok-prueba', 'refreshToken' => 'ref-prueba']];
+            }
+
+            return ['codigo' => 200, 'json' => ['accounts' => [['walletId' => 164926, 'currency' => 'CLP', 'isPrincipal' => true]]]];
+        });
+        $prueba = $cliente->probar('cliente-publico-ada9', $secreto);
+        $this->assertTrue($prueba['ok'], implode(' ', $prueba['errores']));
+        $this->assertSame('POST', $llamadas[0][0]);
+        $this->assertSame('/b2b/auth', $llamadas[0][1]);
+        $this->assertNull($llamadas[0][3]);
+        $this->assertStringContainsString('cliente-publico-ada9', (string) $llamadas[0][2]);
+        $this->assertSame('GET', $llamadas[1][0]);
+        $this->assertSame('/b2b/accounts', $llamadas[1][1]);
+        $this->assertSame('tok-prueba', $llamadas[1][3]);
+        $this->assertSame('164926', $prueba['cuentas'][0]['walletId']);
+        $rechazo = (new Global66Cuenta(static fn (): array => ['codigo' => 401, 'json' => ['message' => 'Unauthorized']]))
+            ->probar('cliente-publico-ada9', $secreto);
+        $this->assertSame('Global66 rechazó el Client ID o el Client Secret.', $rechazo['errores'][0]);
     }
 
     public function testMachSoloTrazaPagosDeComercio(): void

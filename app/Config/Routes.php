@@ -125,6 +125,7 @@ $routes->group('', ['filter' => 'auth'], static function (RouteCollection $route
     $routes->post('parametros/tarjetas/(:num)/sincronizar', 'Parametros::sincronizarTarjeta/$1');
     $routes->post('parametros/tarjetas/(:num)/eliminar', 'Parametros::eliminarTarjeta/$1');
     $routes->post('parametros/medios', 'Parametros::medio');
+    $routes->post('parametros/medios/(:num)/probar', 'Parametros::probarMedio/$1');
     $routes->post('parametros/medios/(:num)/eliminar', 'Parametros::eliminarMedio/$1');
     $routes->post('informes/medios/(:num)/rendir', 'Informes::rendirMovimiento/$1');
     $routes->post('parametros/aceptados', 'Parametros::aceptados');
