@@ -85,16 +85,16 @@
                 <a<?= $marca('rendiciones') ?> href="<?= base_url('rendiciones') ?>">Rendiciones</a>
                 <a<?= $marca('fondos') ?> href="<?= base_url('fondos') ?>">Fondos</a>
                 <a<?= $marca('informes') ?> href="<?= base_url('informes') ?>">Informes</a>
-                <a<?= $marca('categorias') ?> href="<?= base_url('categorias') ?>">Categorías</a>
                 <?php if ($esAdmin) : ?>
+                    <a<?= $marca('categorias') ?> href="<?= base_url('categorias') ?>">Categorías</a>
                     <?php $esIntegracion = $ruta === 'parametros/medios' || str_starts_with($ruta, 'parametros/medios/'); ?>
                     <a<?= ! $esIntegracion && ($ruta === 'parametros' || str_starts_with($ruta, 'parametros/')) ? ' class="activa"' : '' ?> href="<?= base_url('parametros') ?>">Parámetros</a>
                     <a<?= $esIntegracion ? ' class="activa"' : '' ?> href="<?= base_url('parametros/medios') ?>">Integraciones</a>
                     <a<?= $marca('modulos') ?> href="<?= base_url('modulos') ?>">Módulos</a>
                     <a<?= $marca('personas') ?> href="<?= base_url('personas') ?>">Usuarios</a>
+                    <a<?= $marca('empresa') ?> href="<?= base_url('empresa') ?>">Empresa</a>
+                    <a<?= $marca('cuenta') ?> href="<?= base_url('cuenta') ?>">Cuenta</a>
                 <?php endif ?>
-                <a<?= $marca('empresa') ?> href="<?= base_url('empresa') ?>">Empresa</a>
-                <a<?= $marca('cuenta') ?> href="<?= base_url('cuenta') ?>">Cuenta</a>
             <?php endif ?>
         </nav>
         <div class="lado">

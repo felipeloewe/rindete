@@ -77,6 +77,9 @@ class Informes extends BaseController
         ],
     ];
 
+    /** @var list<string> */
+    private const DEL_RENDIDOR = ['rendiciones', 'cartola', 'gastos', 'pendientes'];
+
     /** @var array<string, string> */
     private const DE_PAGO = [
         'asientos' => 'preasientos',
@@ -96,8 +99,13 @@ class Informes extends BaseController
             return redirect()->to('/login');
         }
 
+        $piezas = self::PIEZAS;
+        if (! $filtro['esAdmin']) {
+            $piezas = array_intersect_key($piezas, array_flip(self::DEL_RENDIDOR));
+        }
+
         return view('informes/index', $this->comun($usuario, $empresa, $filtro) + [
-            'piezas' => self::PIEZAS,
+            'piezas' => $piezas,
             'accion' => base_url('informes'),
         ]);
     }
@@ -146,6 +154,9 @@ class Informes extends BaseController
         }
         if (! isset(self::PIEZAS[$pieza])) {
             return redirect()->to('/informes');
+        }
+        if (! $filtro['esAdmin'] && ! in_array($pieza, self::DEL_RENDIDOR, true)) {
+            return redirect()->to('/informes')->with('error', 'Ese informe lo ve quien administra la empresa.');
         }
         if (isset(self::DE_PAGO[$pieza]) && ! Modulos::activo($empresa, self::DE_PAGO[$pieza])) {
             return view('plan/fuera', [

@@ -34,6 +34,8 @@ final class TableroTest extends CIUnitTestCase
         $panel = $this->withSession(['usuario_id' => $ana['id']])->get('panel');
         $panel->assertOK();
         $panel->assertSee('Acciones pendientes');
+        $panel->assertSee('Categorías');
+        $panel->assertSee('Usuarios');
         $panel->assertSee('Viaje abierto');
         $panel->assertSee('Sigue abierta. Ciérrala para terminar el flujo.');
         $panel->assertSee('Almuerzo repetido');
@@ -69,6 +71,43 @@ final class TableroTest extends CIUnitTestCase
         $final = $this->withSession(['usuario_id' => $ana['id']])->get('panel');
         $final->assertSee('Ya recibió los fondos de vuelta.');
         $final->assertDontSee('Está rendida y espera los fondos de vuelta.');
+    }
+
+    public function testQuienRindeSoloVeRendicionEInformes(): void
+    {
+        $ana = $this->cuenta();
+        $empresa = model(EmpresaModel::class)->find($ana['empresa_id']);
+        $alta = (new \App\Libraries\PersonaServicio())->crear($empresa, [
+            'nombre'   => 'Luis Soto',
+            'email'    => 'luis@acme.test',
+            'password' => 'clave-segura',
+        ]);
+        $this->assertTrue($alta['ok'], implode(' ', $alta['errores']));
+
+        $panel = $this->withSession(['usuario_id' => $alta['id']])->get('panel');
+        $panel->assertOK();
+        $panel->assertSee('Gastos');
+        $panel->assertSee('Rendiciones');
+        $panel->assertSee('Fondos');
+        $panel->assertSee('Informes');
+        $panel->assertSee('Acciones pendientes');
+        $panel->assertDontSee('Categorías');
+        $panel->assertDontSee('Parámetros');
+        $panel->assertDontSee('Documento único');
+        $panel->assertDontSee('País, moneda');
+
+        $informes = $this->withSession(['usuario_id' => $alta['id']])->get('informes');
+        $informes->assertOK();
+        $informes->assertSee('Rendiciones del período');
+        $informes->assertSee('Cartola');
+        $informes->assertDontSee('Caja chica');
+        $informes->assertDontSee('Preasientos');
+        $informes->assertDontSee('Remuneraciones');
+
+        $ajeno = $this->withSession(['usuario_id' => $alta['id']])->get('informes/remuneraciones');
+        $ajeno->assertRedirectTo(site_url('informes'));
+        $empresaPagina = $this->withSession(['usuario_id' => $alta['id']])->get('empresa');
+        $empresaPagina->assertRedirectTo(site_url('panel'));
     }
 
     public function testLaBoletaRecibidaDejaLaLecturaEnElGasto(): void

@@ -79,6 +79,10 @@
         <strong>Fondos</strong>
         <span>Pide el dinero y sigue el saldo.</span>
     </a>
+    <a class="losa losa-informes" href="<?= base_url('informes') ?>">
+        <strong>Informes</strong>
+        <span>Cartola y rendiciones del mes.</span>
+    </a>
     <?php if (($usuario['rol'] ?? '') === 'administrador') : ?>
         <a class="losa losa-gastos" href="<?= base_url('documentos') ?>">
             <strong>Documento único</strong>
@@ -92,43 +96,33 @@
             <strong>Socios</strong>
             <span>Varios documentos y lo que hay que recuperar.</span>
         </a>
-    <?php endif ?>
-    <a class="losa losa-empresa" href="<?= base_url('cargos') ?>">
-        <strong>Tarjeta</strong>
-        <span>Cargo, validación y fondo por rendir.</span>
-    </a>
-    <a class="losa losa-informes" href="<?= base_url('informes') ?>">
-        <strong>Informes</strong>
-        <span>Cartola y rendiciones del mes.</span>
-    </a>
-    <a class="losa losa-categorias" href="<?= base_url('categorias') ?>">
-        <strong>Categorías</strong>
-        <span>Los límites de la política.</span>
-    </a>
-    <?php if (($usuario['rol'] ?? '') === 'administrador') : ?>
+        <a class="losa losa-empresa" href="<?= base_url('cargos') ?>">
+            <strong>Tarjeta</strong>
+            <span>Cargo, validación y fondo por rendir.</span>
+        </a>
+        <a class="losa losa-categorias" href="<?= base_url('categorias') ?>">
+            <strong>Categorías</strong>
+            <span>Los límites de la política.</span>
+        </a>
         <a class="losa losa-parametros" href="<?= base_url('parametros') ?>">
             <strong>Parámetros</strong>
             <span>Cuentas, documentos y quién puede cargar.</span>
         </a>
-    <?php endif ?>
-    <?php if (($usuario['rol'] ?? '') === 'administrador') : ?>
         <a class="losa losa-personas" href="<?= base_url('personas') ?>">
             <strong>Usuarios</strong>
             <span>Quién entra y quién rinde sin solicitud.</span>
         </a>
-    <?php endif ?>
-    <?php if (($usuario['rol'] ?? '') === 'administrador') : ?>
         <a class="losa losa-parametros" href="<?= base_url('modulos') ?>">
             <strong>Módulos</strong>
             <span>Lo incluido y lo que se contrata.</span>
         </a>
+        <a class="losa losa-empresa" href="<?= base_url('empresa') ?>">
+            <strong>Empresa</strong>
+            <span>País, moneda e identificación.</span>
+        </a>
     <?php endif ?>
-    <a class="losa losa-empresa" href="<?= base_url('empresa') ?>">
-        <strong>Empresa</strong>
-        <span>País, moneda e identificación.</span>
-    </a>
 </div>
-<?php if ($empresa && $pais) : ?>
+<?php if (($usuario['rol'] ?? '') === 'administrador' && $empresa && $pais) : ?>
     <section class="bloque">
         <dl class="ficha">
             <div><dt>País</dt><dd><?= esc($pais['nombre']) ?></dd></div>

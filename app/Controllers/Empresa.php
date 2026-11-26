@@ -15,7 +15,14 @@ class Empresa extends BaseController
     public function index()
     {
         $sesion  = new Sesion();
+        $usuario = $sesion->usuario();
         $empresa = $sesion->empresa();
+        if ($usuario === null || $empresa === null) {
+            return redirect()->to('/login');
+        }
+        if (($usuario['rol'] ?? '') !== 'administrador') {
+            return redirect()->to('/panel');
+        }
 
         return view('empresa/index', [
             'empresa' => $empresa,
