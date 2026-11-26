@@ -31,6 +31,7 @@ final class PersonasTest extends CIUnitTestCase
         $this->withSession(['usuario_id' => $ana['id']]);
         $pagina = $this->get('personas');
         $pagina->assertOK();
+        $pagina->assertSee('Usuarios');
         $pagina->assertSee('Dar de alta');
         $pagina->assertDontSee('Aceptación de políticas');
         $pagina->assertDontSee('Falta aceptar las condiciones de uso.');

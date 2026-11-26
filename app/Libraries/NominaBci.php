@@ -40,7 +40,7 @@ class NominaBci
             }
             $banco = (string) ($linea['banco_destino'] ?? '');
             if (! BancosChile::existe($banco)) {
-                $errores[] = 'A ' . $quien . ' le falta el banco de destino. Se anota en Personas.';
+                $errores[] = 'A ' . $quien . ' le falta el banco de destino. Se anota en Usuarios.';
             }
             $rut = strtoupper(str_replace('.', '', (string) ($linea['rut'] ?? '')));
             if (preg_match('/^([0-9]{1,12})-([0-9K])$/', $rut, $partes) !== 1) {

@@ -5,7 +5,7 @@
 <?= $this->section('content') ?>
 <header class="pagina">
     <div>
-        <h1>Personas</h1>
+        <h1>Usuarios</h1>
         <p>Caben <?= esc((string) $cupo) ?> personas que rinden. El administrador no ocupa cupo, salvo que también rinda.<?php if ($global) : ?> La cuenta Global66 de cada persona es opcional.<?php else : ?> Para anotar la cuenta Global66 de una persona, habilítala antes en Integraciones.<?php endif ?></p>
     </div>
 </header>

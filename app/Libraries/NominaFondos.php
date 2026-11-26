@@ -40,10 +40,10 @@ class NominaFondos
                 $errores[] = 'A ' . $nombre . ' le falta el RUT.';
             }
             if (! is_array($persona) || trim((string) ($persona['cuenta_banco'] ?? '')) === '') {
-                $errores[] = 'A ' . $nombre . ' le falta la cuenta del banco. Se anota en Personas.';
+                $errores[] = 'A ' . $nombre . ' le falta la cuenta del banco. Se anota en Usuarios.';
             }
             if ($chile && (! is_array($persona) || ! BancosChile::existe((string) ($persona['banco_destino'] ?? '')))) {
-                $errores[] = 'A ' . $nombre . ' le falta el banco de destino. Se anota en Personas.';
+                $errores[] = 'A ' . $nombre . ' le falta el banco de destino. Se anota en Usuarios.';
             }
         }
         if ($errores !== []) {

@@ -113,7 +113,7 @@
     <?php endif ?>
     <?php if (($usuario['rol'] ?? '') === 'administrador') : ?>
         <a class="losa losa-personas" href="<?= base_url('personas') ?>">
-            <strong>Personas</strong>
+            <strong>Usuarios</strong>
             <span>Quién entra y quién rinde sin solicitud.</span>
         </a>
     <?php endif ?>

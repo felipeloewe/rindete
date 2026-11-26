@@ -91,7 +91,7 @@
                     <a<?= ! $esIntegracion && ($ruta === 'parametros' || str_starts_with($ruta, 'parametros/')) ? ' class="activa"' : '' ?> href="<?= base_url('parametros') ?>">Parámetros</a>
                     <a<?= $esIntegracion ? ' class="activa"' : '' ?> href="<?= base_url('parametros/medios') ?>">Integraciones</a>
                     <a<?= $marca('modulos') ?> href="<?= base_url('modulos') ?>">Módulos</a>
-                    <a<?= $marca('personas') ?> href="<?= base_url('personas') ?>">Personas</a>
+                    <a<?= $marca('personas') ?> href="<?= base_url('personas') ?>">Usuarios</a>
                 <?php endif ?>
                 <a<?= $marca('empresa') ?> href="<?= base_url('empresa') ?>">Empresa</a>
                 <a<?= $marca('cuenta') ?> href="<?= base_url('cuenta') ?>">Cuenta</a>
