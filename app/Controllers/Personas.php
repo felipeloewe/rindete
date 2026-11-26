@@ -36,7 +36,7 @@ class Personas extends BaseController
             'documento'  => $pais['id_fiscal'] ?? 'RUT',
             'ejemplo'    => $pais['ejemplo'] ?? '',
             'chile'      => (string) $empresa['pais'] === 'CL',
-            'bancos'     => BancosChile::CODIGOS,
+            'grupos'     => BancosChile::grupos(),
             'cuentas'    => (new CuentaGlobal())->delEmpresa((int) $empresa['id']),
             'global'     => (new MediosConexion())->de((int) $empresa['id'], 'global66') !== null,
         ]);

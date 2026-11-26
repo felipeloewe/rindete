@@ -218,7 +218,7 @@ class PersonaServicio
             return '';
         }
         if (! BancosChile::existe($raw)) {
-            $errores[] = 'Elige el banco de la cuenta.';
+            $errores[] = 'Elige el banco o el emisor TPPF.';
 
             return '';
         }

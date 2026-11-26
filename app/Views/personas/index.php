@@ -52,14 +52,7 @@
                 <?php endif ?>
             </div>
             <?php if ($chile) : ?>
-                <label>Banco de destino
-                    <select name="banco_destino">
-                        <option value="">Elige el banco</option>
-                        <?php foreach ($bancos as $codigo => $banco) : ?>
-                            <option value="<?= esc($codigo) ?>" <?= old('banco_destino') === $codigo ? 'selected' : '' ?>><?= esc($codigo) ?> <?= esc($banco) ?></option>
-                        <?php endforeach ?>
-                    </select>
-                </label>
+                <?= view('personas/banco', ['seleccionado' => (string) old('banco_destino'), 'grupos' => $grupos]) ?>
             <?php endif ?>
             <label class="cheque">
                 <input type="checkbox" name="puede_rendir_sin_solicitud" value="1" <?= old('puede_rendir_sin_solicitud') ? 'checked' : '' ?>>
@@ -116,14 +109,7 @@
                 </label>
             </div>
             <?php if ($chile) : ?>
-                <label>Banco de destino
-                    <select name="banco_destino">
-                        <option value="">Elige el banco</option>
-                        <?php foreach ($bancos as $codigo => $banco) : ?>
-                            <option value="<?= esc($codigo) ?>" <?= (string) ($persona['banco_destino'] ?? '') === $codigo ? 'selected' : '' ?>><?= esc($codigo) ?> <?= esc($banco) ?></option>
-                        <?php endforeach ?>
-                    </select>
-                </label>
+                <?= view('personas/banco', ['seleccionado' => (string) ($persona['banco_destino'] ?? ''), 'grupos' => $grupos]) ?>
             <?php endif ?>
             <?php if ((int) $persona['id'] === $propias) : ?>
                 <p>Esta es tu cuenta. Sigue activa.</p>

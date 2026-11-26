@@ -38,14 +38,24 @@ final class PersonasTest extends CIUnitTestCase
         $pagina->assertSee('Mínimo 8 caracteres.');
         $pagina->assertSee('Integraciones');
         $pagina->assertDontSee('Identificador Global66');
+        $pagina->assertSee('Elige el banco o el TPPF');
+        $pagina->assertSee('label="Bancos"');
+        $pagina->assertSee('label="TPPF"');
+        $pagina->assertSee('Global Card');
+        $pagina->assertSee('738');
 
         $servicio = new PersonaServicio();
         foreach (['luis@acme.test', 'marta@acme.test', 'nora@acme.test', 'quinta@acme.test'] as $correo) {
-            $alta = $servicio->crear($empresa, [
+            $datos = [
                 'nombre'   => 'Persona ' . $correo,
                 'email'    => $correo,
                 'password' => 'clave-segura',
-            ]);
+            ];
+            if ($correo === 'luis@acme.test') {
+                $datos['banco_destino'] = '738';
+                $datos['cuenta_banco']  = '11223344';
+            }
+            $alta = $servicio->crear($empresa, $datos);
             $this->assertTrue($alta['ok'], implode(' ', $alta['errores']));
         }
         $lleno = $servicio->crear($empresa, [
@@ -60,6 +70,9 @@ final class PersonasTest extends CIUnitTestCase
         $luis = model(UsuarioModel::class)->porEmail('luis@acme.test');
         $this->assertSame(0, (int) $luis['puede_rendir_sin_solicitud']);
         $this->assertSame(\App\Libraries\PoliticaDatos::VERSION, $luis['politica_version']);
+        $this->assertSame('738', $luis['banco_destino']);
+        $this->assertTrue(\App\Libraries\BancosChile::existe('738'));
+        $this->assertTrue(\App\Libraries\BancosChile::existe('016'));
         $categorias = model(CategoriaModel::class)->where('empresa_id', $empresa['id'])->countAllResults();
         $aceptados = db_connect()->table('gastos_aceptados')->where('usuario_id', $luis['id'])->countAllResults();
         $this->assertSame($categorias, $aceptados);
