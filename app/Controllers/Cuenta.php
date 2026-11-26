@@ -38,7 +38,10 @@ class Cuenta extends BaseController
                 $errores[] = 'Ese correo ya tiene una cuenta.';
             }
         }
-        if ($password !== '' && strlen($password) < 8) {
+        $inicial = (int) ($actual['clave_inicial'] ?? 0) === 1;
+        if ($inicial && strlen($password) < 8) {
+            $errores[] = 'Cambia la contraseña inicial. Debe tener al menos 8 caracteres.';
+        } elseif ($password !== '' && strlen($password) < 8) {
             $errores[] = 'La contraseña debe tener al menos 8 caracteres.';
         }
         if ($errores !== []) {
@@ -48,6 +51,7 @@ class Cuenta extends BaseController
         $datos = ['nombre' => $nombre, 'email' => $email];
         if ($password !== '') {
             $datos['password'] = password_hash($password, PASSWORD_DEFAULT);
+            $datos['clave_inicial'] = 0;
         }
         model(UsuarioModel::class)->update($actual['id'], $datos);
 

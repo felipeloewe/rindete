@@ -30,6 +30,9 @@ class Auth extends BaseController
         }
 
         (new Sesion())->entrar($usuario);
+        if ((int) ($usuario['clave_inicial'] ?? 0) === 1) {
+            return redirect()->to('/cuenta')->with('error', 'Cambia la contraseña inicial antes de seguir.');
+        }
 
         return redirect()->to('/panel');
     }
