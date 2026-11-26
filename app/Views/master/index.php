@@ -16,7 +16,7 @@
 <header class="pagina">
     <div>
         <h1>Empresas</h1>
-        <p>El administrador de cada empresa crea a las personas que caben en su plan.</p>
+        <p>El administrador no rinde ni ocupa un cupo hasta que lo marques. Si lo marcas, cuenta entre las personas que rinden. En Plan Free caben 4.</p>
     </div>
 </header>
 <section class="bloque">
@@ -42,7 +42,7 @@
                     <th>Empresa</th>
                     <th>Plan</th>
                     <th>Cobro</th>
-                    <th>Personas</th>
+                    <th>Rinden</th>
                     <th>Administrador</th>
                     <th></th>
                 </tr>
@@ -98,6 +98,7 @@
                     <th>Correo</th>
                     <th>Empresa</th>
                     <th>Papel</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
@@ -110,6 +111,15 @@
                         <td><?= esc($persona['email']) ?></td>
                         <td><?= esc($persona['empresa']) ?></td>
                         <td><?= esc($persona['papel']) ?></td>
+                        <td>
+                            <?php if ($persona['administrador']) : ?>
+                                <form method="post" action="<?= base_url('master/usuarios/' . $persona['id'] . '/rendidor') ?>">
+                                    <?= csrf_field() ?>
+                                    <input type="hidden" name="rinde" value="<?= $persona['rinde'] ? '0' : '1' ?>">
+                                    <button class="boton claro" type="submit"><?= $persona['rinde'] ? 'Dejar solo administrador' : 'Marcar como usuario rendidor' ?></button>
+                                </form>
+                            <?php endif ?>
+                        </td>
                     </tr>
                 <?php endforeach ?>
             </tbody>
@@ -152,7 +162,7 @@
                 <option value="anual" <?= old('cobro_periodicidad') === 'anual' ? 'selected' : '' ?>>Anual</option>
             </select>
         </label>
-        <label>Cupo de usuarios del plan de cobro
+        <label>Cupo de quienes rinden en el plan de cobro
             <input name="cupo_usuarios" value="<?= esc(old('cupo_usuarios', '')) ?>" inputmode="numeric" placeholder="Plan Free queda en 4">
         </label>
         <label>Administrador

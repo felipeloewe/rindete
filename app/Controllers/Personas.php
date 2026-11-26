@@ -23,14 +23,15 @@ class Personas extends BaseController
 
         $personas = model(UsuarioModel::class)->where('empresa_id', $empresa['id'])->orderBy('id', 'ASC')->findAll();
         $cupo     = (int) ($empresa['cupo_usuarios'] ?? Planes::USUARIOS);
+        $usadas   = Planes::rendidores((int) $empresa['id']);
         $pais     = Paises::pais((string) $empresa['pais']);
 
         return view('personas/index', [
             'personas'   => $personas,
             'propias'    => (int) $usuario['id'],
-            'usadas'     => count($personas),
+            'usadas'     => $usadas,
             'cupo'       => $cupo,
-            'puedeSumar' => Planes::puedeSumarUsuario(count($personas), $cupo),
+            'puedeSumar' => Planes::puedeSumarUsuario($usadas, $cupo),
             'documento'  => $pais['id_fiscal'] ?? 'RUT',
             'ejemplo'    => $pais['ejemplo'] ?? '',
             'chile'      => (string) $empresa['pais'] === 'CL',

@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use App\Libraries\Incorporacion;
+use App\Libraries\PersonaServicio;
+use App\Libraries\Planes;
 use App\Libraries\TableroMaestro;
 use App\Models\CategoriaModel;
 use App\Models\EmpresaModel;
@@ -112,6 +114,8 @@ final class SuperadminTest extends CIUnitTestCase
         $panel->assertSee('ana@acme.test');
         $panel->assertSee('Usuarios registrados');
         $panel->assertSee('Solo administrador');
+        $panel->assertSee('Marcar como usuario rendidor');
+        $panel->assertSee('0 / 4');
 
         $norte = model(EmpresaModel::class)->porFiscal('CL', '11111111-1');
         $this->assertSame('cobro', $norte['plan']);
@@ -127,11 +131,18 @@ final class SuperadminTest extends CIUnitTestCase
         $this->assertSame(600000.0, $tablero['anual'][0]['monto']);
 
         model(EmpresaModel::class)->update($norte['id'], ['cupo_usuarios' => 1]);
-        $llena = (new Incorporacion())->administrador((int) $norte['id'], 'Otra', 'otra@norte.test');
+        $otra = (new Incorporacion())->administrador((int) $norte['id'], 'Otra', 'otra@norte.test');
+        $this->assertTrue($otra['ok'], implode(' ', $otra['errores']));
+        $luz = model(UsuarioModel::class)->porEmail('luz@norte.test');
+        $marca = (new Incorporacion())->marcarRendidor((int) $luz['id'], true);
+        $this->assertTrue($marca['ok'], implode(' ', $marca['errores']));
+        $segunda = model(UsuarioModel::class)->porEmail('otra@norte.test');
+        $llena = (new Incorporacion())->marcarRendidor((int) $segunda['id'], true);
         $this->assertFalse($llena['ok']);
         $this->assertSame('El plan admite 1 usuario.', $llena['errores'][0]);
         $admin = model(UsuarioModel::class)->porEmail('luz@norte.test');
         $this->assertSame(1, (int) $admin['clave_inicial']);
+        $this->assertSame(1, (int) $admin['rinde']);
         $this->assertSame('', (string) ($admin['politica_version'] ?? ''));
     }
 
@@ -151,6 +162,7 @@ final class SuperadminTest extends CIUnitTestCase
         $categoria = model(CategoriaModel::class)->where('empresa_id', (int) $empresa['id'])->first();
         $solo = (new TableroMaestro())->armar();
         $this->assertSame('Solo administrador', $solo['personas'][0]['papel']);
+        $this->assertSame('0 / 4', $solo['empresas'][0]['cupo']);
 
         model(GastoModel::class)->insert([
             'empresa_id'   => (int) $empresa['id'],
@@ -178,9 +190,55 @@ final class SuperadminTest extends CIUnitTestCase
         foreach ((new TableroMaestro())->armar()['personas'] as $persona) {
             $papeles[$persona['email']] = $persona['papel'];
         }
-        $this->assertSame('Administrador y usuario', $papeles['ana@acme.test']);
+        $this->assertSame('Solo administrador', $papeles['ana@acme.test']);
         $this->assertSame('Usuario', $papeles['luis@acme.test']);
-        $this->assertSame('Acme SpA', (new TableroMaestro())->armar()['personas'][1]['empresa']);
+        $marcado = (new Incorporacion())->marcarRendidor((int) $ana['id'], true);
+        $this->assertTrue($marcado['ok'], implode(' ', $marcado['errores']));
+        $papeles = [];
+        $luego = (new TableroMaestro())->armar();
+        foreach ($luego['personas'] as $persona) {
+            $papeles[$persona['email']] = $persona['papel'];
+        }
+        $this->assertSame('Administrador y usuario', $papeles['ana@acme.test']);
+        $this->assertSame('2 / 4', $luego['empresas'][0]['cupo']);
+        $this->assertSame('Acme SpA', $luego['personas'][1]['empresa']);
+    }
+
+    public function testElPlanFreeAdmiteCuatroRendidoresAdemasDelAdmin(): void
+    {
+        $alta = (new Incorporacion())->abrir([
+            'pais'      => 'CL',
+            'empresa'   => 'Acme SpA',
+            'id_fiscal' => '12.345.678-5',
+            'nombre'    => 'Ana Pérez',
+            'email'     => 'ana@acme.test',
+            'plan'      => 'free',
+        ]);
+        $this->assertTrue($alta['ok'], implode(' ', $alta['errores']));
+        $ana = model(UsuarioModel::class)->porEmail('ana@acme.test');
+        $this->assertSame(0, (int) $ana['rinde']);
+        $empresa = model(EmpresaModel::class)->find((int) $ana['empresa_id']);
+        $servicio = new PersonaServicio();
+        foreach (['luis@acme.test', 'marta@acme.test', 'nora@acme.test', 'quinta@acme.test'] as $correo) {
+            $creada = $servicio->crear($empresa, [
+                'nombre'          => 'Persona ' . $correo,
+                'email'           => $correo,
+                'password'        => 'clave-segura',
+                'acepta_politica' => '1',
+            ]);
+            $this->assertTrue($creada['ok'], implode(' ', $creada['errores']));
+        }
+        $this->assertSame(4, Planes::rendidores((int) $empresa['id']));
+        $llena = (new Incorporacion())->marcarRendidor((int) $ana['id'], true);
+        $this->assertFalse($llena['ok']);
+        $this->assertSame('El plan Free admite 4 usuarios.', $llena['errores'][0]);
+        $gasto = (new \App\Libraries\GastoServicio())->crear($ana, $empresa, [
+            'concepto' => 'Taxi',
+            'monto'    => '1000',
+            'fecha'    => '2026-11-01',
+        ], null);
+        $this->assertFalse($gasto['ok']);
+        $this->assertSame(Planes::SIN_MARCA, $gasto['errores'][0]);
     }
 
     public function testElAdministradorCambiaLaClaveInicialAntesDeEntrar(): void

@@ -74,6 +74,7 @@ class Incorporacion
                 'rol'                        => 'administrador',
                 'activo'                     => 1,
                 'puede_rendir_sin_solicitud' => 1,
+                'rinde'                      => 0,
                 'clave_inicial'              => 1,
                 'creado'                     => $ahora,
             ], true);
@@ -116,13 +117,6 @@ class Incorporacion
         } elseif (model(UsuarioModel::class)->porEmail($email) !== null) {
             $errores[] = 'Ese correo ya tiene una cuenta.';
         }
-        $cupo     = (int) ($empresa['cupo_usuarios'] ?? Planes::USUARIOS);
-        $actuales = model(UsuarioModel::class)->where('empresa_id', $empresaId)->countAllResults();
-        if (! Planes::puedeSumarUsuario($actuales, $cupo)) {
-            $errores[] = (string) ($empresa['plan'] ?? '') === 'free'
-                ? 'El plan Free admite ' . $cupo . ' usuarios.'
-                : 'El plan admite ' . $cupo . ($cupo === 1 ? ' usuario.' : ' usuarios.');
-        }
         if ($errores !== []) {
             return ['ok' => false, 'errores' => $errores];
         }
@@ -136,6 +130,7 @@ class Incorporacion
             'rol'                        => 'administrador',
             'activo'                     => 1,
             'puede_rendir_sin_solicitud' => 1,
+            'rinde'                      => 0,
             'clave_inicial'              => 1,
             'creado'                     => date('Y-m-d H:i:s'),
         ], true);
@@ -147,6 +142,47 @@ class Incorporacion
             'email'   => $email,
             'nombre'  => $nombre,
             'empresa' => (string) ($empresa['nombre'] ?? ''),
+        ];
+    }
+
+    /**
+     * @return array{ok: bool, errores: list<string>, aviso?: string}
+     */
+    public function marcarRendidor(int $usuarioId, bool $rinde): array
+    {
+        $persona = model(UsuarioModel::class)->find($usuarioId);
+        if (! is_array($persona)) {
+            return ['ok' => false, 'errores' => ['Esa persona no está.']];
+        }
+        if ((string) ($persona['rol'] ?? '') !== 'administrador') {
+            return ['ok' => false, 'errores' => ['Solo se marca al administrador. Quien rinde ya cuenta en el plan.']];
+        }
+        $quiere = $rinde ? 1 : 0;
+        if ((int) ($persona['rinde'] ?? 0) === $quiere) {
+            return [
+                'ok'      => true,
+                'errores' => [],
+                'aviso'   => $quiere === 1 ? 'Ya está marcado como usuario rendidor.' : 'Sigue como solo administrador.',
+            ];
+        }
+        if ($quiere === 1) {
+            $empresa = model(EmpresaModel::class)->find((int) $persona['empresa_id']);
+            if (! is_array($empresa)) {
+                return ['ok' => false, 'errores' => ['Esa empresa no está.']];
+            }
+            $cupo = (int) ($empresa['cupo_usuarios'] ?? Planes::USUARIOS);
+            if (! Planes::puedeSumarUsuario(Planes::rendidores((int) $empresa['id']), $cupo)) {
+                return ['ok' => false, 'errores' => [Planes::avisoCupo($empresa)]];
+            }
+        }
+        model(UsuarioModel::class)->update($usuarioId, ['rinde' => $quiere]);
+
+        return [
+            'ok'      => true,
+            'errores' => [],
+            'aviso'   => $quiere === 1
+                ? 'El administrador queda como usuario rendidor y ocupa un cupo.'
+                : 'El administrador queda solo como administrador y libera el cupo.',
         ];
     }
 

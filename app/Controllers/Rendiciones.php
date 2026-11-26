@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Libraries\Montos;
+use App\Libraries\Planes;
 use App\Libraries\Paises;
 use App\Libraries\RendicionDirecta;
 use App\Libraries\RendicionServicio;
@@ -65,6 +66,9 @@ class Rendiciones extends BaseController
             return redirect()->to('/login');
         }
 
+        if (! Planes::esRendidor($usuario)) {
+            return redirect()->to('/rendiciones')->with('error', Planes::SIN_MARCA);
+        }
         if (! RendicionDirecta::autorizada($usuario)) {
             return redirect()->to('/rendiciones')->with('error', 'Esta persona no está autorizada a rendir sin solicitud.');
         }

@@ -6,7 +6,7 @@
 <header class="pagina">
     <div>
         <h1>Personas</h1>
-        <p>El plan Free admite <?= esc((string) $cupo) ?> usuarios. Cada persona que rinde tiene su cuenta Global66. La nómina deposita ahí y el egreso abre la rendición.</p>
+        <p>Caben <?= esc((string) $cupo) ?> personas que rinden. El administrador no ocupa cupo, salvo que también rinda. Cada persona que rinde tiene su cuenta Global66. La nómina deposita ahí y el egreso abre la rendición.</p>
     </div>
 </header>
 <p class="bloque"><?= esc((string) $usadas) ?> de <?= esc((string) $cupo) ?> usuarios.</p>

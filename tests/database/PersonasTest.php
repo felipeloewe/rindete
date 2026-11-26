@@ -37,10 +37,10 @@ final class PersonasTest extends CIUnitTestCase
         $pagina->assertSee('Ley N° 19.628');
         $pagina->assertSee('Ley N° 21.719');
         $pagina->assertSee('Quedan fuera la evaluación de crédito');
-        $pagina->assertSee('1 de 4');
+        $pagina->assertSee('0 de 4');
 
         $servicio = new PersonaServicio();
-        foreach (['luis@acme.test', 'marta@acme.test', 'nora@acme.test'] as $correo) {
+        foreach (['luis@acme.test', 'marta@acme.test', 'nora@acme.test', 'quinta@acme.test'] as $correo) {
             $alta = $servicio->crear($empresa, [
                 'nombre'   => 'Persona ' . $correo,
                 'email'    => $correo,
@@ -50,8 +50,8 @@ final class PersonasTest extends CIUnitTestCase
             $this->assertTrue($alta['ok'], implode(' ', $alta['errores']));
         }
         $lleno = $servicio->crear($empresa, [
-            'nombre'   => 'Quinta',
-            'email'    => 'quinta@acme.test',
+            'nombre'   => 'Sexta',
+            'email'    => 'sexta@acme.test',
             'password' => 'clave-segura',
             'acepta_politica' => '1',
         ]);

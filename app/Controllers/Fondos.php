@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Libraries\BancosChile;
+use App\Libraries\Planes;
 use App\Libraries\NominaFondos;
 use App\Libraries\Paises;
 use App\Libraries\Sesion;
@@ -128,6 +129,9 @@ class Fondos extends BaseController
         [$usuario, $empresa] = $this->cuenta();
         if ($usuario === null || $empresa === null) {
             return redirect()->to('/login');
+        }
+        if (! Planes::esRendidor($usuario)) {
+            return redirect()->to('/fondos')->with('error', Planes::SIN_MARCA);
         }
         $pais = Paises::pais((string) $empresa['pais']);
 

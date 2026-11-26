@@ -19,6 +19,9 @@ class RendicionServicio
     {
         $titulo = trim($titulo);
         $nota   = trim($nota);
+        if (! Planes::esRendidor($usuario)) {
+            return ['ok' => false, 'errores' => [Planes::SIN_MARCA]];
+        }
         if ($titulo === '' || strlen($titulo) > 140) {
             return ['ok' => false, 'errores' => ['Escribe un nombre para la rendición.']];
         }

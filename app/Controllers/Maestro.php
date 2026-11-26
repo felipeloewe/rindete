@@ -95,6 +95,16 @@ class Maestro extends BaseController
         return $this->entregar('Administrador creado.', $resultado);
     }
 
+    public function rendidor(int $id): RedirectResponse
+    {
+        $resultado = (new Incorporacion())->marcarRendidor($id, (string) $this->request->getPost('rinde') === '1');
+        if (! $resultado['ok']) {
+            return redirect()->to('/master')->with('errores', $resultado['errores']);
+        }
+
+        return redirect()->to('/master')->with('ok', (string) ($resultado['aviso'] ?? 'Listo.'));
+    }
+
     public function vigencia(int $id): RedirectResponse
     {
         $vigente = (string) $this->request->getPost('vigente') === '1';

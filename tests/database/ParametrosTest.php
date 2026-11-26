@@ -137,6 +137,7 @@ final class ParametrosTest extends CIUnitTestCase
             'acepta_politica' => '1',
         ]);
         $usuario = model(UsuarioModel::class)->porEmail('ana@acme.test');
+        model(UsuarioModel::class)->update($usuario['id'], ['rinde' => 1]);
 
         return ['usuario_id' => (int) $usuario['id']];
     }

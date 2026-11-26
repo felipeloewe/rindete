@@ -17,6 +17,7 @@ $routes->group('master', ['filter' => 'maestro'], static function (RouteCollecti
     $routes->get('salir', 'Maestro::salir');
     $routes->post('empresas', 'Maestro::crear');
     $routes->post('empresas/(:num)/administrador', 'Maestro::administrador/$1');
+    $routes->post('usuarios/(:num)/rendidor', 'Maestro::rendidor/$1');
     $routes->post('empresas/(:num)/vigencia', 'Maestro::vigencia/$1');
 });
 $routes->get('politicas', 'Politicas::ver');

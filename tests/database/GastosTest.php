@@ -34,7 +34,7 @@ final class GastosTest extends CIUnitTestCase
     public function testGuardarSinComprobanteQuedaObservado(): void
     {
         $this->postForm('registro', $this->cuenta());
-        $usuario   = model(UsuarioModel::class)->porEmail('ana@acme.test');
+        $usuario   = $this->rendidora(model(UsuarioModel::class)->porEmail('ana@acme.test'));
         $categoria = model(CategoriaModel::class)->where('nombre', 'Alimentación')->first();
 
         $this->withSession(['usuario_id' => $usuario['id']]);
@@ -62,7 +62,7 @@ final class GastosTest extends CIUnitTestCase
     public function testUnComprobanteDentroDelTopeQuedaLegalizado(): void
     {
         $this->postForm('registro', $this->cuenta());
-        $usuario   = model(UsuarioModel::class)->porEmail('ana@acme.test');
+        $usuario   = $this->rendidora(model(UsuarioModel::class)->porEmail('ana@acme.test'));
         $empresa   = model(EmpresaModel::class)->find($usuario['empresa_id']);
         $categoria = model(CategoriaModel::class)->where('nombre', 'Alimentación')->first();
         $ruta      = WRITEPATH . 'nota-prueba.pdf';
@@ -89,7 +89,7 @@ final class GastosTest extends CIUnitTestCase
     public function testUnComprobanteSobreElCupoSeRechaza(): void
     {
         $this->postForm('registro', $this->cuenta());
-        $usuario   = model(UsuarioModel::class)->porEmail('ana@acme.test');
+        $usuario   = $this->rendidora(model(UsuarioModel::class)->porEmail('ana@acme.test'));
         $empresa   = model(EmpresaModel::class)->find($usuario['empresa_id']);
         $categoria = model(CategoriaModel::class)->where('nombre', 'Alimentación')->first();
         model(EmpresaModel::class)->update($empresa['id'], ['cupo_bytes' => 20]);
@@ -117,7 +117,7 @@ final class GastosTest extends CIUnitTestCase
     public function testElCentroDeLaEmpresaQuedaEnElGasto(): void
     {
         $this->postForm('registro', $this->cuenta());
-        $usuario = model(UsuarioModel::class)->porEmail('ana@acme.test');
+        $usuario = $this->rendidora(model(UsuarioModel::class)->porEmail('ana@acme.test'));
         $empresa = model(EmpresaModel::class)->find($usuario['empresa_id']);
         $categoria = model(CategoriaModel::class)->where('nombre', 'Alimentación')->first();
         $lugares = new \App\Libraries\Lugares();
@@ -157,6 +157,18 @@ final class GastosTest extends CIUnitTestCase
         $formulario->assertSee('Comercial');
         $formulario->assertSee('Debe completar toda la información solicitada.');
         $formulario->assertSee('name="monto" inputmode="decimal" required');
+    }
+
+    /**
+     * @param array<string, mixed> $usuario
+     *
+     * @return array<string, mixed>
+     */
+    private function rendidora(array $usuario): array
+    {
+        model(UsuarioModel::class)->update($usuario['id'], ['rinde' => 1]);
+
+        return model(UsuarioModel::class)->find($usuario['id']);
     }
 
     /**

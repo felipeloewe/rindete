@@ -19,6 +19,9 @@ class SolicitudServicio
      */
     public function pedir(array $usuario, array $empresa, string $motivo, string $montoTexto, int $categoriaId): array
     {
+        if (! Planes::esRendidor($usuario)) {
+            return ['ok' => false, 'errores' => [Planes::SIN_MARCA]];
+        }
         $motivo = trim($motivo);
         $monto  = Montos::parse($montoTexto);
         $categoria = model(CategoriaModel::class)->find($categoriaId);

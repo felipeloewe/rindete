@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Libraries\Comprobante;
+use App\Libraries\Planes;
 use App\Libraries\GastoServicio;
 use App\Libraries\Recepcion;
 use App\Libraries\Paises;
@@ -67,6 +68,9 @@ class Gastos extends BaseController
         [$usuario, $empresa] = $this->cuenta();
         if ($usuario === null || $empresa === null) {
             return redirect()->to('/login');
+        }
+        if (! Planes::esRendidor($usuario)) {
+            return redirect()->to('/gastos')->with('error', Planes::SIN_MARCA);
         }
         (new GastoServicio())->asegurarCategorias($empresa);
 

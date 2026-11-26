@@ -16,24 +16,29 @@ class TableroMaestro
      *     planes: list<array{nombre: string, cantidad: int}>,
      *     mensual: list<array{moneda: string, monto: float}>,
      *     anual: list<array{moneda: string, monto: float}>,
-     *     personas: list<array{nombre: string, email: string, empresa: string, papel: string, activo: bool}>
+     *     personas: list<array{id: int, nombre: string, email: string, empresa: string, papel: string, activo: bool, administrador: bool, rinde: bool}>
      * }
      */
     public function armar(): array
     {
-        $rinde = $this->quienesRinden();
         $admins = [];
         $cupos  = [];
         $personas = [];
         foreach (model(UsuarioModel::class)->orderBy('id', 'ASC')->findAll() as $persona) {
             $empresaId = (int) ($persona['empresa_id'] ?? 0);
-            $cupos[$empresaId] = ($cupos[$empresaId] ?? 0) + 1;
-            $papel = $this->papel($persona, isset($rinde[(int) ($persona['id'] ?? 0)]));
+            $esAdmin   = (string) ($persona['rol'] ?? '') === 'administrador';
+            $rinde     = Planes::esRendidor($persona);
+            if ($rinde) {
+                $cupos[$empresaId] = ($cupos[$empresaId] ?? 0) + 1;
+            }
             $ficha = [
-                'nombre'  => (string) ($persona['nombre'] ?? ''),
-                'email'   => (string) ($persona['email'] ?? ''),
-                'papel'   => $papel,
-                'activo'  => (int) ($persona['activo'] ?? 0) === 1,
+                'id'            => (int) ($persona['id'] ?? 0),
+                'nombre'        => (string) ($persona['nombre'] ?? ''),
+                'email'         => (string) ($persona['email'] ?? ''),
+                'papel'         => $this->papel($esAdmin, $rinde),
+                'activo'        => (int) ($persona['activo'] ?? 0) === 1,
+                'administrador' => $esAdmin,
+                'rinde'         => $rinde,
             ];
             $personas[$empresaId][] = $ficha;
             if ((string) ($persona['rol'] ?? '') === 'administrador') {
@@ -109,31 +114,9 @@ class TableroMaestro
         ];
     }
 
-    /**
-     * @return array<int, true>
-     */
-    private function quienesRinden(): array
+    private function papel(bool $administrador, bool $rinde): string
     {
-        $ids = [];
-        $db = db_connect();
-        foreach (['gastos', 'rendiciones'] as $tabla) {
-            if (! $db->tableExists($tabla)) {
-                continue;
-            }
-            foreach ($db->table($tabla)->select('usuario_id')->distinct()->get()->getResultArray() as $fila) {
-                $ids[(int) ($fila['usuario_id'] ?? 0)] = true;
-            }
-        }
-
-        return $ids;
-    }
-
-    /**
-     * @param array<string, mixed> $persona
-     */
-    private function papel(array $persona, bool $rinde): string
-    {
-        if ((string) ($persona['rol'] ?? '') !== 'administrador') {
+        if (! $administrador) {
             return 'Usuario';
         }
 

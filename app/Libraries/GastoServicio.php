@@ -28,6 +28,9 @@ class GastoServicio
      */
     public function crear(array $usuario, array $empresa, array $input, ?UploadedFile $archivo): array
     {
+        if (! Planes::esRendidor($usuario)) {
+            return ['ok' => false, 'errores' => [Planes::SIN_MARCA]];
+        }
         if ($this->cupo((int) $empresa['id']) >= self::CUPO_MENSUAL) {
             return ['ok' => false, 'errores' => ['El plan incluye ' . self::CUPO_MENSUAL . ' documentos al mes.']];
         }

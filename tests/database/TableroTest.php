@@ -113,7 +113,10 @@ final class TableroTest extends CIUnitTestCase
             $seguridad->getTokenName() => $seguridad->getHash(),
         ]);
 
-        return model(UsuarioModel::class)->porEmail('ana@acme.test');
+        $ana = model(UsuarioModel::class)->porEmail('ana@acme.test');
+        model(UsuarioModel::class)->update($ana['id'], ['rinde' => 1]);
+
+        return model(UsuarioModel::class)->find($ana['id']);
     }
 
     /**

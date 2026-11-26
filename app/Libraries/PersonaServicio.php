@@ -40,11 +40,8 @@ class PersonaServicio
         $destino = $this->bancoDestino((string) ($input['banco_destino'] ?? ''), $errores);
         $telefono = $this->telefono($empresa, $input, $errores);
         $cupo  = (int) ($empresa['cupo_usuarios'] ?? Planes::USUARIOS);
-        $actuales = model(UsuarioModel::class)->where('empresa_id', (int) $empresa['id'])->countAllResults();
-        if (! Planes::puedeSumarUsuario($actuales, $cupo)) {
-            $errores[] = (string) ($empresa['plan'] ?? '') === 'free'
-                ? 'El plan Free admite ' . $cupo . ' usuarios.'
-                : 'El plan admite ' . $cupo . ' usuarios.';
+        if (! Planes::puedeSumarUsuario(Planes::rendidores((int) $empresa['id']), $cupo)) {
+            $errores[] = Planes::avisoCupo($empresa);
         }
         if ($errores !== []) {
             return ['ok' => false, 'errores' => $errores];
@@ -62,6 +59,7 @@ class PersonaServicio
             'rol'                         => 'rendidor',
             'activo'                      => 1,
             'puede_rendir_sin_solicitud' => ! empty($input['puede_rendir_sin_solicitud']) ? 1 : 0,
+            'rinde'                      => 1,
             'monto_maximo_rendicion'     => $monto,
             'creado'                      => date('Y-m-d H:i:s'),
         ] + PoliticaDatos::marca(), true);

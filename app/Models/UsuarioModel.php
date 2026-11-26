@@ -17,7 +17,7 @@ class UsuarioModel extends Model
     protected $afterFind        = ['hidratar'];
     protected $allowedFields    = [
         'empresa_id', 'rol', 'activo', 'creado', 'politica_version', 'politica_aceptada_en', 'clave_inicial',
-        'puede_rendir_sin_solicitud', 'monto_maximo_rendicion',
+        'puede_rendir_sin_solicitud', 'monto_maximo_rendicion', 'rinde',
     ];
 
     /**
@@ -108,6 +108,9 @@ class UsuarioModel extends Model
         $personal       = [];
         $empresaId      = 0;
         if (is_array($row)) {
+            if ((string) ($row['rol'] ?? '') === 'rendidor' && ! array_key_exists('rinde', $row)) {
+                $row['rinde'] = 1;
+            }
             $empresaId = (int) ($row['empresa_id'] ?? 0);
             $personal  = (new Identidad())->separar($row, Identidad::PERSONA);
         }

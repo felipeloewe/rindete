@@ -80,6 +80,7 @@ class AltaEmpresa
                 'rol'                         => 'administrador',
                 'activo'                      => 1,
                 'puede_rendir_sin_solicitud' => 1,
+                'rinde'                       => 0,
                 'creado'                      => $ahora,
             ] + PoliticaDatos::marca(), true);
             CategoriasBase::sembrar((int) $empresaId, Paises::pais($pais)['moneda']);
