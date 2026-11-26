@@ -42,7 +42,9 @@ class PersonaServicio
         $cupo  = (int) ($empresa['cupo_usuarios'] ?? Planes::USUARIOS);
         $actuales = model(UsuarioModel::class)->where('empresa_id', (int) $empresa['id'])->countAllResults();
         if (! Planes::puedeSumarUsuario($actuales, $cupo)) {
-            $errores[] = 'El plan Free admite ' . $cupo . ' usuarios.';
+            $errores[] = (string) ($empresa['plan'] ?? '') === 'free'
+                ? 'El plan Free admite ' . $cupo . ' usuarios.'
+                : 'El plan admite ' . $cupo . ' usuarios.';
         }
         if ($errores !== []) {
             return ['ok' => false, 'errores' => $errores];

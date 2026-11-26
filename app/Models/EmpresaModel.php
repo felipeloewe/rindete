@@ -17,6 +17,7 @@ class EmpresaModel extends Model
     protected $afterFind        = ['hidratar'];
     protected $allowedFields    = [
         'pais', 'plan', 'cupo_usuarios', 'cupo_bytes', 'creado', 'politica_version', 'politica_aceptada_en',
+        'cobro_plan', 'cobro_monto', 'cobro_moneda', 'cobro_periodicidad', 'vigente',
         'parametros_sembrados', 'monto_maximo_rendicion', 'detener_monto', 'detener_tipo', 'detener_habilitacion',
         'preasiento_agrupacion', 'preasiento_auxiliar', 'preasiento_cuenta_id', 'preasiento_salida_id', 'preasiento_liquidacion_id',
     ];

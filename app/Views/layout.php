@@ -49,7 +49,10 @@
         $seccion = 'cuenta';
     } elseif ($ruta === 'cuenta' || str_starts_with($ruta, 'cuenta/')) {
         $seccion = 'cuenta';
+    } elseif ($ruta === 'master' || str_starts_with($ruta, 'master/')) {
+        $seccion = 'cuenta';
     }
+    $esMaestro = (bool) session('maestro_id') && ($ruta === 'master' || str_starts_with($ruta, 'master/'));
     $esAdmin = false;
     if (session('usuario_id')) {
         $personaNav = (new \App\Libraries\Sesion())->usuario();
@@ -66,7 +69,7 @@
 <body class="etapa-<?= esc($etapa !== '' ? $etapa : 'trabajo') ?> sec-<?= esc($seccion) ?>">
     <div class="franja"></div>
     <header class="top">
-        <a class="marca" href="<?= base_url(session('usuario_id') ? 'panel' : '/') ?>">
+        <a class="marca" href="<?= base_url($esMaestro ? 'master' : (session('usuario_id') ? 'panel' : '/')) ?>">
             <svg class="logo" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true">
                 <rect x="3" y="8" width="16" height="18" rx="4" fill="#8fd6cf"/>
                 <rect x="13" y="4" width="16" height="18" rx="4" fill="#0e5c62"/>
@@ -74,7 +77,9 @@
             Rindete
         </a>
         <nav>
-            <?php if (session('usuario_id')) : ?>
+            <?php if ($esMaestro) : ?>
+                <a class="activa" href="<?= base_url('master') ?>">Empresas</a>
+            <?php elseif (session('usuario_id')) : ?>
                 <a<?= $marca('panel') ?> href="<?= base_url('panel') ?>">Inicio</a>
                 <a<?= $marca('gastos') ?> href="<?= base_url('gastos') ?>">Gastos</a>
                 <a<?= $marca('rendiciones') ?> href="<?= base_url('rendiciones') ?>">Rendiciones</a>
@@ -91,7 +96,9 @@
             <?php endif ?>
         </nav>
         <div class="lado">
-            <?php if (session('usuario_id')) : ?>
+            <?php if ($esMaestro) : ?>
+                <a class="enlace" href="<?= base_url('master/salir') ?>">Salir</a>
+            <?php elseif (session('usuario_id')) : ?>
                 <a class="enlace" href="<?= base_url('logout') ?>">Salir</a>
                 <a class="boton" href="<?= base_url('gastos/nuevo') ?>">Nuevo gasto</a>
             <?php else : ?>

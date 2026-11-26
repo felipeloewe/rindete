@@ -9,6 +9,16 @@ $routes->post('login', 'Auth::attempt');
 $routes->get('logout', 'Auth::logout');
 $routes->get('registro', 'Registro::index');
 $routes->post('registro', 'Registro::store');
+$routes->get('master', 'Maestro::entrada');
+$routes->post('master', 'Maestro::entrar');
+$routes->group('master', ['filter' => 'maestro'], static function (RouteCollection $routes): void {
+    $routes->get('clave', 'Maestro::clave');
+    $routes->post('clave', 'Maestro::guardarClave');
+    $routes->get('salir', 'Maestro::salir');
+    $routes->post('empresas', 'Maestro::crear');
+    $routes->post('empresas/(:num)/administrador', 'Maestro::administrador/$1');
+    $routes->post('empresas/(:num)/vigencia', 'Maestro::vigencia/$1');
+});
 $routes->get('politicas', 'Politicas::ver');
 $routes->get('condiciones', 'Politicas::condiciones');
 

@@ -19,6 +19,13 @@ class AuthFilter implements FilterInterface
             return redirect()->to('/login');
         }
         $ruta = trim(uri_string(), '/');
+        if ((int) ($usuario['clave_inicial'] ?? 0) === 1) {
+            if (! str_starts_with($ruta, 'cuenta')) {
+                return redirect()->to('/cuenta')->with('error', 'Cambia la contraseña inicial antes de seguir.');
+            }
+
+            return null;
+        }
         if (! PoliticaDatos::aceptada($usuario) && $ruta !== 'politicas/aceptar') {
             return redirect()->to('/politicas/aceptar');
         }

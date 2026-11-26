@@ -16,8 +16,11 @@
             <input type="email" name="email" value="<?= esc(old('email', $usuario['email'] ?? '')) ?>" maxlength="160" required>
         </label>
         <label>Nueva contraseña
-            <input type="password" name="password" minlength="8" autocomplete="new-password" placeholder="Déjala vacía para no cambiarla">
+            <input type="password" name="password" minlength="8" autocomplete="new-password" <?= (int) ($usuario['clave_inicial'] ?? 0) === 1 ? 'required' : '' ?> placeholder="<?= (int) ($usuario['clave_inicial'] ?? 0) === 1 ? 'Reemplaza la clave inicial' : 'Déjala vacía para no cambiarla' ?>">
         </label>
+        <?php if ((int) ($usuario['clave_inicial'] ?? 0) === 1) : ?>
+            <p>Esta es la contraseña inicial. Cámbiala para seguir.</p>
+        <?php endif ?>
         <button class="boton" type="submit">Guardar</button>
     </form>
 </section>
