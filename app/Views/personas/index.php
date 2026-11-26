@@ -65,7 +65,6 @@
                 <input type="checkbox" name="puede_rendir_sin_solicitud" value="1" <?= old('puede_rendir_sin_solicitud') ? 'checked' : '' ?>>
                 Puede rendir sin solicitud
             </label>
-            <?= view('politicas/apartado', ['texto' => 'La persona acepta las condiciones de uso y los efectos que se indican para cada ley.'], ['saveData' => false]) ?>
             <button class="boton" type="submit">Agregar persona</button>
         </form>
     </section>
@@ -82,11 +81,6 @@
         <?php $cuenta = $cuentas[(int) $persona['id']] ?? null; ?>
         <?php if (is_array($cuenta)) : ?>
             <p>Cuenta Global66 <?= esc((string) $cuenta['referencia']) ?> · billetera <?= esc((string) $cuenta['billetera']) ?></p>
-        <?php endif ?>
-        <?php if (\App\Libraries\PoliticaDatos::aceptada($persona)) : ?>
-            <p>Aceptó las condiciones de uso.</p>
-        <?php else : ?>
-            <p>Falta aceptar las condiciones de uso.</p>
         <?php endif ?>
         <form method="post" action="<?= base_url('personas/' . $persona['id']) ?>">
             <?= csrf_field() ?>

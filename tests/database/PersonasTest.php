@@ -32,11 +32,8 @@ final class PersonasTest extends CIUnitTestCase
         $pagina = $this->get('personas');
         $pagina->assertOK();
         $pagina->assertSee('Dar de alta');
-        $pagina->assertSee('Aceptación de políticas');
-        $pagina->assertSee('Infórmate más');
-        $pagina->assertSee('Ley N° 19.628');
-        $pagina->assertSee('Ley N° 21.719');
-        $pagina->assertSee('Quedan fuera la evaluación de crédito');
+        $pagina->assertDontSee('Aceptación de políticas');
+        $pagina->assertDontSee('Falta aceptar las condiciones de uso.');
         $pagina->assertSee('0 de 4');
         $pagina->assertSee('Mínimo 8 caracteres.');
         $pagina->assertSee('Integraciones');
@@ -48,7 +45,6 @@ final class PersonasTest extends CIUnitTestCase
                 'nombre'   => 'Persona ' . $correo,
                 'email'    => $correo,
                 'password' => 'clave-segura',
-                'acepta_politica' => '1',
             ]);
             $this->assertTrue($alta['ok'], implode(' ', $alta['errores']));
         }
@@ -63,6 +59,7 @@ final class PersonasTest extends CIUnitTestCase
 
         $luis = model(UsuarioModel::class)->porEmail('luis@acme.test');
         $this->assertSame(0, (int) $luis['puede_rendir_sin_solicitud']);
+        $this->assertSame(\App\Libraries\PoliticaDatos::VERSION, $luis['politica_version']);
         $categorias = model(CategoriaModel::class)->where('empresa_id', $empresa['id'])->countAllResults();
         $aceptados = db_connect()->table('gastos_aceptados')->where('usuario_id', $luis['id'])->countAllResults();
         $this->assertSame($categorias, $aceptados);

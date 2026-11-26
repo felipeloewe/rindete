@@ -31,9 +31,6 @@ class PersonaServicio
         if (strlen($password) < 8) {
             $errores[] = 'La contraseña debe tener al menos 8 caracteres.';
         }
-        if ((string) ($input['acepta_politica'] ?? '') !== '1') {
-            $errores[] = 'Acepta las condiciones de uso y los efectos que se indican para dar de alta a la persona.';
-        }
         $monto = $this->monto((string) ($input['monto_maximo'] ?? ''), $errores);
         $fiscal = $this->documento($empresa, (string) ($input['id_fiscal'] ?? ''), $errores);
         $banco = $this->cuentaBanco((string) ($input['cuenta_banco'] ?? ''), $errores);
