@@ -87,7 +87,9 @@
                 <a<?= $marca('informes') ?> href="<?= base_url('informes') ?>">Informes</a>
                 <a<?= $marca('categorias') ?> href="<?= base_url('categorias') ?>">Categorías</a>
                 <?php if ($esAdmin) : ?>
-                    <a<?= $marca('parametros') ?> href="<?= base_url('parametros') ?>">Parámetros</a>
+                    <?php $esIntegracion = $ruta === 'parametros/medios' || str_starts_with($ruta, 'parametros/medios/'); ?>
+                    <a<?= ! $esIntegracion && ($ruta === 'parametros' || str_starts_with($ruta, 'parametros/')) ? ' class="activa"' : '' ?> href="<?= base_url('parametros') ?>">Parámetros</a>
+                    <a<?= $esIntegracion ? ' class="activa"' : '' ?> href="<?= base_url('parametros/medios') ?>">Integraciones</a>
                     <a<?= $marca('modulos') ?> href="<?= base_url('modulos') ?>">Módulos</a>
                     <a<?= $marca('personas') ?> href="<?= base_url('personas') ?>">Personas</a>
                 <?php endif ?>

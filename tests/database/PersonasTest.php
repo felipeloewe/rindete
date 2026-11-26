@@ -38,6 +38,9 @@ final class PersonasTest extends CIUnitTestCase
         $pagina->assertSee('Ley N° 21.719');
         $pagina->assertSee('Quedan fuera la evaluación de crédito');
         $pagina->assertSee('0 de 4');
+        $pagina->assertSee('Mínimo 8 caracteres.');
+        $pagina->assertSee('Integraciones');
+        $pagina->assertDontSee('Identificador Global66');
 
         $servicio = new PersonaServicio();
         foreach (['luis@acme.test', 'marta@acme.test', 'nora@acme.test', 'quinta@acme.test'] as $correo) {
@@ -70,6 +73,30 @@ final class PersonasTest extends CIUnitTestCase
         $propia = $servicio->guardar($ana, $ana, ['activo' => '0', 'monto_maximo' => '']);
         $this->assertTrue($propia['ok'], implode(' ', $propia['errores']));
         $this->assertSame(1, (int) model(UsuarioModel::class)->find($ana['id'])['activo']);
+    }
+
+    public function testLaCuentaGlobalApareceAlHabilitarLaIntegracion(): void
+    {
+        [$ana, $empresa] = $this->empresa();
+        model(\App\Models\MedioModel::class)->insert([
+            'empresa_id' => $empresa['id'],
+            'proveedor'  => 'global66',
+            'clave'      => 'clave-prueba',
+            'secreto'    => 'cifrado',
+            'vigente'    => 1,
+        ]);
+        $pagina = $this->withSession(['usuario_id' => $ana['id']])->get('personas');
+        $pagina->assertOK();
+        $pagina->assertSee('Identificador Global66');
+        $pagina->assertSee('Opcional. accountID');
+
+        $cuenta = (new \App\Libraries\CuentaGlobal())->revisar((int) $empresa['id'], 0, [
+            'global_cliente'   => '',
+            'global_billetera' => '445566',
+        ]);
+        $this->assertTrue($cuenta['ok'], implode(' ', $cuenta['errores']));
+        $this->assertTrue($cuenta['aplica']);
+        $this->assertSame('445566', $cuenta['billetera']);
     }
 
     public function testLaRendicionDirectaUsaElTopeYElConceptoDeLaPersona(): void

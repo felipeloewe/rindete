@@ -6,7 +6,7 @@
 <header class="pagina">
     <div>
         <h1>Personas</h1>
-        <p>Caben <?= esc((string) $cupo) ?> personas que rinden. El administrador no ocupa cupo, salvo que también rinda. Cada persona que rinde tiene su cuenta Global66. La nómina deposita ahí y el egreso abre la rendición.</p>
+        <p>Caben <?= esc((string) $cupo) ?> personas que rinden. El administrador no ocupa cupo, salvo que también rinda.<?php if ($global) : ?> La cuenta Global66 de cada persona es opcional.<?php else : ?> Para anotar la cuenta Global66 de una persona, habilítala antes en Integraciones.<?php endif ?></p>
     </div>
 </header>
 <p class="bloque"><?= esc((string) $usadas) ?> de <?= esc((string) $cupo) ?> usuarios.</p>
@@ -28,7 +28,8 @@
             </div>
             <div class="grid-2">
                 <label>Clave inicial
-                    <input name="password" type="password" required minlength="8" autocomplete="new-password">
+                    <input name="password" type="password" required minlength="8" autocomplete="new-password" placeholder="Mínimo 8 caracteres">
+                    <p>Mínimo 8 caracteres.</p>
                 </label>
                 <label>Tope propio de rendición
                     <input name="monto_maximo" inputmode="decimal" value="<?= esc(old('monto_maximo', '')) ?>" placeholder="Vacío usa el de la empresa">
@@ -41,12 +42,14 @@
                 <label>Cuenta del banco
                     <input name="cuenta_banco" maxlength="18" value="<?= esc(old('cuenta_banco', '')) ?>" placeholder="Para la nómina de fondos">
                 </label>
-                <label>Identificador Global66
-                    <input name="global_cliente" maxlength="80" value="<?= esc(old('global_cliente', '')) ?>" placeholder="Cliente de la cuenta de esta persona">
-                </label>
-                <label>Billetera Global66
-                    <input name="global_billetera" maxlength="40" value="<?= esc(old('global_billetera', '')) ?>" placeholder="Id numérico de la billetera">
-                </label>
+                <?php if ($global) : ?>
+                    <label>Identificador Global66
+                        <input name="global_cliente" maxlength="80" value="<?= esc(old('global_cliente', '')) ?>" placeholder="Opcional. customerId">
+                    </label>
+                    <label>Billetera Global66
+                        <input name="global_billetera" maxlength="40" value="<?= esc(old('global_billetera', '')) ?>" placeholder="Opcional. accountID">
+                    </label>
+                <?php endif ?>
             </div>
             <?php if ($chile) : ?>
                 <label>Banco de destino
@@ -96,7 +99,7 @@
                     <input name="monto_maximo" inputmode="decimal" value="<?= $persona['monto_maximo_rendicion'] === null || $persona['monto_maximo_rendicion'] === '' ? '' : esc((string) $persona['monto_maximo_rendicion']) ?>" placeholder="Vacío usa el de la empresa">
                 </label>
                 <label>Nueva clave
-                    <input name="password" type="password" minlength="8" autocomplete="new-password" placeholder="Solo si quieres cambiarla">
+                    <input name="password" type="password" minlength="8" autocomplete="new-password" placeholder="Mínimo 8 caracteres, solo si la cambias">
                 </label>
             </div>
             <div class="grid-2">
@@ -106,12 +109,14 @@
                 <label>Cuenta del banco
                     <input name="cuenta_banco" maxlength="18" value="<?= esc((string) ($persona['cuenta_banco'] ?? '')) ?>" placeholder="Para la nómina de fondos">
                 </label>
-                <label>Identificador Global66
-                    <input name="global_cliente" maxlength="80" value="<?= esc(is_array($cuenta) ? (string) $cuenta['referencia'] : '') ?>" placeholder="Cliente de la cuenta de esta persona">
-                </label>
-                <label>Billetera Global66
-                    <input name="global_billetera" maxlength="40" value="<?= esc(is_array($cuenta) ? (string) $cuenta['billetera'] : '') ?>" placeholder="Id numérico de la billetera">
-                </label>
+                <?php if ($global || is_array($cuenta)) : ?>
+                    <label>Identificador Global66
+                        <input name="global_cliente" maxlength="80" value="<?= esc(is_array($cuenta) ? (string) $cuenta['referencia'] : '') ?>" placeholder="Opcional. customerId">
+                    </label>
+                    <label>Billetera Global66
+                        <input name="global_billetera" maxlength="40" value="<?= esc(is_array($cuenta) ? (string) $cuenta['billetera'] : '') ?>" placeholder="Opcional. accountID">
+                    </label>
+                <?php endif ?>
                 <label>Teléfono de envío
                     <input name="telefono" maxlength="20" value="<?= esc((string) ($persona['telefono'] ?? '')) ?>" placeholder="+56 9 1234 5678">
                 </label>

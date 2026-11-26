@@ -20,11 +20,19 @@
             return 'Este campo';
         }
         var copia = etiqueta.cloneNode(true);
-        copia.querySelectorAll('input, select, textarea, small, button').forEach(function (nodo) {
+        copia.querySelectorAll('input, select, textarea, small, button, p').forEach(function (nodo) {
             nodo.remove();
         });
         var texto = (copia.textContent || '').replace(/\s+/g, ' ').trim();
         return texto || 'Este campo';
+    }
+
+    function motivo(campo) {
+        var titulo = nombre(campo);
+        if (campo.validity && campo.validity.tooShort && campo.minLength > 0) {
+            return titulo + ' (mínimo ' + campo.minLength + ' caracteres)';
+        }
+        return titulo;
     }
 
     function marcar(campo) {
@@ -61,7 +69,7 @@
                     return;
                 }
                 vistos.push(item);
-                var titulo = nombre(item);
+                var titulo = motivo(item);
                 if (nombres.indexOf(titulo) === -1) {
                     nombres.push(titulo);
                 }

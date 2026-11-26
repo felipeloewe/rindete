@@ -29,10 +29,10 @@ class CuentaGlobal
         if ($cliente === '' && $billetera === '') {
             return $vacio;
         }
-        if ($cliente === '' || $billetera === '') {
-            return ['ok' => false, 'errores' => ['La cuenta Global66 necesita el identificador y la billetera.'], 'aplica' => false, 'cliente' => '', 'billetera' => ''];
+        if ($billetera === '') {
+            return ['ok' => false, 'errores' => ['La billetera es el accountID de la cuenta.'], 'aplica' => false, 'cliente' => '', 'billetera' => ''];
         }
-        if (preg_match('/^\d+$/', $cliente) !== 1 || strlen($cliente) > 80) {
+        if ($cliente !== '' && (preg_match('/^\d+$/', $cliente) !== 1 || strlen($cliente) > 80)) {
             return ['ok' => false, 'errores' => ['El identificador de la cuenta Global66 es numérico.'], 'aplica' => false, 'cliente' => '', 'billetera' => ''];
         }
         if (preg_match('/^\d+$/', $billetera) !== 1 || strlen($billetera) > 40) {
@@ -40,7 +40,7 @@ class CuentaGlobal
         }
         $propia = $this->de($empresaId, $usuarioId);
         $propiaId = is_array($propia) ? (int) $propia['id'] : 0;
-        if ($this->ocupada($empresaId, 'referencia', $cliente, $propiaId)) {
+        if ($cliente !== '' && $this->ocupada($empresaId, 'referencia', $cliente, $propiaId)) {
             return ['ok' => false, 'errores' => ['Esa cuenta Global66 ya es de otra persona.'], 'aplica' => false, 'cliente' => '', 'billetera' => ''];
         }
         if ($this->ocupada($empresaId, 'billetera', $billetera, $propiaId)) {

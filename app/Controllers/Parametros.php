@@ -61,8 +61,8 @@ class Parametros extends BaseController
             'bajada' => 'Identifica la tarjeta de quien rinde. Si es de la empresa, queda exclusiva del proceso de rendiciones.',
         ],
         'medios' => [
-            'titulo' => 'Global66 y MACH',
-            'bajada' => 'Global66 avisa abonos y remesas, y con el token de consulta trae los movimientos de la cuenta. MACH avisa pagos de comercio: no publica los movimientos de la tarjeta de débito del titular.',
+            'titulo' => 'Integraciones',
+            'bajada' => 'Opcional. Aquí viven las credenciales de la API. Al guardar Global66, el alta de personas puede anotar el accountID de cada cuenta.',
         ],
         'aceptados' => [
             'titulo' => 'Gastos aceptados',

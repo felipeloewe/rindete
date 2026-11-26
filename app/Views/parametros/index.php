@@ -31,8 +31,8 @@
         <span>Identificación y exclusividad de quien rinde.</span>
     </a>
     <a class="losa losa-empresa" href="<?= base_url('parametros/medios') ?>">
-        <strong>Global66 y MACH</strong>
-        <span>Webhook de la cuenta y pagos de comercio.</span>
+        <strong>Integraciones</strong>
+        <span>Opcional. Credenciales de Global66 y de MACH.</span>
     </a>
     <a class="losa losa-aceptados" href="<?= base_url('parametros/aceptados') ?>">
         <strong>Gastos aceptados</strong>

@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Libraries\BancosChile;
 use App\Libraries\CuentaGlobal;
+use App\Libraries\MediosConexion;
 use App\Libraries\Paises;
 use App\Libraries\PersonaServicio;
 use App\Libraries\Planes;
@@ -37,6 +38,7 @@ class Personas extends BaseController
             'chile'      => (string) $empresa['pais'] === 'CL',
             'bancos'     => BancosChile::CODIGOS,
             'cuentas'    => (new CuentaGlobal())->delEmpresa((int) $empresa['id']),
+            'global'     => (new MediosConexion())->de((int) $empresa['id'], 'global66') !== null,
         ]);
     }
 

@@ -22,7 +22,7 @@
     <label>Client Secret
         <input name="client_secret" type="password" maxlength="500" autocomplete="new-password" placeholder="No se vuelve a mostrar">
     </label>
-    <p>En Global66 registra la dirección de abajo y los eventos de abono y de remesa. La clave viaja en el header x-api-key. El Client ID y el Client Secret salen de Integraciones API. La lista de IPs se autoriza allá, en la credencial. La cuenta es una por persona y se anota en Personas.</p>
+    <p>Opcional. El Client ID y el Client Secret son de la credencial de la API. La lista de IPs se autoriza en Global66. Al guardar esta conexión, el alta de cada persona puede anotar, si quieres, el accountID de su cuenta.</p>
     <p>En MACH registra la otra dirección. MACH avisa pagos y devoluciones de comercio, con el token en Authorization. No envía los movimientos de la tarjeta de débito de quien rinde: esa tarjeta se identifica y se carga en la rendición.</p>
     <button class="boton" type="submit">Guardar conexión</button>
 </form>
