@@ -23,6 +23,7 @@
     <h2>Incorporación</h2>
     <div class="pendientes">
         <a href="#empresas"><strong><?= (int) $tablero['activas'] ?></strong><span>Activas</span></a>
+        <a href="#usuarios"><strong><?= count($tablero['personas']) ?></strong><span>Usuarios</span></a>
         <?php foreach ($tablero['planes'] as $plan) : ?>
             <a href="#empresas"><strong><?= (int) $plan['cantidad'] ?></strong><span><?= esc($plan['nombre']) ?></span></a>
         <?php endforeach ?>
@@ -56,7 +57,12 @@
                         <td><?= esc($empresa['plan']) ?><?= $empresa['vigente'] ? '' : ' · En pausa' ?></td>
                         <td><?= $empresa['es_free'] ? 'Sin cobro' : esc($empresa['monto'] . ' · ' . $empresa['periodicidad']) ?></td>
                         <td><?= esc($empresa['cupo']) ?></td>
-                        <td><?= esc($empresa['admins']) ?></td>
+                        <td>
+                            <?php foreach ($empresa['admins'] as $admin) : ?>
+                                <?= esc($admin['email']) ?>
+                                <small><?= esc($admin['papel']) ?></small>
+                            <?php endforeach ?>
+                        </td>
                         <td>
                             <form method="post" action="<?= base_url('master/empresas/' . $empresa['id'] . '/vigencia') ?>">
                                 <?= csrf_field() ?>
@@ -74,6 +80,36 @@
                                 <button class="boton claro" type="submit">Enviar clave</button>
                             </form>
                         </td>
+                    </tr>
+                <?php endforeach ?>
+            </tbody>
+        </table>
+    <?php endif ?>
+</section>
+<section class="bloque" id="usuarios">
+    <h2>Usuarios registrados</h2>
+    <?php if ($tablero['personas'] === []) : ?>
+        <p>Todavía no hay usuarios.</p>
+    <?php else : ?>
+        <table class="tabla">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Correo</th>
+                    <th>Empresa</th>
+                    <th>Papel</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($tablero['personas'] as $persona) : ?>
+                    <tr>
+                        <td>
+                            <?= esc($persona['nombre']) ?>
+                            <?= $persona['activo'] ? '' : '<small>Inactiva</small>' ?>
+                        </td>
+                        <td><?= esc($persona['email']) ?></td>
+                        <td><?= esc($persona['empresa']) ?></td>
+                        <td><?= esc($persona['papel']) ?></td>
                     </tr>
                 <?php endforeach ?>
             </tbody>

@@ -3,7 +3,10 @@
 declare(strict_types=1);
 
 use App\Libraries\Incorporacion;
+use App\Libraries\TableroMaestro;
+use App\Models\CategoriaModel;
 use App\Models\EmpresaModel;
+use App\Models\GastoModel;
 use App\Models\UsuarioModel;
 use CodeIgniter\Test\CIUnitTestCase;
 use CodeIgniter\Test\DatabaseTestTrait;
@@ -107,6 +110,8 @@ final class SuperadminTest extends CIUnitTestCase
         $panel->assertSee('Mensual');
         $panel->assertSee('Anual');
         $panel->assertSee('ana@acme.test');
+        $panel->assertSee('Usuarios registrados');
+        $panel->assertSee('Solo administrador');
 
         $norte = model(EmpresaModel::class)->porFiscal('CL', '11111111-1');
         $this->assertSame('cobro', $norte['plan']);
@@ -128,6 +133,54 @@ final class SuperadminTest extends CIUnitTestCase
         $admin = model(UsuarioModel::class)->porEmail('luz@norte.test');
         $this->assertSame(1, (int) $admin['clave_inicial']);
         $this->assertSame('', (string) ($admin['politica_version'] ?? ''));
+    }
+
+    public function testDistingueAlAdminQueTambienRinde(): void
+    {
+        $alta = (new Incorporacion())->abrir([
+            'pais'      => 'CL',
+            'empresa'   => 'Acme SpA',
+            'id_fiscal' => '12.345.678-5',
+            'nombre'    => 'Ana Pérez',
+            'email'     => 'ana@acme.test',
+            'plan'      => 'free',
+        ]);
+        $this->assertTrue($alta['ok'], implode(' ', $alta['errores']));
+        $ana = model(UsuarioModel::class)->porEmail('ana@acme.test');
+        $empresa = model(EmpresaModel::class)->find((int) $ana['empresa_id']);
+        $categoria = model(CategoriaModel::class)->where('empresa_id', (int) $empresa['id'])->first();
+        $solo = (new TableroMaestro())->armar();
+        $this->assertSame('Solo administrador', $solo['personas'][0]['papel']);
+
+        model(GastoModel::class)->insert([
+            'empresa_id'   => (int) $empresa['id'],
+            'usuario_id'   => (int) $ana['id'],
+            'categoria_id' => (int) $categoria['id'],
+            'concepto'     => 'Taxi',
+            'proveedor'    => 'Uber',
+            'fecha'        => '2026-11-01',
+            'monto'        => 1000,
+            'moneda'       => 'CLP',
+            'estado'       => 'borrador',
+            'creado'       => date('Y-m-d H:i:s'),
+        ]);
+        model(UsuarioModel::class)->insert([
+            'empresa_id' => (int) $empresa['id'],
+            'nombre'     => 'Luis Soto',
+            'email'      => 'luis@acme.test',
+            'password'   => password_hash('clave-segura', PASSWORD_DEFAULT),
+            'rol'        => 'rendidor',
+            'activo'     => 1,
+            'creado'     => date('Y-m-d H:i:s'),
+        ]);
+
+        $papeles = [];
+        foreach ((new TableroMaestro())->armar()['personas'] as $persona) {
+            $papeles[$persona['email']] = $persona['papel'];
+        }
+        $this->assertSame('Administrador y usuario', $papeles['ana@acme.test']);
+        $this->assertSame('Usuario', $papeles['luis@acme.test']);
+        $this->assertSame('Acme SpA', (new TableroMaestro())->armar()['personas'][1]['empresa']);
     }
 
     public function testElAdministradorCambiaLaClaveInicialAntesDeEntrar(): void

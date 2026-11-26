@@ -15,18 +15,29 @@ class TableroMaestro
      *     activas: int,
      *     planes: list<array{nombre: string, cantidad: int}>,
      *     mensual: list<array{moneda: string, monto: float}>,
-     *     anual: list<array{moneda: string, monto: float}>
+     *     anual: list<array{moneda: string, monto: float}>,
+     *     personas: list<array{nombre: string, email: string, empresa: string, papel: string, activo: bool}>
      * }
      */
     public function armar(): array
     {
+        $rinde = $this->quienesRinden();
         $admins = [];
         $cupos  = [];
-        foreach (model(UsuarioModel::class)->findAll() as $persona) {
+        $personas = [];
+        foreach (model(UsuarioModel::class)->orderBy('id', 'ASC')->findAll() as $persona) {
             $empresaId = (int) ($persona['empresa_id'] ?? 0);
             $cupos[$empresaId] = ($cupos[$empresaId] ?? 0) + 1;
+            $papel = $this->papel($persona, isset($rinde[(int) ($persona['id'] ?? 0)]));
+            $ficha = [
+                'nombre'  => (string) ($persona['nombre'] ?? ''),
+                'email'   => (string) ($persona['email'] ?? ''),
+                'papel'   => $papel,
+                'activo'  => (int) ($persona['activo'] ?? 0) === 1,
+            ];
+            $personas[$empresaId][] = $ficha;
             if ((string) ($persona['rol'] ?? '') === 'administrador') {
-                $admins[$empresaId][] = (string) ($persona['email'] ?? '');
+                $admins[$empresaId][] = $ficha;
             }
         }
 
@@ -53,7 +64,7 @@ class TableroMaestro
                 'monto'        => $esFree ? '' : Montos::formato($monto, $moneda),
                 'periodicidad' => $esFree ? '' : ($cada === 'anual' ? 'Anual' : 'Mensual'),
                 'cupo'         => ($cupos[$id] ?? 0) . ' / ' . (int) ($empresa['cupo_usuarios'] ?? Planes::USUARIOS),
-                'admins'       => implode(', ', $admins[$id] ?? []),
+                'admins'       => $admins[$id] ?? [],
                 'creado'       => substr((string) ($empresa['creado'] ?? ''), 0, 10),
                 'vigente'      => $vigente,
             ];
@@ -80,13 +91,53 @@ class TableroMaestro
             $cajas[] = ['nombre' => $nombre, 'cantidad' => $cantidad];
         }
 
+        $lista = [];
+        foreach ($filas as $empresa) {
+            foreach ($personas[$empresa['id']] ?? [] as $persona) {
+                $persona['empresa'] = $empresa['nombre'];
+                $lista[] = $persona;
+            }
+        }
+
         return [
             'empresas' => $filas,
             'activas'  => $activas,
             'planes'   => $cajas,
             'mensual'  => $this->sumas($mensual),
             'anual'    => $this->sumas($anual),
+            'personas' => $lista,
         ];
+    }
+
+    /**
+     * @return array<int, true>
+     */
+    private function quienesRinden(): array
+    {
+        $ids = [];
+        $db = db_connect();
+        foreach (['gastos', 'rendiciones'] as $tabla) {
+            if (! $db->tableExists($tabla)) {
+                continue;
+            }
+            foreach ($db->table($tabla)->select('usuario_id')->distinct()->get()->getResultArray() as $fila) {
+                $ids[(int) ($fila['usuario_id'] ?? 0)] = true;
+            }
+        }
+
+        return $ids;
+    }
+
+    /**
+     * @param array<string, mixed> $persona
+     */
+    private function papel(array $persona, bool $rinde): string
+    {
+        if ((string) ($persona['rol'] ?? '') !== 'administrador') {
+            return 'Usuario';
+        }
+
+        return $rinde ? 'Administrador y usuario' : 'Solo administrador';
     }
 
     /**
