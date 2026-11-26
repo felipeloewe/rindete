@@ -33,7 +33,9 @@
     }
 
     function soltar(campo) {
-        if (campo.checkValidity()) {
+        // validity.valid no dispara el evento invalid. checkValidity() sí, y el aviso
+        // se abría de nuevo en cada tecla mientras el campo seguía corto.
+        if (campo.validity && campo.validity.valid) {
             campo.classList.remove('falta');
             campo.removeAttribute('aria-invalid');
         }
