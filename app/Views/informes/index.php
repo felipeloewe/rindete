@@ -6,7 +6,7 @@
 <header class="pagina">
     <div>
         <h1>Informes</h1>
-        <p>Estados de cuenta del período. El administrador ve a todas las personas.</p>
+        <p>Estados de cuenta del período.</p>
     </div>
 </header>
 <section class="bloque">

@@ -96,6 +96,9 @@ final class TableroTest extends CIUnitTestCase
         $informes = $this->withSession(['usuario_id' => $alta['id']])->get('informes');
         $informes->assertOK();
         $informes->assertSee('Rendiciones del período');
+        $informes->assertSee('Estados de cuenta del período.');
+        $informes->assertSee('Rendiciones del período y su estado.');
+        $informes->assertDontSee('administrador');
         $informes->assertSee('Cartola');
         $informes->assertDontSee('Caja chica');
         $informes->assertDontSee('Preasientos');

@@ -21,7 +21,7 @@ class Informes extends BaseController
     private const PIEZAS = [
         'rendiciones' => [
             'titulo' => 'Rendiciones del período',
-            'bajada' => 'Las rendiciones abiertas en el mes, agrupadas por persona.',
+            'bajada' => 'Rendiciones del período y su estado.',
         ],
         'cartola' => [
             'titulo' => 'Cartola',
@@ -29,7 +29,7 @@ class Informes extends BaseController
         ],
         'gastos' => [
             'titulo' => 'Gastos y cuentas',
-            'bajada' => 'Gastos rendidos del período, por persona y por la cuenta del preasiento.',
+            'bajada' => 'Gastos rendidos del período.',
         ],
         'asientos' => [
             'titulo' => 'Preasientos',
@@ -37,7 +37,7 @@ class Informes extends BaseController
         ],
         'tipos' => [
             'titulo' => 'Tipo de gasto',
-            'bajada' => 'Nivel de gasto de la compañía en el período, por tipo.',
+            'bajada' => 'Gasto del período, por tipo.',
         ],
         'pendientes' => [
             'titulo' => 'Pendientes del mes',
@@ -156,7 +156,7 @@ class Informes extends BaseController
             return redirect()->to('/informes');
         }
         if (! $filtro['esAdmin'] && ! in_array($pieza, self::DEL_RENDIDOR, true)) {
-            return redirect()->to('/informes')->with('error', 'Ese informe lo ve quien administra la empresa.');
+            return redirect()->to('/informes')->with('error', 'Ese informe no está en este perfil.');
         }
         if (isset(self::DE_PAGO[$pieza]) && ! Modulos::activo($empresa, self::DE_PAGO[$pieza])) {
             return view('plan/fuera', [
@@ -166,10 +166,10 @@ class Informes extends BaseController
             ]);
         }
         if ($pieza === 'cuentas' && ! $filtro['esAdmin']) {
-            return redirect()->to('/panel')->with('error', 'Solo el administrador ve el seguimiento de cuentas.');
+            return redirect()->to('/panel')->with('error', 'Ese informe no está en este perfil.');
         }
         if (in_array($pieza, ['caja', 'socios', 'recuperar'], true) && ! $filtro['esAdmin']) {
-            return redirect()->to('/informes')->with('error', 'Ese estado de cuenta lo ve quien administra la empresa.');
+            return redirect()->to('/informes')->with('error', 'Ese informe no está en este perfil.');
         }
         $servicio = new InformeServicio();
         $persona = $filtro['persona'];
@@ -423,7 +423,7 @@ class Informes extends BaseController
     {
         return $empresa === null
             ? redirect()->to('/login')
-            : redirect()->to('/panel')->with('error', 'Solo el administrador arma los preasientos.');
+            : redirect()->to('/panel')->with('error', 'Ese informe no está en este perfil.');
     }
 
     /**

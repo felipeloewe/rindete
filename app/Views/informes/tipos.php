@@ -6,7 +6,7 @@
 <header class="pagina">
     <div>
         <h1><?= esc($pieza['titulo']) ?></h1>
-        <p><?= esc($periodo) ?>. <?= $esAdmin && (int) $persona === 0 ? 'Nivel de la compañía.' : 'Nivel de la persona.' ?></p>
+        <p><?= esc($periodo) ?>. <?= esc($pieza['bajada']) ?></p>
     </div>
     <a class="boton" href="<?= base_url('informes?' . $consulta) ?>">Volver</a>
 </header>

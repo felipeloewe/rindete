@@ -6,7 +6,7 @@
 <header class="pagina">
     <div>
         <h1>Mi perfil</h1>
-        <p><a href="#datos">Mis datos</a> · <a href="#estado">Mi estado</a> · <a href="#salir">Salir</a></p>
+        <p class="saltos"><a href="#datos">Mis datos</a><a href="#estado">Mi estado</a><a href="#salir">Salir</a></p>
     </div>
 </header>
 <section class="bloque" id="datos">
