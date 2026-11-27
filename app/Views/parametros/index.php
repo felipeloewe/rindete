@@ -9,6 +9,11 @@
         <p>Elige la regla que quieres dejar vigente. La carga lee cuentas, clasificación, gastos aceptados y tipos de documento.</p>
     </div>
 </header>
+<section class="caja">
+    <div class="caja-cabeza">
+        <h2>Reglas</h2>
+        <span>Cada una se carga por separado.</span>
+    </div>
 <div class="mosaico">
     <a class="losa losa-gastos" href="<?= base_url('parametros/cuentas') ?>">
         <strong>Cuentas</strong>
@@ -55,4 +60,5 @@
         <span><?= ! empty($dePago) ? 'Si quien rinde los anota en el gasto.' : 'En planes de pago.' ?></span>
     </a>
 </div>
+</section>
 <?= $this->endSection() ?>

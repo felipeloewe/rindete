@@ -12,6 +12,11 @@
 <section class="bloque">
     <?= $this->include('informes/filtros') ?>
 </section>
+<section class="caja">
+    <div class="caja-cabeza">
+        <h2>Informes del período</h2>
+        <span>Elige el estado de cuenta que necesitas.</span>
+    </div>
 <div class="mosaico">
     <?php
         $losas = [
@@ -52,4 +57,5 @@
         </a>
     <?php endif ?>
 </div>
+</section>
 <?= $this->endSection() ?>
