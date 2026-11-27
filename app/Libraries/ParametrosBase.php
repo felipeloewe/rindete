@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Libraries;
 
 use App\Models\CategoriaModel;
+use App\Models\GastoModel;
 use App\Models\TipoDocumentoModel;
 use App\Models\UsuarioModel;
 
@@ -17,7 +18,11 @@ class ParametrosBase
     {
         $empresaId = (int) $empresa['id'];
         $fila      = model(\App\Models\EmpresaModel::class)->find($empresaId);
-        if (! is_array($fila) || (int) ($fila['parametros_sembrados'] ?? 0) === 1) {
+        if (! is_array($fila)) {
+            return;
+        }
+        self::alinearDocumentos($fila);
+        if ((int) ($fila['parametros_sembrados'] ?? 0) === 1) {
             return;
         }
         $pais = Paises::pais((string) ($fila['pais'] ?? $empresa['pais'] ?? ''));
@@ -98,6 +103,49 @@ class ParametrosBase
         $db->table('gastos_aceptados')->where('categoria_id', $categoriaId)->delete();
         $db->table('categoria_cuentas')->where('categoria_id', $categoriaId)->delete();
         $db->table('tarjeta_categorias')->where('categoria_id', $categoriaId)->delete();
+    }
+
+    /**
+     * Chile ofrece boleta, factura y nota de crédito electrónicas, más Otro.
+     * Un nombre que ya no está en esa lista se apaga si algún gasto lo usa, y se quita si no.
+     *
+     * @param array<string, mixed> $empresa
+     */
+    private static function alinearDocumentos(array $empresa): void
+    {
+        if ((string) ($empresa['pais'] ?? '') !== 'CL') {
+            return;
+        }
+        $empresaId = (int) $empresa['id'];
+        $deseados  = Paises::pais('CL')['docs'] ?? [];
+        $modelo    = model(TipoDocumentoModel::class);
+        $porNombre = [];
+        foreach ($modelo->where('empresa_id', $empresaId)->findAll() as $fila) {
+            $porNombre[(string) $fila['nombre']] = $fila;
+        }
+        foreach ($deseados as $nombre) {
+            if (isset($porNombre[$nombre])) {
+                continue;
+            }
+            $modelo->insert([
+                'empresa_id'      => $empresaId,
+                'nombre'          => $nombre,
+                'monto_aceptado'  => 0,
+                'sin_comprobante' => 0,
+                'activo'          => 1,
+            ]);
+        }
+        foreach (['Boleta', 'Nota de crédito', 'Comprobante de gasto'] as $viejo) {
+            if (! isset($porNombre[$viejo])) {
+                continue;
+            }
+            $usado = model(GastoModel::class)->where('empresa_id', $empresaId)->where('tipo_doc', $viejo)->countAllResults();
+            if ($usado > 0) {
+                $modelo->update($porNombre[$viejo]['id'], ['activo' => 0]);
+                continue;
+            }
+            $modelo->delete($porNombre[$viejo]['id']);
+        }
     }
 
     /**

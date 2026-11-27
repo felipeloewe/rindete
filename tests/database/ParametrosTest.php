@@ -29,20 +29,83 @@ final class ParametrosTest extends CIUnitTestCase
 
     public function testElAltaDejaLosTiposYLosGastosAceptados(): void
     {
-        $this->entrar();
+        $cuenta = $this->entrar();
         $empresa = model(EmpresaModel::class)->first();
         $tipos   = model(TipoDocumentoModel::class)->where('empresa_id', $empresa['id'])->findAll();
         $nombres = array_column($tipos, 'nombre');
 
-        $this->assertContains('Boleta', $nombres);
+        sort($nombres);
+        $this->assertSame(
+            ['Boleta electrónica', 'Factura electrónica', 'Nota de crédito electrónica', 'Otro'],
+            $nombres,
+        );
         $this->assertSame(1, (int) $empresa['parametros_sembrados']);
         $this->assertSame(6, db_connect()->table('gastos_aceptados')->countAllResults());
+
+        $formulario = $this->withSession(['usuario_id' => $cuenta['usuario_id']])->get('gastos/nuevo');
+        $formulario->assertOK();
+        $formulario->assertSee('Boleta electrónica');
+        $formulario->assertSee('Factura electrónica');
+        $formulario->assertSee('Nota de crédito electrónica');
+        $formulario->assertSee('value="Otro"');
+        $formulario->assertDontSee('Comprobante de gasto');
+        $formulario->assertDontSee('>Boleta<');
+        $formulario->assertDontSee('>Nota de crédito<');
+    }
+
+    public function testUnaEmpresaChilenaYaCreadaQuedaConLosDocumentosDelSii(): void
+    {
+        $cuenta    = $this->entrar();
+        $usuario   = model(UsuarioModel::class)->find($cuenta['usuario_id']);
+        $empresa   = model(EmpresaModel::class)->find($usuario['empresa_id']);
+        $categoria = model(CategoriaModel::class)->where('empresa_id', $empresa['id'])->first();
+        $modelo    = model(TipoDocumentoModel::class);
+        $modelo->where('empresa_id', $empresa['id'])->delete();
+        foreach (['Factura electrónica', 'Boleta', 'Nota de crédito', 'Comprobante de gasto', 'Otro', 'Vale interno'] as $nombre) {
+            $modelo->insert([
+                'empresa_id'      => $empresa['id'],
+                'nombre'          => $nombre,
+                'monto_aceptado'  => 0,
+                'sin_comprobante' => 0,
+                'activo'          => 1,
+            ]);
+        }
+        model(GastoModel::class)->insert([
+            'empresa_id'   => $empresa['id'],
+            'usuario_id'   => $usuario['id'],
+            'categoria_id' => $categoria['id'],
+            'concepto'     => 'Taxi',
+            'proveedor'    => 'Sur',
+            'fecha'        => '2026-11-09',
+            'monto'        => 1000,
+            'moneda'       => 'CLP',
+            'tipo_doc'     => 'Boleta',
+            'estado'       => 'legalizado',
+            'creado'       => date('Y-m-d H:i:s'),
+        ]);
+
+        \App\Libraries\ParametrosBase::sembrar($empresa);
+
+        $vigentes = [];
+        $apagados = [];
+        foreach ($modelo->where('empresa_id', $empresa['id'])->orderBy('nombre', 'ASC')->findAll() as $fila) {
+            if ((int) $fila['activo'] === 1) {
+                $vigentes[] = $fila['nombre'];
+            } else {
+                $apagados[] = $fila['nombre'];
+            }
+        }
+        $this->assertSame(
+            ['Boleta electrónica', 'Factura electrónica', 'Nota de crédito electrónica', 'Otro', 'Vale interno'],
+            $vigentes,
+        );
+        $this->assertSame(['Boleta'], $apagados);
     }
 
     public function testLaCargaObservaElTopeDelTipoYLaCategoria(): void
     {
         $cuenta = $this->entrar();
-        $boleta = model(TipoDocumentoModel::class)->where('nombre', 'Boleta')->first();
+        $boleta = model(TipoDocumentoModel::class)->where('nombre', 'Boleta electrónica')->first();
         model(TipoDocumentoModel::class)->update($boleta['id'], ['monto_aceptado' => 5000]);
         $usuario   = model(UsuarioModel::class)->find($cuenta['usuario_id']);
         $empresa   = model(EmpresaModel::class)->find($usuario['empresa_id']);
@@ -107,7 +170,12 @@ final class ParametrosTest extends CIUnitTestCase
 
         $tipos = $this->withSession(['usuario_id' => $cuenta['usuario_id']])->get('parametros/tipos');
         $tipos->assertOK();
-        $tipos->assertSee('Boleta');
+        $tipos->assertSee('Boleta electrónica');
+        $tipos->assertSee('Factura electrónica');
+        $tipos->assertSee('Nota de crédito electrónica');
+        $tipos->assertDontSee('Comprobante de gasto');
+        $tipos->assertDontSee('>Boleta<');
+        $tipos->assertDontSee('>Nota de crédito<');
 
         $rendidor = model(UsuarioModel::class)->insert([
             'empresa_id' => model(UsuarioModel::class)->find($cuenta['usuario_id'])['empresa_id'],
@@ -153,7 +221,7 @@ final class ParametrosTest extends CIUnitTestCase
             'fecha'        => '2026-11-09',
             'monto'        => $monto,
             'categoria_id' => (string) $categoriaId,
-            'tipo_doc'     => 'Boleta',
+            'tipo_doc'     => 'Boleta electrónica',
             'id_fiscal'    => '76.111.222-3',
             'num_doc'      => $numero,
         ];

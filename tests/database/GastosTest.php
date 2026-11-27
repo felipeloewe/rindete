@@ -44,7 +44,7 @@ final class GastosTest extends CIUnitTestCase
             'fecha'        => '2026-11-09',
             'monto'        => '10000',
             'categoria_id' => (string) $categoria['id'],
-            'tipo_doc'     => 'Boleta',
+            'tipo_doc'     => 'Boleta electrónica',
             'id_fiscal'    => '76.111.222-3',
             'num_doc'      => '99',
         ]);
@@ -75,7 +75,7 @@ final class GastosTest extends CIUnitTestCase
             'fecha'        => '2026-11-09',
             'monto'        => '12000',
             'categoria_id' => $categoria['id'],
-            'tipo_doc'     => 'Boleta',
+            'tipo_doc'     => 'Boleta electrónica',
             'id_fiscal'    => '76.111.222-3',
             'num_doc'      => '100',
         ], $archivo);
@@ -104,7 +104,7 @@ final class GastosTest extends CIUnitTestCase
             'fecha'        => '2026-11-09',
             'monto'        => '12000',
             'categoria_id' => $categoria['id'],
-            'tipo_doc'     => 'Boleta',
+            'tipo_doc'     => 'Boleta electrónica',
             'id_fiscal'    => '76.111.222-3',
             'num_doc'      => '101',
         ], $archivo);
@@ -129,7 +129,7 @@ final class GastosTest extends CIUnitTestCase
             'fecha'        => '2026-11-09',
             'monto'        => '4000',
             'categoria_id' => $categoria['id'],
-            'tipo_doc'     => 'Boleta',
+            'tipo_doc'     => 'Boleta electrónica',
             'centro_id'    => (string) $centro,
         ];
 
@@ -175,7 +175,7 @@ final class GastosTest extends CIUnitTestCase
             'fecha'        => '2026-11-12',
             'monto'        => '1500',
             'categoria_id' => $categoria['id'],
-            'tipo_doc'     => 'Boleta',
+            'tipo_doc'     => 'Boleta electrónica',
             'centro_id'    => '999',
         ], null);
         $this->assertFalse($ajeno['ok']);
@@ -198,7 +198,7 @@ final class GastosTest extends CIUnitTestCase
             'fecha'        => '2026-11-09',
             'monto'        => '4000',
             'categoria_id' => $categoria['id'],
-            'tipo_doc'     => 'Boleta',
+            'tipo_doc'     => 'Boleta electrónica',
             'centro_id'    => '999',
         ], null);
         $this->assertTrue($conserva['ok'], implode(' ', $conserva['errores']));

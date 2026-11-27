@@ -220,7 +220,7 @@ final class RendicionesTest extends CIUnitTestCase
             'fecha'        => $fecha,
             'monto'        => '12000',
             'categoria_id' => $categoria['id'],
-            'tipo_doc'     => 'Boleta',
+            'tipo_doc'     => 'Boleta electrónica',
             'id_fiscal'    => '76.111.222-3',
             'num_doc'      => $numero,
         ], $archivo);

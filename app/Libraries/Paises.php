@@ -15,7 +15,7 @@ class Paises
             'CL' => [
                 'nombre' => 'Chile', 'moneda' => 'CLP', 'autoridad' => 'SII', 'id_fiscal' => 'RUT', 'ejemplo' => '12.345.678-5',
                 'id_proveedor' => 'RUT proveedor', 'codigo' => 'Folio DTE', 'codigo_ayuda' => 'Folio del documento tributario electrónico',
-                'docs' => ['Factura electrónica', 'Boleta', 'Nota de crédito', 'Comprobante de gasto', 'Otro'],
+                'docs' => ['Boleta electrónica', 'Factura electrónica', 'Nota de crédito electrónica', 'Otro'],
             ],
             'CO' => [
                 'nombre' => 'Colombia', 'moneda' => 'COP', 'autoridad' => 'DIAN', 'id_fiscal' => 'NIT', 'ejemplo' => '900.123.456-8',
