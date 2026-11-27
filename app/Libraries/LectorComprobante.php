@@ -177,6 +177,9 @@ class LectorComprobante
 
     private function tesseract(string $ruta): string
     {
+        if (! function_exists('exec')) {
+            return '';
+        }
         $base = tempnam(sys_get_temp_dir(), 'ocr');
         if ($base === false) {
             return '';
@@ -198,13 +201,10 @@ class LectorComprobante
             $partes[] = $bytes;
         }
         foreach ($this->streams($bytes) as $stream) {
-            if (
-                str_contains($stream, '<RUTEmisor')
-                || str_contains($stream, '<Folio')
-                || str_contains($stream, 'Tj')
-                || str_contains($stream, 'BT')
-            ) {
+            if (str_contains($stream, '<RUTEmisor') || str_contains($stream, '<Folio')) {
                 $partes[] = $stream;
+            }
+            if (str_contains($stream, 'Tj') || str_contains($stream, 'BT')) {
                 $partes[] = $this->cadenas($stream);
             }
         }
@@ -222,9 +222,7 @@ class LectorComprobante
         }
         $lista = [];
         foreach ($hallados[1] as $stream) {
-            $stream  = rtrim($stream, "\r\n");
-            $inflado = @gzinflate($stream);
-            $lista[] = is_string($inflado) && $inflado !== '' ? $inflado : $stream;
+            $lista[] = $this->inflar(rtrim($stream, "\r\n"));
         }
 
         return $lista;
@@ -237,7 +235,9 @@ class LectorComprobante
         }
         $lineas = [];
         foreach ($hallados[1] as $cadena) {
-            $linea = str_replace(['\\(', '\\)', '\\\\', '\\n', '\\r'], ['(', ')', '\\', "\n", ''], $cadena);
+            $linea = preg_replace_callback('/\\\\([0-7]{1,3})/', static fn (array $m): string => chr(octdec($m[1])), $cadena);
+            $linea = str_replace(['\\(', '\\)', '\\\\', '\\n', '\\r'], ['(', ')', '\\', "\n", ''], (string) $linea);
+            $linea = mb_convert_encoding($linea, 'UTF-8', 'ISO-8859-1');
             $linea = trim($linea);
             if ($linea !== '' && preg_match('/[\p{L}\d]/u', $linea) === 1) {
                 $lineas[] = $linea;
@@ -247,8 +247,23 @@ class LectorComprobante
         return implode("\n", $lineas);
     }
 
+    private function inflar(string $stream): string
+    {
+        foreach (['gzuncompress', 'gzinflate', 'gzdecode'] as $funcion) {
+            $inflado = @$funcion($stream);
+            if (is_string($inflado) && $inflado !== '') {
+                return $inflado;
+            }
+        }
+
+        return $stream;
+    }
+
     private function pdftotext(string $ruta): string
     {
+        if (! function_exists('exec')) {
+            return '';
+        }
         $salida = [];
         $codigo = 1;
         exec('command -v pdftotext', $salida, $codigo);

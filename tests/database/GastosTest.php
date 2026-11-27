@@ -263,6 +263,46 @@ final class GastosTest extends CIUnitTestCase
         $this->withSession(['usuario_id' => $usuario['id']])->get('gastos/nuevo')->assertDontSee('Centro de costo');
     }
 
+    public function testCompletaLosDatosVaciosDeUnGastoYaGuardado(): void
+    {
+        $this->postForm('registro', $this->cuenta());
+        $usuario   = $this->rendidora(model(UsuarioModel::class)->porEmail('ana@acme.test'));
+        $empresa   = model(EmpresaModel::class)->find($usuario['empresa_id']);
+        $categoria = model(CategoriaModel::class)->where('nombre', 'Alimentación')->first();
+        $xml       = '<TipoDTE>33</TipoDTE><Folio>4412</Folio><FchEmis>2026-11-09</FchEmis>'
+            . '<RUTEmisor>76111222-3</RUTEmisor><RznSoc>Cafe Central</RznSoc><MntTotal>12500</MntTotal>';
+        $flujo = gzdeflate($xml);
+        $pdf   = "%PDF-1.4\n1 0 obj\n<< /Length " . strlen($flujo) . " /Filter /FlateDecode >>\nstream\n"
+            . $flujo . "\nendstream\nendobj\ntrailer\n<<>>\n%%EOF\n";
+        $guardado = (new \App\Libraries\Comprobante())->guardarBytes((int) $empresa['id'], $pdf, 'pdf');
+        $this->assertTrue($guardado['ok'], $guardado['error']);
+
+        $resultado = (new GastoServicio())->crear($usuario, $empresa, [
+            'concepto'      => 'Almuerzo',
+            'proveedor'     => 'Lo escrito a mano',
+            'fecha'         => '2026-11-09',
+            'monto'         => '12500',
+            'categoria_id'  => $categoria['id'],
+            'tipo_doc'      => '',
+            'id_fiscal'     => '',
+            'num_doc'       => '',
+            'codigo_fiscal' => '',
+            'comprobante_recibido' => $guardado['nombre'],
+        ], null);
+        $this->assertTrue($resultado['ok'], implode(' ', $resultado['errores']));
+        $this->assertSame('', $resultado['gasto']['id_fiscal']);
+
+        $informe = (new \App\Libraries\CompletarLectura())->aplicar();
+        $this->assertSame(1, $informe['actualizados']);
+        $gasto = model(GastoModel::class)->find($resultado['gasto']['id']);
+        $this->assertSame('Lo escrito a mano', $gasto['proveedor']);
+        $this->assertSame('76.111.222-3', $gasto['id_fiscal']);
+        $this->assertSame('4412', $gasto['num_doc']);
+        $this->assertSame('4412', $gasto['codigo_fiscal']);
+        $this->assertSame('Factura electrónica', $gasto['tipo_doc']);
+        $this->assertSame(0, (int) $gasto['fiscal_incompleto']);
+    }
+
     public function testLaTablaDeLegalizadosEsDeTodaLaEmpresaYSoloDelAdmin(): void
     {
         $this->postForm('registro', $this->cuenta());
