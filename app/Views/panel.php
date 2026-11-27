@@ -10,8 +10,11 @@
     </div>
     <a class="boton" href="<?= base_url('gastos/nuevo') ?>">Registrar un gasto</a>
 </header>
-<section class="bloque">
-    <h2>Acciones pendientes</h2>
+<section class="caja">
+    <div class="caja-cabeza">
+        <h2>Acciones pendientes</h2>
+        <span>Lo que hoy espera una revisión.</span>
+    </div>
     <div class="pendientes">
         <a href="<?= base_url('rendiciones') ?>"><strong><?= count($tablero['abiertas']) ?></strong><span>Rendiciones abiertas</span></a>
         <a href="<?= base_url('rendiciones') ?>"><strong><?= count($tablero['proceso']) ?></strong><span>Rendiciones en proceso</span></a>
@@ -22,6 +25,11 @@
         <p><a href="<?= base_url('gastos') ?>">Hay <?= count($entradas) ?> boleta<?= count($entradas) === 1 ? '' : 's' ?> por confirmar.</a> Llegaron por WhatsApp o por correo y faltan los datos del gasto.</p>
     <?php endif ?>
 </section>
+<section class="caja">
+    <div class="caja-cabeza">
+        <h2>Accesos</h2>
+        <span>Entra a cada parte de la cuenta.</span>
+    </div>
 <div class="mosaico">
     <a class="losa losa-gastos" href="<?= base_url('gastos') ?>">
         <strong>Gastos</strong>
@@ -82,6 +90,7 @@
         </a>
     <?php endif ?>
 </div>
+</section>
 <?php if (($usuario['rol'] ?? '') === 'administrador' && $empresa && $pais) : ?>
     <section class="bloque">
         <dl class="ficha">
