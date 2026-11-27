@@ -86,6 +86,63 @@ final class GastosTest extends CIUnitTestCase
         @unlink($ruta);
     }
 
+    public function testLaFacturaElectronicaGuardaLosDatosLeidos(): void
+    {
+        $this->postForm('registro', $this->cuenta());
+        $usuario   = $this->rendidora(model(UsuarioModel::class)->porEmail('ana@acme.test'));
+        $categoria = model(CategoriaModel::class)->where('nombre', 'Alimentación')->first();
+        $xml       = '<TipoDTE>33</TipoDTE><Folio>4412</Folio><FchEmis>2026-11-09</FchEmis>'
+            . '<RUTEmisor>76111222-3</RUTEmisor><RznSoc>Cafe Central</RznSoc><MntTotal>12500</MntTotal>';
+        $flujo = gzdeflate($xml);
+        $pdf   = "%PDF-1.4\n1 0 obj\n<< /Length " . strlen($flujo) . " /Filter /FlateDecode >>\nstream\n"
+            . $flujo . "\nendstream\nendobj\ntrailer\n<<>>\n%%EOF\n";
+        $ruta = WRITEPATH . 'factura-formulario.pdf';
+        file_put_contents($ruta, $pdf);
+        service('superglobals')->setFilesArray([
+            'comprobante' => [
+                'name'     => 'factura.pdf',
+                'type'     => 'application/pdf',
+                'tmp_name' => $ruta,
+                'error'    => UPLOAD_ERR_OK,
+                'size'     => filesize($ruta),
+            ],
+        ]);
+
+        $resultado = $this->withSession(['usuario_id' => $usuario['id']])->postForm('gastos', [
+            'concepto'     => 'Almuerzo',
+            'proveedor'    => '',
+            'fecha'        => date('Y-m-d'),
+            'monto'        => '',
+            'categoria_id' => (string) $categoria['id'],
+            'tipo_doc'     => '',
+            'id_fiscal'    => '',
+            'num_doc'      => '',
+            'codigo_fiscal'=> '',
+        ]);
+
+        service('superglobals')->setFilesArray([]);
+        @unlink($ruta);
+        $resultado->assertRedirect();
+        $gasto = model(GastoModel::class)->orderBy('id', 'DESC')->first();
+        $this->assertSame('Cafe Central', $gasto['proveedor']);
+        $this->assertSame('Factura electrónica', $gasto['tipo_doc']);
+        $this->assertSame('76.111.222-3', $gasto['id_fiscal']);
+        $this->assertSame('4412', $gasto['num_doc']);
+        $this->assertSame('4412', $gasto['codigo_fiscal']);
+        $this->assertSame('2026-11-09', $gasto['fecha']);
+        $this->assertSame(12500.0, (float) $gasto['monto']);
+        $this->assertSame('legalizado', $gasto['estado']);
+
+        $editar = $this->withSession(['usuario_id' => $usuario['id']])->get('gastos/' . $gasto['id'] . '/editar');
+        $editar->assertOK();
+        $cuerpo = $editar->getBody();
+        $this->assertStringContainsString('value="Cafe Central"', $cuerpo);
+        $this->assertStringContainsString('value="76.111.222-3"', $cuerpo);
+        $this->assertStringContainsString('value="4412"', $cuerpo);
+        $this->assertStringContainsString('value="2026-11-09"', $cuerpo);
+        $this->assertStringContainsString('value="Factura electr&oacute;nica" selected', $cuerpo);
+    }
+
     public function testUnComprobanteSobreElCupoSeRechaza(): void
     {
         $this->postForm('registro', $this->cuenta());
@@ -204,6 +261,84 @@ final class GastosTest extends CIUnitTestCase
         $this->assertTrue($conserva['ok'], implode(' ', $conserva['errores']));
         $this->assertSame($centro, (int) $conserva['gasto']['centro_id']);
         $this->withSession(['usuario_id' => $usuario['id']])->get('gastos/nuevo')->assertDontSee('Centro de costo');
+    }
+
+    public function testLaTablaDeLegalizadosEsDeTodaLaEmpresaYSoloDelAdmin(): void
+    {
+        $this->postForm('registro', $this->cuenta());
+        $ana       = $this->rendidora(model(UsuarioModel::class)->porEmail('ana@acme.test'));
+        $empresa   = model(EmpresaModel::class)->find($ana['empresa_id']);
+        $categoria = model(CategoriaModel::class)->where('nombre', 'Alimentación')->first();
+        $alta      = (new \App\Libraries\PersonaServicio())->crear($empresa, [
+            'nombre'   => 'Luis Soto',
+            'email'    => 'luis@acme.test',
+            'password' => 'clave-segura',
+        ]);
+        $this->assertTrue($alta['ok'], implode(' ', $alta['errores']));
+        $luis = model(UsuarioModel::class)->find($alta['id']);
+        $pdf  = $this->pdf();
+
+        $deAna = (new GastoServicio())->crear($ana, $empresa, [
+            'concepto'      => 'Almuerzo',
+            'proveedor'     => 'Café Central',
+            'fecha'         => '2026-11-09',
+            'monto'         => '10000',
+            'categoria_id'  => $categoria['id'],
+            'tipo_doc'      => 'Factura electrónica',
+            'id_fiscal'     => '76.111.222-3',
+            'num_doc'       => '100',
+            'codigo_fiscal' => '100',
+        ], $pdf);
+        $this->assertTrue($deAna['ok'], implode(' ', $deAna['errores']));
+        $deLuis = (new GastoServicio())->crear($luis, $empresa, [
+            'concepto'      => 'Taxi',
+            'proveedor'     => 'Transporte Sur',
+            'fecha'         => '2026-11-10',
+            'monto'         => '8000',
+            'categoria_id'  => $categoria['id'],
+            'tipo_doc'      => 'Boleta electrónica',
+            'id_fiscal'     => '77.222.333-4',
+            'num_doc'       => '200',
+            'codigo_fiscal' => '200',
+        ], $this->pdf());
+        $this->assertSame('legalizado', $deLuis['gasto']['estado']);
+        (new GastoServicio())->crear($luis, $empresa, [
+            'concepto'     => 'Sin papel',
+            'proveedor'    => 'Kiosco',
+            'fecha'        => '2026-11-11',
+            'monto'        => '3000',
+            'categoria_id' => $categoria['id'],
+            'tipo_doc'     => 'Otro',
+        ], null);
+
+        $tabla = $this->withSession(['usuario_id' => $ana['id']])->get('gastos/legalizados');
+        $tabla->assertOK();
+        $tabla->assertSee('Documentos legalizados');
+        $tabla->assertSee('Ana Pérez');
+        $tabla->assertSee('Luis Soto');
+        $tabla->assertSee('76.111.222-3');
+        $tabla->assertSee('77.222.333-4');
+        $tabla->assertSee('Café Central');
+        $tabla->assertSee('Transporte Sur');
+        $tabla->assertDontSee('Kiosco');
+        $menu = $this->withSession(['usuario_id' => $ana['id']])->get('gastos');
+        $menu->assertSee('Documentos legalizados');
+
+        $ajeno = $this->withSession(['usuario_id' => $luis['id']])->get('gastos/legalizados');
+        $ajeno->assertRedirectTo(site_url('gastos'));
+        $ajeno->assertSessionHas('error', 'Esa tabla es del administrador.');
+        $suyo = $this->withSession(['usuario_id' => $luis['id']])->get('gastos');
+        $suyo->assertOK();
+        $suyo->assertDontSee('Documentos legalizados');
+        $suyo->assertDontSee('gastos/legalizados');
+    }
+
+    private function pdf(): UploadedFile
+    {
+        $ruta = WRITEPATH . 'legalizado-' . bin2hex(random_bytes(4)) . '.pdf';
+        file_put_contents($ruta, "%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF\n");
+
+        return new UploadedFile($ruta, 'nota.pdf', 'application/pdf', (int) filesize($ruta), UPLOAD_ERR_OK);
     }
 
     /**

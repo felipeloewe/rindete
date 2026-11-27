@@ -80,7 +80,10 @@
             <?php if ($esMaestro) : ?>
                 <a class="activa" href="<?= base_url('master') ?>">Empresas</a>
             <?php elseif (session('usuario_id')) : ?>
-                <a<?= $marca('gastos') ?> href="<?= base_url('gastos') ?>">Gastos</a>
+                <a<?= ($ruta === 'gastos' || (str_starts_with($ruta, 'gastos/') && $ruta !== 'gastos/legalizados')) ? ' class="activa"' : '' ?> href="<?= base_url('gastos') ?>">Gastos</a>
+                <?php if ($esAdmin) : ?>
+                    <a<?= $ruta === 'gastos/legalizados' ? ' class="activa"' : '' ?> href="<?= base_url('gastos/legalizados') ?>">Legalizados</a>
+                <?php endif ?>
                 <a<?= $marca('rendiciones') ?> href="<?= base_url('rendiciones') ?>">Rendiciones</a>
                 <a<?= $marca('fondos') ?> href="<?= base_url('fondos') ?>">Fondos</a>
                 <a<?= $marca('informes') ?> href="<?= base_url('informes') ?>">Informes</a>

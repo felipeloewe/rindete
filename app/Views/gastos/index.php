@@ -5,7 +5,12 @@
 <?= $this->section('content') ?>
 <header class="pagina">
     <h1>Gastos</h1>
-    <a class="boton" href="<?= base_url('gastos/nuevo') ?>">Nuevo gasto</a>
+    <div class="lado">
+        <?php if (! empty($esAdmin)) : ?>
+            <a class="boton claro" href="<?= base_url('gastos/legalizados') ?>">Documentos legalizados</a>
+        <?php endif ?>
+        <a class="boton" href="<?= base_url('gastos/nuevo') ?>">Nuevo gasto</a>
+    </div>
 </header>
 <section class="bloque">
     <form class="filtros" method="get" action="<?= base_url('gastos') ?>">
