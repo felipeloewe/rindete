@@ -53,6 +53,7 @@ $routes->group('', ['filter' => 'auth'], static function (RouteCollection $route
 
     $routes->get('gastos', 'Gastos::index');
     $routes->get('gastos/nuevo', 'Gastos::nuevo');
+    $routes->get('gastos/legalizados', 'Gastos::legalizados');
     $routes->get('gastos/entradas/(:num)', 'Gastos::entrada/$1');
     $routes->post('gastos/entradas/(:num)/tomar', 'Gastos::tomarEntrada/$1');
     $routes->post('gastos', 'Gastos::crear');

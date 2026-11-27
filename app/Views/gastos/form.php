@@ -109,7 +109,7 @@
         </label>
         <label>Comprobante
             <input type="file" name="comprobante" accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf">
-            <small>JPG, PNG, WEBP o PDF. Máximo 5 MB. Si la foto trae fecha, monto, identificación o número, los completamos y te dejamos confirmar.</small>
+            <small>JPG, PNG, WEBP o PDF. Máximo 5 MB. Si el archivo trae proveedor, tipo, fecha, monto, RUT o folio, los guardamos en el gasto y te dejamos confirmar.</small>
         </label>
         <?php if (! empty($gasto['comprobante'])) : ?>
             <p><a href="<?= base_url('gastos/' . $gasto['id'] . '/comprobante') ?>">Ver comprobante actual</a></p>

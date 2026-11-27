@@ -40,6 +40,10 @@
         <span>Cartola y rendiciones del mes.</span>
     </a>
     <?php if (($usuario['rol'] ?? '') === 'administrador') : ?>
+        <a class="losa losa-gastos" href="<?= base_url('gastos/legalizados') ?>">
+            <strong>Legalizados</strong>
+            <span>Todos los documentos, de quien sea que rinda.</span>
+        </a>
         <a class="losa losa-gastos" href="<?= base_url('documentos') ?>">
             <strong>Documento único</strong>
             <span>Una forma de pago y el aviso a tesorería.</span>

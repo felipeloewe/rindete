@@ -60,6 +60,39 @@ class Gastos extends BaseController
             'personas'   => $this->personas((int) $empresa['id']),
             'entradas'   => (new Recepcion())->pendientes($usuario),
             'yo'         => (int) $usuario['id'],
+            'esAdmin'    => ($usuario['rol'] ?? '') === 'administrador',
+        ]);
+    }
+
+    public function legalizados()
+    {
+        [$usuario, $empresa] = $this->cuenta();
+        if ($usuario === null || $empresa === null) {
+            return redirect()->to('/login');
+        }
+        if (($usuario['rol'] ?? '') !== 'administrador') {
+            return redirect()->to('/gastos')->with('error', 'Esa tabla es del administrador.');
+        }
+
+        $q        = trim((string) $this->request->getGet('q'));
+        $consulta = model(GastoModel::class)
+            ->where('empresa_id', $empresa['id'])
+            ->where('estado', 'legalizado');
+        if ($q !== '') {
+            $consulta->groupStart()
+                ->like('proveedor', $q)
+                ->orLike('tipo_doc', $q)
+                ->orLike('id_fiscal', $q)
+                ->orLike('num_doc', $q)
+                ->orLike('codigo_fiscal', $q)
+                ->groupEnd();
+        }
+
+        return view('gastos/legalizados', [
+            'items'    => $consulta->orderBy('fecha', 'DESC')->orderBy('id', 'DESC')->findAll(),
+            'q'        => $q,
+            'pais'     => Paises::pais((string) $empresa['pais']),
+            'personas' => $this->personas((int) $empresa['id']),
         ]);
     }
 
@@ -107,7 +140,7 @@ class Gastos extends BaseController
         (new GastoServicio())->asegurarCategorias($empresa);
         $archivo = $this->request->getFile('comprobante');
         [$post, $leidos] = $this->completarLectura($this->request->getPost() ?? [], $archivo);
-        $post = $this->recibido($usuario, $post);
+        [$post, $leidos] = $this->recibido($usuario, $post, $leidos);
         $resultado = (new GastoServicio())->crear($usuario, $empresa, $post, $archivo);
         if (! $resultado['ok']) {
             return redirect()->back()->withInput()->with('errores', $resultado['errores']);
@@ -333,25 +366,31 @@ class Gastos extends BaseController
     /**
      * @param array<string, mixed> $usuario
      * @param array<string, mixed> $post
+     * @param list<string>         $leidos
      *
-     * @return array<string, mixed>
+     * @return array{0: array<string, mixed>, 1: list<string>}
      */
-    private function recibido(array $usuario, array $post): array
+    private function recibido(array $usuario, array $post, array $leidos): array
     {
         unset($post['comprobante_recibido']);
         $entradaId = (int) ($post['entrada_id'] ?? 0);
         if ($entradaId < 1) {
-            return $post;
+            return [$post, $leidos];
         }
         $entrada = (new Recepcion())->paraGasto($usuario, $entradaId);
         if ($entrada === null) {
             unset($post['entrada_id']);
 
-            return $post;
+            return [$post, $leidos];
         }
         $post['comprobante_recibido'] = (string) ($entrada['comprobante'] ?? '');
+        $json = json_decode((string) ($entrada['lectura'] ?? ''), true);
+        if (is_array($json)) {
+            [$post, $extra] = $this->aplicarLectura($post, $json);
+            $leidos = array_values(array_unique(array_merge($leidos, $extra)));
+        }
 
-        return $post;
+        return [$post, $leidos];
     }
 
     /**
@@ -374,18 +413,44 @@ class Gastos extends BaseController
      */
     private function completarLectura(array $post, $archivo): array
     {
-        $leido = (new \App\Libraries\LectorComprobante())->leer($archivo);
+        return $this->aplicarLectura($post, (new \App\Libraries\LectorComprobante())->leer($archivo));
+    }
+
+    /**
+     * Copia al gasto los datos leídos que el formulario dejó vacíos.
+     * La fecha de hoy es el valor que trae el formulario, así que la factura la reemplaza.
+     *
+     * @param array<string, mixed>  $post
+     * @param array<string, mixed>  $leido
+     *
+     * @return array{0: array<string, mixed>, 1: list<string>}
+     */
+    private function aplicarLectura(array $post, array $leido): array
+    {
         $usados = [];
         foreach ([
-            'id_fiscal' => 'la identificación',
-            'num_doc'   => 'el número',
-            'fecha'     => 'la fecha',
-            'monto'     => 'el monto',
+            'proveedor'     => 'el proveedor',
+            'tipo_doc'      => 'el tipo de documento',
+            'id_fiscal'     => 'la identificación',
+            'num_doc'       => 'el número',
+            'codigo_fiscal' => 'el folio',
+            'fecha'         => 'la fecha',
+            'monto'         => 'el monto',
         ] as $campo => $etiqueta) {
-            if (trim((string) ($post[$campo] ?? '')) === '' && ($leido[$campo] ?? '') !== '') {
-                $post[$campo] = $leido[$campo];
-                $usados[] = $etiqueta;
+            $propuesto = trim((string) ($leido[$campo] ?? ''));
+            if ($propuesto === '') {
+                continue;
             }
+            $actual = trim((string) ($post[$campo] ?? ''));
+            $vacio  = $actual === '';
+            if ($campo === 'fecha' && $actual === date('Y-m-d') && $propuesto !== $actual) {
+                $vacio = true;
+            }
+            if (! $vacio) {
+                continue;
+            }
+            $post[$campo] = $propuesto;
+            $usados[] = $etiqueta;
         }
 
         return [$post, $usados];
