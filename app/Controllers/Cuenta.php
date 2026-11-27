@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Libraries\BancosChile;
 use App\Libraries\IdFiscal;
+use App\Libraries\Paises;
+use App\Libraries\PerfilEstado;
 use App\Libraries\Sesion;
 use App\Models\UsuarioModel;
 
@@ -12,7 +15,37 @@ class Cuenta extends BaseController
 {
     public function index()
     {
-        return view('cuenta/index', ['usuario' => (new Sesion())->usuario()]);
+        $sesion = new Sesion();
+        $usuario = $sesion->usuario();
+        $empresa = $sesion->empresa();
+        $pais = is_array($empresa) ? Paises::pais((string) $empresa['pais']) : null;
+        $codigo = is_array($usuario) ? (string) ($usuario['banco_destino'] ?? '') : '';
+
+        return view('cuenta/index', [
+            'titulo'   => 'Mi perfil',
+            'usuario'  => $usuario,
+            'empresa'  => $empresa,
+            'pais'     => $pais,
+            'banco'    => $codigo === '' ? '' : sprintf('%03d %s', (int) $codigo, BancosChile::CODIGOS[$codigo] ?? ''),
+            'perfil'   => self::perfil(is_array($usuario) ? $usuario : []),
+            'estado'   => is_array($usuario) ? (new PerfilEstado())->de($usuario) : [
+                'trabajo' => [], 'fondos' => [], 'rendiciones' => [], 'alertas' => [],
+            ],
+        ]);
+    }
+
+    /**
+     * @param array<string, mixed> $usuario
+     */
+    private static function perfil(array $usuario): string
+    {
+        $admin = ($usuario['rol'] ?? '') === 'administrador';
+        $rinde = (int) ($usuario['rinde'] ?? 0) === 1;
+        if ($admin && $rinde) {
+            return 'Administrador y usuario';
+        }
+
+        return $admin ? 'Administrador' : 'Usuario';
     }
 
     public function update()

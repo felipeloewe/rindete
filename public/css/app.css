@@ -322,6 +322,8 @@ fieldset { border: 1px solid var(--line); border-radius: 10px; margin: 0 0 0.9re
 
 .lado .boton { background: var(--accent); color: var(--accent-ink); }
 .lado .boton:hover { background: var(--accent-hover); color: var(--accent-ink); }
+.lado .boton.perfil { background: #f6d3b0; color: #5a3b22; box-shadow: none; }
+.lado .boton.perfil:hover { background: #f0c49a; color: #5a3b22; }
 
 .boton.claro { background: white; color: var(--titulo); border: 1px solid var(--titulo); box-shadow: none; }
 .boton.claro:hover { background: white; color: var(--titulo); }

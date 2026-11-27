@@ -80,7 +80,6 @@
             <?php if ($esMaestro) : ?>
                 <a class="activa" href="<?= base_url('master') ?>">Empresas</a>
             <?php elseif (session('usuario_id')) : ?>
-                <a<?= $marca('panel') ?> href="<?= base_url('panel') ?>">Inicio</a>
                 <a<?= $marca('gastos') ?> href="<?= base_url('gastos') ?>">Gastos</a>
                 <a<?= $marca('rendiciones') ?> href="<?= base_url('rendiciones') ?>">Rendiciones</a>
                 <a<?= $marca('fondos') ?> href="<?= base_url('fondos') ?>">Fondos</a>
@@ -93,7 +92,6 @@
                     <a<?= $marca('modulos') ?> href="<?= base_url('modulos') ?>">Módulos</a>
                     <a<?= $marca('personas') ?> href="<?= base_url('personas') ?>">Usuarios</a>
                     <a<?= $marca('empresa') ?> href="<?= base_url('empresa') ?>">Empresa</a>
-                    <a<?= $marca('cuenta') ?> href="<?= base_url('cuenta') ?>">Cuenta</a>
                 <?php endif ?>
             <?php endif ?>
         </nav>
@@ -101,8 +99,7 @@
             <?php if ($esMaestro) : ?>
                 <a class="enlace" href="<?= base_url('master/salir') ?>">Salir</a>
             <?php elseif (session('usuario_id')) : ?>
-                <a class="enlace" href="<?= base_url('logout') ?>">Salir</a>
-                <a class="boton" href="<?= base_url('gastos/nuevo') ?>">Nuevo gasto</a>
+                <a class="boton perfil<?= $ruta === 'cuenta' || str_starts_with($ruta, 'cuenta/') ? ' activa' : '' ?>" href="<?= base_url('cuenta') ?>">Mi perfil</a>
             <?php else : ?>
                 <a class="enlace" href="<?= base_url('login') ?>">Entrar</a>
                 <a class="boton" href="<?= base_url('registro') ?>">Crear empresa</a>
