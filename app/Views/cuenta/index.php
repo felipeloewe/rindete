@@ -48,7 +48,6 @@
 <section class="bloque" id="estado">
     <h2>Mi estado</h2>
     <h3>On work</h3>
-    <p>Lo que tienes que hacer.</p>
     <?php if ($estado['trabajo'] === []) : ?>
         <p>No tienes nada que hacer.</p>
     <?php else : ?>

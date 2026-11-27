@@ -103,6 +103,7 @@ final class PerfilTest extends CIUnitTestCase
         $pagina->assertSee('Acme SpA');
         $pagina->assertSee('Administrador y usuario');
         $pagina->assertSee('On work');
+        $pagina->assertDontSee('Lo que tienes que hacer');
         $pagina->assertSee('Corrige el gasto Taxi del centro.');
         $pagina->assertSee('Retoma la rendición Viaje abierto.');
         $pagina->assertSee('Fondos a rendir');
