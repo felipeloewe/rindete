@@ -365,8 +365,41 @@ dt { color: var(--muted); }
 dd { margin: 0; font-weight: 600; }
 
 @media (max-width: 860px) {
-    .top { grid-template-columns: 1fr auto; padding: 0.85rem 1rem; }
-    nav { grid-column: 1 / -1; justify-content: flex-start; gap: 0.8rem; }
-    .grid-2, .filtros, .mosaico, .pendientes { grid-template-columns: 1fr; }
+    .franja { height: 0.4rem; }
+    .top {
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas:
+            "marca lado"
+            "nav nav";
+        column-gap: 0.75rem;
+        row-gap: 0.15rem;
+        padding: 0.4rem 0.85rem 0.2rem;
+    }
+    .marca { grid-area: marca; font-size: 1.2rem; min-width: 0; }
+    .lado { grid-area: lado; gap: 0.55rem; }
+    .lado .boton { padding: 0.42rem 0.8rem; }
+    nav {
+        grid-area: nav;
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+        gap: 0.9rem;
+        overflow-x: auto;
+        scrollbar-width: none;
+        margin: 0 -0.85rem;
+        padding: 0.1rem 0.85rem 0.3rem;
+    }
+    nav::-webkit-scrollbar { display: none; }
+    .top nav a {
+        flex: none;
+        padding: 0.12rem 0;
+        font-size: 0.92rem;
+        white-space: nowrap;
+    }
+    main { padding: 1.1rem 0.9rem 2.5rem; }
+    .grid-2, .filtros, .mosaico { grid-template-columns: 1fr; }
+    .pendientes { grid-template-columns: 1fr 1fr; gap: 0.55rem; }
+    .pendientes a { padding: 0.7rem 0.75rem; }
+    .pendientes strong { font-size: 1.35rem; }
+    .pendientes span { font-size: 0.86rem; line-height: 1.25; }
     .pagina { align-items: flex-start; flex-direction: column; }
 }

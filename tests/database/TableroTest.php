@@ -34,11 +34,14 @@ final class TableroTest extends CIUnitTestCase
         $panel = $this->withSession(['usuario_id' => $ana['id']])->get('panel');
         $panel->assertOK();
         $panel->assertSee('Acciones pendientes');
+        $panel->assertSee('Rendiciones abiertas');
+        $panel->assertSee('Rendiciones en proceso');
+        $panel->assertSee('Rendiciones cerradas');
+        $panel->assertSee('Posible duplicado (gasto)');
         $panel->assertSee('Categorías');
         $panel->assertSee('Usuarios');
-        $panel->assertSee('Viaje abierto');
-        $panel->assertSee('Sigue abierta. Ciérrala para terminar el flujo.');
-        $panel->assertSee('Almuerzo repetido');
+        $panel->assertDontSee('Sigue abierta. Ciérrala para terminar el flujo.');
+        $panel->assertDontSee('No hay rendiciones abiertas.');
 
         $rendicion = model(RendicionModel::class)->find($deuda);
         $cierre = (new SaldoRendicion())->cerrar($rendicion);
@@ -48,8 +51,6 @@ final class TableroTest extends CIUnitTestCase
         $cerrada = model(RendicionModel::class)->find($deuda);
         $this->assertSame('por_devolver', $cerrada['reembolso']);
 
-        $espera = $this->withSession(['usuario_id' => $ana['id']])->get('panel');
-        $espera->assertSee('Está rendida y espera los fondos de vuelta.');
         $ficha = $this->withSession(['usuario_id' => $ana['id']])->get('rendiciones/' . $deuda);
         $ficha->assertSee('Devolver los fondos');
 
@@ -67,10 +68,6 @@ final class TableroTest extends CIUnitTestCase
         $archivo->assertHeader('Content-Disposition', 'attachment; filename="devolucion-' . $deuda . '.txt"');
         $devuelta = model(RendicionModel::class)->find($deuda);
         $this->assertSame('devuelto', $devuelta['reembolso']);
-
-        $final = $this->withSession(['usuario_id' => $ana['id']])->get('panel');
-        $final->assertSee('Ya recibió los fondos de vuelta.');
-        $final->assertDontSee('Está rendida y espera los fondos de vuelta.');
     }
 
     public function testQuienRindeSoloVeRendicionEInformes(): void
