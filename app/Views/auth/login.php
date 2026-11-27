@@ -17,5 +17,6 @@
         </label>
         <button class="boton" type="submit">Entrar</button>
     </form>
+    <p><a href="<?= base_url('login/credenciales') ?>">Olvidaste tus credenciales</a></p>
 </section>
 <?= $this->endSection() ?>

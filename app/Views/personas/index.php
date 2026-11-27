@@ -121,6 +121,10 @@
             <?php endif ?>
             <button class="boton" type="submit">Guardar</button>
         </form>
+        <form method="post" action="<?= base_url('personas/' . $persona['id'] . '/credenciales') ?>">
+            <?= csrf_field() ?>
+            <button class="boton claro" type="submit">Reenviar credenciales</button>
+        </form>
     </section>
 <?php endforeach ?>
 <?= $this->endSection() ?>

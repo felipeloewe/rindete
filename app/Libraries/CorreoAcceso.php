@@ -35,4 +35,29 @@ class CorreoAcceso
             return false;
         }
     }
+
+    public function claveNueva(string $destino, string $nombre, string $empresa, string $clave): bool
+    {
+        $config = config(Email::class);
+        if ($config->fromEmail === '' || $destino === '' || $clave === '') {
+            return false;
+        }
+        $texto = "Hola {$nombre}.\n\n"
+            . "Esta es una clave nueva para entrar a {$empresa} en Rindete.\n\n"
+            . 'Entras en ' . site_url('login') . "\n"
+            . "Correo: {$destino}\n"
+            . "Clave: {$clave}\n\n"
+            . "Al entrar la cambias.\n";
+        try {
+            $mail = service('email');
+            $mail->setFrom($config->fromEmail, $config->fromName !== '' ? $config->fromName : 'Rindete');
+            $mail->setTo($destino);
+            $mail->setSubject('Tu clave de Rindete');
+            $mail->setMessage($texto);
+
+            return $mail->send(false);
+        } catch (\Throwable) {
+            return false;
+        }
+    }
 }

@@ -158,6 +158,72 @@ final class PersonasTest extends CIUnitTestCase
         $ficha->assertSee('CLP 8.000');
     }
 
+    public function testElAdministradorReenviaLaClaveYElLoginLaPide(): void
+    {
+        [$ana] = $this->empresa();
+        $alta = (new PersonaServicio())->crear(model(EmpresaModel::class)->find($ana['empresa_id']), [
+            'nombre'   => 'Luis Soto',
+            'email'    => 'luis@acme.test',
+            'password' => 'clave-segura',
+        ]);
+        $this->assertTrue($alta['ok'], implode(' ', $alta['errores']));
+        $luis = model(UsuarioModel::class)->porEmail('luis@acme.test');
+        $antes = (string) $luis['password'];
+
+        $pagina = $this->withSession(['usuario_id' => $ana['id']])->get('personas');
+        $pagina->assertOK();
+        $pagina->assertSee('Reenviar credenciales');
+
+        $this->withSession(['usuario_id' => $luis['id']]);
+        $ajeno = $this->postForm('personas/' . $ana['id'] . '/credenciales', []);
+        $ajeno->assertRedirectTo(site_url('panel'));
+
+        $this->withSession(['usuario_id' => $ana['id']]);
+        $envio = $this->postForm('personas/' . $luis['id'] . '/credenciales', []);
+        $envio->assertRedirectTo(site_url('personas'));
+        $avisos = session('avisos') ?? [];
+        $this->assertNotSame([], $avisos);
+        $this->assertMatchesRegularExpression('/Clave nueva de luis@acme\.test: [a-f0-9]{12}/', $avisos[0]);
+        preg_match('/: ([a-f0-9]{12})\./', $avisos[0], $clave);
+        $luego = model(UsuarioModel::class)->find($luis['id']);
+        $this->assertSame(1, (int) $luego['clave_inicial']);
+        $this->assertNotSame($antes, (string) $luego['password']);
+        $this->assertTrue(password_verify($clave[1], (string) $luego['password']));
+
+        model(UsuarioModel::class)->update($luis['id'], ['activo' => 0, 'clave_inicial' => 0]);
+        $this->withSession(['usuario_id' => $ana['id']]);
+        $apagado = $this->postForm('personas/' . $luis['id'] . '/credenciales', []);
+        $apagado->assertRedirectTo(site_url('personas'));
+        $apagado->assertSessionHas('error', 'Habilítala para entrar antes de reenviar la clave.');
+
+        $this->withSession([]);
+        $entrada = $this->get('login');
+        $entrada->assertOK();
+        $entrada->assertSee('Olvidaste tus credenciales');
+        $olvido = $this->get('login/credenciales');
+        $olvido->assertOK();
+        $olvido->assertSee('Enviar clave');
+        $pedido = $this->postForm('login/credenciales', ['email' => 'ana@acme.test']);
+        $pedido->assertRedirectTo(site_url('login/credenciales'));
+        $pedido->assertSessionHas('ok', 'Si ese correo tiene una cuenta, le enviamos una clave nueva. Si no llega, pide al administrador de tu empresa que la reenvíe.');
+        $ana = model(UsuarioModel::class)->porEmail('ana@acme.test');
+        $this->assertSame(0, (int) $ana['clave_inicial']);
+        $this->assertTrue(password_verify('clave-segura', (string) $ana['password']));
+        $nadie = $this->postForm('login/credenciales', ['email' => 'nadie@acme.test']);
+        $nadie->assertSessionHas('ok', 'Si ese correo tiene una cuenta, le enviamos una clave nueva. Si no llega, pide al administrador de tu empresa que la reenvíe.');
+    }
+
+    /**
+     * @param array<string, string> $data
+     */
+    private function postForm(string $path, array $data)
+    {
+        $security = service('security');
+        $data[$security->getTokenName()] = $security->getHash();
+
+        return $this->post($path, $data);
+    }
+
     /**
      * @return array{0: array<string, mixed>, 1: array<string, mixed>}
      */

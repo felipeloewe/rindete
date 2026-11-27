@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Libraries\BancosChile;
+use App\Libraries\Credenciales;
 use App\Libraries\CuentaGlobal;
 use App\Libraries\MediosConexion;
 use App\Libraries\Paises;
@@ -90,6 +91,36 @@ class Personas extends BaseController
         }
 
         return redirect()->to('/personas')->with('ok', 'Datos de la persona guardados.');
+    }
+
+    public function credenciales(int $id)
+    {
+        [$usuario, $empresa] = $this->admin();
+        if ($usuario === null) {
+            return $this->fuera($empresa);
+        }
+        $persona = model(UsuarioModel::class)->find($id);
+        if (! is_array($persona) || (int) $persona['empresa_id'] !== (int) $empresa['id']) {
+            return redirect()->to('/personas')->with('error', 'No encontramos a esa persona.');
+        }
+        $resultado = (new Credenciales())->renovar($persona, false);
+        if (! $resultado['ok']) {
+            return redirect()->to('/personas')->with('error', $resultado['errores'][0]);
+        }
+        $propia = (int) $usuario['id'] === (int) $persona['id'];
+        $destino = $propia ? '/cuenta' : '/personas';
+        if ($resultado['enviada']) {
+            return redirect()->to($destino)->with(
+                'ok',
+                $propia
+                    ? 'Enviamos una clave nueva a tu correo. Cámbiala ahora.'
+                    : 'Enviamos una clave nueva a ' . $resultado['email'] . '. Al entrar la cambia.',
+            );
+        }
+
+        return redirect()->to($destino)->with('ok', 'La clave nueva quedó lista.')->with('avisos', [
+            'El correo no salió. Clave nueva de ' . $resultado['email'] . ': ' . $resultado['clave'] . '. Al entrar la cambia.',
+        ]);
     }
 
     /**

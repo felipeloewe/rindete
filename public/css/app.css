@@ -158,6 +158,8 @@ main { max-width: 68rem; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
     scroll-margin-top: 5.5rem;
 }
 
+.bloque form + form { margin-top: 0.85rem; }
+
 .bloque form,
 .bloque .filtros {
     background: transparent;
@@ -414,6 +416,7 @@ dd { margin: 0; font-weight: 600; }
     .pagina { align-items: flex-start; flex-direction: column; }
     .pagina > .boton,
     .filtros > .boton,
+    .bloque form > .boton,
     #datos form > .boton,
     #salir > .boton { width: 100%; text-align: center; }
     .pagina .lado, .bloque .lado { width: 100%; justify-content: flex-start; flex-wrap: wrap; }

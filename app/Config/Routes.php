@@ -6,6 +6,8 @@ use CodeIgniter\Router\RouteCollection;
 $routes->get('/', 'Home::index');
 $routes->get('login', 'Auth::login');
 $routes->post('login', 'Auth::attempt');
+$routes->get('login/credenciales', 'Auth::olvidar');
+$routes->post('login/credenciales', 'Auth::reenviar');
 $routes->get('logout', 'Auth::logout');
 $routes->get('registro', 'Registro::index');
 $routes->post('registro', 'Registro::store');
@@ -46,6 +48,7 @@ $routes->group('', ['filter' => 'auth'], static function (RouteCollection $route
     $routes->post('empresa', 'Empresa::update');
     $routes->get('personas', 'Personas::index');
     $routes->post('personas', 'Personas::crear');
+    $routes->post('personas/(:num)/credenciales', 'Personas::credenciales/$1');
     $routes->post('personas/(:num)', 'Personas::guardar/$1');
 
     $routes->get('gastos', 'Gastos::index');
