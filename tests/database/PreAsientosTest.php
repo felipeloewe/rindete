@@ -183,7 +183,7 @@ final class PreAsientosTest extends CIUnitTestCase
         $movimientos = $this->withSession(['usuario_id' => $ana['id']])->get('informes/asientos?anio=2026&mes=11');
         $movimientos->assertOK();
         $movimientos->assertSee('Preasientos');
-        $movimientos->assertSee('antes de pasarlo al ERP');
+        $movimientos->assertSee('antes del ERP');
         $movimientos->assertDontSee('Asientos');
     }
 

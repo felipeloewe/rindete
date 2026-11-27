@@ -42,11 +42,11 @@
     <?php if (($usuario['rol'] ?? '') === 'administrador') : ?>
         <a class="losa losa-gastos" href="<?= base_url('gastos/legalizados') ?>">
             <strong>Legalizados</strong>
-            <span>Todos los documentos, de quien sea que rinda.</span>
+            <span>Todos los documentos de la empresa.</span>
         </a>
         <a class="losa losa-gastos" href="<?= base_url('documentos') ?>">
             <strong>Documento único</strong>
-            <span>Una forma de pago y el aviso a tesorería.</span>
+            <span>Una forma de pago y aviso a tesorería.</span>
         </a>
         <a class="losa losa-fondos" href="<?= base_url('caja') ?>">
             <strong>Caja chica</strong>
@@ -54,7 +54,7 @@
         </a>
         <a class="losa losa-personas" href="<?= base_url('socios') ?>">
             <strong>Socios</strong>
-            <span>Varios documentos y lo que hay que recuperar.</span>
+            <span>Documentos y lo que hay que recuperar.</span>
         </a>
         <a class="losa losa-empresa" href="<?= base_url('cargos') ?>">
             <strong>Tarjeta</strong>
@@ -66,11 +66,11 @@
         </a>
         <a class="losa losa-parametros" href="<?= base_url('parametros') ?>">
             <strong>Parámetros</strong>
-            <span>Cuentas, documentos y quién puede cargar.</span>
+            <span>Cuentas, documentos y quién carga.</span>
         </a>
         <a class="losa losa-personas" href="<?= base_url('personas') ?>">
             <strong>Usuarios</strong>
-            <span>Quién entra y quién rinde sin solicitud.</span>
+            <span>Quién entra y quién rinde.</span>
         </a>
         <a class="losa losa-parametros" href="<?= base_url('modulos') ?>">
             <strong>Módulos</strong>

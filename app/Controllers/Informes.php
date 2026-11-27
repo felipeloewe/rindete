@@ -25,7 +25,7 @@ class Informes extends BaseController
         ],
         'cartola' => [
             'titulo' => 'Cartola',
-            'bajada' => 'Fondos entregados, lo rendido y el saldo. El saldo del período es lo entregado menos lo rendido.',
+            'bajada' => 'Fondos entregados, lo rendido y el saldo del período.',
         ],
         'gastos' => [
             'titulo' => 'Gastos y cuentas',
@@ -33,7 +33,7 @@ class Informes extends BaseController
         ],
         'asientos' => [
             'titulo' => 'Preasientos',
-            'bajada' => 'Cada movimiento del período, del fondo o del gasto, antes de pasarlo al ERP.',
+            'bajada' => 'Movimientos del fondo o del gasto, antes del ERP.',
         ],
         'tipos' => [
             'titulo' => 'Tipo de gasto',
@@ -45,35 +45,35 @@ class Informes extends BaseController
         ],
         'remuneraciones' => [
             'titulo' => 'Remuneraciones',
-            'bajada' => 'Viático, asignación y bien que pasan a la liquidación.',
+            'bajada' => 'Viático, asignación y bien a la liquidación.',
         ],
         'tarjeta' => [
             'titulo' => 'Tarjeta',
-            'bajada' => 'Cargos, lo validado, lo rendido y facturas por pagar.',
+            'bajada' => 'Cargos, lo validado, lo rendido y por pagar.',
         ],
         'desviaciones' => [
             'titulo' => 'Desviaciones de tarjeta',
-            'bajada' => 'Lo que no calza entre el cargo y lo rendido después del pago.',
+            'bajada' => 'Lo que no calza entre el cargo y lo rendido.',
         ],
         'caja' => [
             'titulo' => 'Caja chica',
-            'bajada' => 'Entregas, reposiciones y saldo de la caja centralizada.',
+            'bajada' => 'Entregas, reposiciones y saldo centralizado.',
         ],
         'socios' => [
             'titulo' => 'Socios',
-            'bajada' => 'Documentos pagados, forma de pago y saldo por entidad.',
+            'bajada' => 'Documentos pagados y saldo por entidad.',
         ],
         'recuperar' => [
             'titulo' => 'Por recuperar',
-            'bajada' => 'Lo que hay que recuperar desde socios hacia cada entidad.',
+            'bajada' => 'Lo que hay que recuperar desde socios.',
         ],
         'medios' => [
             'titulo' => 'Movimientos de medios',
-            'bajada' => 'Abonos, remesas y retiros de Global66, y los pagos de comercio que avisa MACH.',
+            'bajada' => 'Global66 y los pagos de comercio de MACH.',
         ],
         'cuentas' => [
             'titulo' => 'Cuentas',
-            'bajada' => 'Movimientos de cada cuenta: el fondo nace cuando sale el dinero y pasa al gasto cuando se rinde.',
+            'bajada' => 'El fondo al salir el dinero y el gasto al rendir.',
         ],
     ];
 

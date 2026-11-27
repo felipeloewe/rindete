@@ -20,7 +20,7 @@
     </a>
     <a class="losa losa-categorias" href="<?= base_url('parametros/conexiones') ?>">
         <strong>Conexiones</strong>
-        <span>El token de Softnet o de Odoo, para preasientos y la nómina en el banco.</span>
+        <span>Token de Softnet o Odoo para el ERP.</span>
     </a>
     <a class="losa losa-parametros" href="<?= base_url('parametros/flujo') ?>">
         <strong>Flujo</strong>
@@ -32,7 +32,7 @@
     </a>
     <a class="losa losa-empresa" href="<?= base_url('parametros/medios') ?>">
         <strong>Integraciones</strong>
-        <span>Opcional. Credenciales de Global66 y de MACH.</span>
+        <span>Credenciales de Global66 y de MACH.</span>
     </a>
     <a class="losa losa-aceptados" href="<?= base_url('parametros/aceptados') ?>">
         <strong>Gastos aceptados</strong>
@@ -52,7 +52,7 @@
     </a>
     <a class="losa losa-gastos" href="<?= base_url('parametros/lugares') ?>">
         <strong>Centros y sucursales</strong>
-        <span><?= ! empty($dePago) ? 'El administrador elige si quien rinde lo anota.' : 'En planes de pago.' ?></span>
+        <span><?= ! empty($dePago) ? 'Si quien rinde los anota en el gasto.' : 'En planes de pago.' ?></span>
     </a>
 </div>
 <?= $this->endSection() ?>

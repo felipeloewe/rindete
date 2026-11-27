@@ -44,11 +44,11 @@
     <?php if ($esAdmin) : ?>
         <a class="losa losa-informes" href="<?= base_url('informes/preasientos?anio=' . $anio . '&mes=' . $mes) ?>">
             <strong>Preasientos del mes</strong>
-            <span><?= empty($incluidos['preasientos']) ? 'Módulo sin contratar.' : 'El mes agrupado, antes de pasarlo al ERP.' ?></span>
+            <span><?= empty($incluidos['preasientos']) ? 'Módulo sin contratar.' : 'El mes agrupado, antes del ERP.' ?></span>
         </a>
         <a class="losa losa-parametros" href="<?= base_url('informes/contabilizados?anio=' . $anio . '&mes=' . $mes) ?>">
             <strong>Asientos contabilizados</strong>
-            <span><?= empty($incluidos['preasientos']) ? 'Módulo sin contratar.' : 'Lo que ya se contabilizó en el ERP, por la API o a mano.' ?></span>
+            <span><?= empty($incluidos['preasientos']) ? 'Módulo sin contratar.' : 'Lo contabilizado en el ERP por API o a mano.' ?></span>
         </a>
     <?php endif ?>
 </div>

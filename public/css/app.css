@@ -213,8 +213,8 @@ main { max-width: 68rem; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
 .losa {
     display: flex;
     flex-direction: column;
-    justify-content: flex-end;
-    min-height: 11rem;
+    justify-content: flex-start;
+    min-height: 9.5rem;
     padding: 1.25rem 1.3rem;
     border-radius: 16px;
     border: 1px solid var(--line);
@@ -233,9 +233,21 @@ a.losa:hover { transform: translateY(-3px); color: var(--ink); box-shadow: 0 14p
     letter-spacing: -0.03em;
     margin: 0;
     color: var(--ink);
+    line-height: 1.2;
+    min-height: 2.4em;
 }
 
-.losa span { color: var(--muted); margin-top: 0.35rem; }
+.losa span {
+    color: var(--muted);
+    margin-top: 0.45rem;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    min-height: calc(1.35em * 2);
+}
 
 .losa-gastos,
 .losa-aceptados,
@@ -431,6 +443,8 @@ dd { margin: 0; font-weight: 600; }
     .mosaico { grid-template-columns: 1fr; }
     .pendientes { grid-template-columns: 1fr 1fr; gap: 0.55rem; }
     .pendientes a { padding: 0.7rem 0.75rem; }
+    .pendientes a:nth-child(2n + 1) { --losa-accent: var(--col-1); --losa-wash: var(--col-1-wash); }
+    .pendientes a:nth-child(2n + 2) { --losa-accent: var(--col-2); --losa-wash: var(--col-2-wash); }
     .pendientes strong { font-size: 1.35rem; }
     .pendientes span { font-size: 0.86rem; line-height: 1.25; }
     .pagina { align-items: flex-start; flex-direction: column; }
