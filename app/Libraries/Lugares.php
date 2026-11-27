@@ -23,6 +23,43 @@ class Lugares
         'concepto' => 'Otro concepto',
     ];
 
+    /** @var array<string, string> */
+    public const USO = [
+        'centro'   => 'usa_centro',
+        'sucursal' => 'usa_sucursal',
+        'concepto' => 'usa_concepto',
+    ];
+
+    /**
+     * @param array<string, mixed> $empresa
+     */
+    public function dePago(array $empresa): bool
+    {
+        return (string) ($empresa['plan'] ?? '') === 'cobro';
+    }
+
+    /**
+     * @param array<string, mixed> $empresa
+     */
+    public function ofrece(array $empresa, string $tipo): bool
+    {
+        $campo = self::USO[$tipo] ?? '';
+
+        return $campo !== '' && $this->dePago($empresa) && (int) ($empresa[$campo] ?? 0) === 1;
+    }
+
+    public function marcar(int $empresaId, string $tipo, bool $habilitado): bool
+    {
+        $campo = self::USO[$tipo] ?? '';
+        if ($campo === '') {
+            return false;
+        }
+
+        return model(\App\Models\EmpresaModel::class)->update($empresaId, [
+            $campo => $habilitado ? 1 : 0,
+        ]);
+    }
+
     /**
      * @return list<array<string, mixed>>
      */

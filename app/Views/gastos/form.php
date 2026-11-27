@@ -39,32 +39,40 @@
                 <input name="proveedor" required maxlength="140" value="<?= esc($valor('proveedor')) ?>" placeholder="Quién emitió el comprobante">
             </label>
         </div>
-        <div class="grid-2">
-            <label>Centro de costo
-                <select name="centro_id">
-                    <option value="">Sin centro</option>
-                    <?php foreach ($centros as $centro) : ?>
-                        <option value="<?= esc((string) $centro['id']) ?>" <?= $valor('centro_id') === (string) $centro['id'] ? 'selected' : '' ?>><?= esc($centro['nombre']) ?></option>
+        <?php if ($usaCentro || $usaSucursal) : ?>
+            <div class="grid-2">
+                <?php if ($usaCentro) : ?>
+                    <label>Centro de costo
+                        <select name="centro_id">
+                            <option value="">Sin centro</option>
+                            <?php foreach ($centros as $centro) : ?>
+                                <option value="<?= esc((string) $centro['id']) ?>" <?= $valor('centro_id') === (string) $centro['id'] ? 'selected' : '' ?>><?= esc($centro['nombre']) ?></option>
+                            <?php endforeach ?>
+                        </select>
+                    </label>
+                <?php endif ?>
+                <?php if ($usaSucursal) : ?>
+                    <label>Sucursal
+                        <select name="sucursal_id">
+                            <option value="">Sin sucursal</option>
+                            <?php foreach ($sucursales as $sucursal) : ?>
+                                <option value="<?= esc((string) $sucursal['id']) ?>" <?= $valor('sucursal_id') === (string) $sucursal['id'] ? 'selected' : '' ?>><?= esc($sucursal['nombre']) ?></option>
+                            <?php endforeach ?>
+                        </select>
+                    </label>
+                <?php endif ?>
+            </div>
+        <?php endif ?>
+        <?php if ($usaConcepto) : ?>
+            <label>Otro concepto
+                <select name="concepto_extra_id">
+                    <option value="">Sin otro concepto</option>
+                    <?php foreach ($conceptos as $extra) : ?>
+                        <option value="<?= esc((string) $extra['id']) ?>" <?= $valor('concepto_extra_id') === (string) $extra['id'] ? 'selected' : '' ?>><?= esc($extra['nombre']) ?></option>
                     <?php endforeach ?>
                 </select>
             </label>
-            <label>Sucursal
-                <select name="sucursal_id">
-                    <option value="">Sin sucursal</option>
-                    <?php foreach ($sucursales as $sucursal) : ?>
-                        <option value="<?= esc((string) $sucursal['id']) ?>" <?= $valor('sucursal_id') === (string) $sucursal['id'] ? 'selected' : '' ?>><?= esc($sucursal['nombre']) ?></option>
-                    <?php endforeach ?>
-                </select>
-            </label>
-        </div>
-        <label>Otro concepto
-            <select name="concepto_extra_id">
-                <option value="">Sin otro concepto</option>
-                <?php foreach ($conceptos as $extra) : ?>
-                    <option value="<?= esc((string) $extra['id']) ?>" <?= $valor('concepto_extra_id') === (string) $extra['id'] ? 'selected' : '' ?>><?= esc($extra['nombre']) ?></option>
-                <?php endforeach ?>
-            </select>
-        </label>
+        <?php endif ?>
         <div class="grid-2">
             <label>Fecha del gasto
                 <input type="date" name="fecha" required value="<?= esc($valor('fecha', date('Y-m-d'))) ?>">

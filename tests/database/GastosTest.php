@@ -123,8 +123,7 @@ final class GastosTest extends CIUnitTestCase
         $lugares = new \App\Libraries\Lugares();
         $this->assertTrue($lugares->crear((int) $empresa['id'], 'centro', 'Comercial')['ok']);
         $centro = (int) $lugares->lista((int) $empresa['id'], 'centro')[0]['id'];
-
-        $resultado = (new GastoServicio())->crear($usuario, $empresa, [
+        $datos = [
             'concepto'     => 'Peaje',
             'proveedor'    => 'Ruta',
             'fecha'        => '2026-11-09',
@@ -132,7 +131,41 @@ final class GastosTest extends CIUnitTestCase
             'categoria_id' => $categoria['id'],
             'tipo_doc'     => 'Boleta',
             'centro_id'    => (string) $centro,
-        ], null);
+        ];
+
+        $apagado = (new GastoServicio())->crear($usuario, $empresa, $datos, null);
+        $this->assertTrue($apagado['ok'], implode(' ', $apagado['errores']));
+        $this->assertNull($apagado['gasto']['centro_id']);
+
+        $pagina = $this->withSession(['usuario_id' => $usuario['id']])->get('parametros/lugares');
+        $pagina->assertOK();
+        $pagina->assertSee('planes de pago');
+        $pagina->assertDontSee('Comercial');
+        $pagina->assertDontSee('Habilitar para quien rinde');
+        $indice = $this->withSession(['usuario_id' => $usuario['id']])->get('parametros');
+        $indice->assertSee('En planes de pago.');
+        $formulario = $this->withSession(['usuario_id' => $usuario['id']])->get('gastos/nuevo');
+        $formulario->assertOK();
+        $formulario->assertDontSee('Centro de costo');
+        $formulario->assertDontSee('Sucursal');
+        $formulario->assertDontSee('Otro concepto');
+
+        model(EmpresaModel::class)->update($empresa['id'], ['plan' => 'cobro']);
+        $empresa = model(EmpresaModel::class)->find($empresa['id']);
+        $pagado = $this->withSession(['usuario_id' => $usuario['id']])->get('parametros/lugares');
+        $pagado->assertSee('Habilitar para quien rinde');
+        $pagado->assertDontSee('Comercial');
+        $this->withSession(['usuario_id' => $usuario['id']])->get('gastos/nuevo')->assertDontSee('Centro de costo');
+
+        $this->withSession(['usuario_id' => $usuario['id']]);
+        $alta = $this->postForm('parametros/lugares/uso', ['tipo' => 'centro', 'habilitado' => '1']);
+        $alta->assertRedirect();
+        $prendido = $this->withSession(['usuario_id' => $usuario['id']])->get('parametros/lugares');
+        $prendido->assertSee('Comercial');
+        $prendido->assertSee('Deshabilitar para quien rinde');
+        $empresa = model(EmpresaModel::class)->find($empresa['id']);
+
+        $resultado = (new GastoServicio())->crear($usuario, $empresa, $datos, null);
         $this->assertTrue($resultado['ok'], implode(' ', $resultado['errores']));
         $this->assertSame($centro, (int) $resultado['gasto']['centro_id']);
 
@@ -148,15 +181,29 @@ final class GastosTest extends CIUnitTestCase
         $this->assertFalse($ajeno['ok']);
         $this->assertStringContainsString('Elige un centro de la empresa.', implode(' ', $ajeno['errores']));
 
-        $pagina = $this->withSession(['usuario_id' => $usuario['id']])->get('parametros/lugares');
-        $pagina->assertOK();
-        $pagina->assertSee('Comercial');
         $formulario = $this->withSession(['usuario_id' => $usuario['id']])->get('gastos/nuevo');
         $formulario->assertOK();
         $formulario->assertSee('Centro de costo');
         $formulario->assertSee('Comercial');
+        $formulario->assertDontSee('Sucursal');
+        $formulario->assertDontSee('Otro concepto');
         $formulario->assertSee('Debe completar toda la información solicitada.');
         $formulario->assertSee('name="monto" inputmode="decimal" required');
+
+        model(EmpresaModel::class)->update($empresa['id'], ['usa_centro' => 0]);
+        $empresa = model(EmpresaModel::class)->find($empresa['id']);
+        $conserva = (new GastoServicio())->actualizar($usuario, $empresa, $resultado['gasto'], [
+            'concepto'     => 'Peaje',
+            'proveedor'    => 'Ruta',
+            'fecha'        => '2026-11-09',
+            'monto'        => '4000',
+            'categoria_id' => $categoria['id'],
+            'tipo_doc'     => 'Boleta',
+            'centro_id'    => '999',
+        ], null);
+        $this->assertTrue($conserva['ok'], implode(' ', $conserva['errores']));
+        $this->assertSame($centro, (int) $conserva['gasto']['centro_id']);
+        $this->withSession(['usuario_id' => $usuario['id']])->get('gastos/nuevo')->assertDontSee('Centro de costo');
     }
 
     /**

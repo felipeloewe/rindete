@@ -143,6 +143,7 @@ $routes->group('', ['filter' => 'auth'], static function (RouteCollection $route
     $routes->post('parametros/tipos', 'Parametros::tipo');
     $routes->post('parametros/preasientos', 'Parametros::preasiento');
     $routes->post('parametros/lugares', 'Parametros::lugar');
+    $routes->post('parametros/lugares/uso', 'Parametros::lugarUso');
     $routes->post('parametros/lugares/quitar', 'Parametros::quitarLugar');
     $routes->post('parametros/tipos/(:num)', 'Parametros::actualizarTipo/$1');
 

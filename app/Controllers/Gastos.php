@@ -309,12 +309,18 @@ class Gastos extends BaseController
         }
 
         $lugares = new \App\Libraries\Lugares();
+        $centros = $lugares->ofrece($empresa, 'centro') ? $lugares->lista((int) $empresa['id'], 'centro', true) : [];
+        $sucursales = $lugares->ofrece($empresa, 'sucursal') ? $lugares->lista((int) $empresa['id'], 'sucursal', true) : [];
+        $conceptos = $lugares->ofrece($empresa, 'concepto') ? $lugares->lista((int) $empresa['id'], 'concepto', true) : [];
 
         return [
             'gasto'      => $gasto,
-            'centros'    => $lugares->lista((int) $empresa['id'], 'centro', true),
-            'sucursales' => $lugares->lista((int) $empresa['id'], 'sucursal', true),
-            'conceptos'  => $lugares->lista((int) $empresa['id'], 'concepto', true),
+            'centros'    => $centros,
+            'sucursales' => $sucursales,
+            'conceptos'  => $conceptos,
+            'usaCentro'   => $centros !== [],
+            'usaSucursal' => $sucursales !== [],
+            'usaConcepto' => $conceptos !== [],
             'pais'       => $pais,
             'moneda'     => (string) ($gasto['moneda'] ?? ($pais['moneda'] ?? 'USD')),
             'valor'      => $valor,

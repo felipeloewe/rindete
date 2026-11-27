@@ -146,16 +146,16 @@ class GastoServicio
             $errores[] = 'Ese tipo de documento no está vigente.';
         }
         $lugares = new Lugares();
-        $centroId = (int) ($input['centro_id'] ?? 0);
-        $sucursalId = (int) ($input['sucursal_id'] ?? 0);
-        $conceptoExtraId = (int) ($input['concepto_extra_id'] ?? 0);
-        if ($centroId > 0 && ! $lugares->activo((int) $empresa['id'], 'centro', $centroId)) {
+        $centroId = $this->lugarElegido($lugares, $empresa, $actual, $input, 'centro', 'centro_id');
+        $sucursalId = $this->lugarElegido($lugares, $empresa, $actual, $input, 'sucursal', 'sucursal_id');
+        $conceptoExtraId = $this->lugarElegido($lugares, $empresa, $actual, $input, 'concepto', 'concepto_extra_id');
+        if ($centroId < 0) {
             $errores[] = 'Elige un centro de la empresa.';
         }
-        if ($sucursalId > 0 && ! $lugares->activo((int) $empresa['id'], 'sucursal', $sucursalId)) {
+        if ($sucursalId < 0) {
             $errores[] = 'Elige una sucursal de la empresa.';
         }
-        if ($conceptoExtraId > 0 && ! $lugares->activo((int) $empresa['id'], 'concepto', $conceptoExtraId)) {
+        if ($conceptoExtraId < 0) {
             $errores[] = 'Elige un concepto de la empresa.';
         }
         if ($errores !== []) {
@@ -240,6 +240,27 @@ class GastoServicio
         return is_array($guardado)
             ? ['ok' => true, 'errores' => [], 'gasto' => $guardado]
             : ['ok' => false, 'errores' => ['No pudimos guardar el gasto.']];
+    }
+
+    /**
+     * Un dato apagado no se elige en la carga. Si el gasto ya lo tenía, se conserva.
+     * Devuelve -1 cuando el id enviado no pertenece a la empresa.
+     *
+     * @param array<string, mixed>      $empresa
+     * @param array<string, mixed>|null $actual
+     * @param array<string, mixed>      $input
+     */
+    private function lugarElegido(Lugares $lugares, array $empresa, ?array $actual, array $input, string $tipo, string $campo): int
+    {
+        if (! $lugares->ofrece($empresa, $tipo)) {
+            return $actual === null ? 0 : (int) ($actual[$campo] ?? 0);
+        }
+        $id = (int) ($input[$campo] ?? 0);
+        if ($id > 0 && ! $lugares->activo((int) $empresa['id'], $tipo, $id)) {
+            return -1;
+        }
+
+        return $id;
     }
 
     /**

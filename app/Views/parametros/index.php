@@ -52,7 +52,7 @@
     </a>
     <a class="losa losa-gastos" href="<?= base_url('parametros/lugares') ?>">
         <strong>Centros y sucursales</strong>
-        <span>Lo que la carga puede anotar en el gasto.</span>
+        <span><?= ! empty($dePago) ? 'El administrador elige si quien rinde lo anota.' : 'En planes de pago.' ?></span>
     </a>
 </div>
 <?= $this->endSection() ?>

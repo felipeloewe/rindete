@@ -78,7 +78,7 @@ class Parametros extends BaseController
         ],
         'lugares' => [
             'titulo' => 'Centros y sucursales',
-            'bajada' => 'Centros de costo, sucursales y otros conceptos que la carga puede anotar en el gasto.',
+            'bajada' => 'Centro de costo, sucursal y otro concepto. En un plan de pago el administrador decide si quien rinde los anota.',
         ],
         'formas' => [
             'titulo' => 'Formas de pago',
@@ -96,6 +96,7 @@ class Parametros extends BaseController
 
         return view('parametros/index', [
             'preasientos' => Modulos::activo($empresa, 'preasientos'),
+            'dePago'      => (new \App\Libraries\Lugares())->dePago($empresa),
         ]);
     }
 
@@ -194,6 +195,12 @@ class Parametros extends BaseController
                 'centro'   => (new \App\Libraries\Lugares())->lista($empresaId, 'centro'),
                 'sucursal' => (new \App\Libraries\Lugares())->lista($empresaId, 'sucursal'),
                 'concepto' => (new \App\Libraries\Lugares())->lista($empresaId, 'concepto'),
+            ],
+            'dePago'      => (new \App\Libraries\Lugares())->dePago($empresa),
+            'lugaresUso'  => [
+                'centro'   => (new \App\Libraries\Lugares())->ofrece($empresa, 'centro'),
+                'sucursal' => (new \App\Libraries\Lugares())->ofrece($empresa, 'sucursal'),
+                'concepto' => (new \App\Libraries\Lugares())->ofrece($empresa, 'concepto'),
             ],
         ];
     }
@@ -356,9 +363,14 @@ class Parametros extends BaseController
         if ($usuario === null || $empresa === null) {
             return $this->fuera($empresa);
         }
-        $creado = (new \App\Libraries\Lugares())->crear(
+        $lugares = new \App\Libraries\Lugares();
+        $tipo = (string) $this->request->getPost('tipo');
+        if (! $lugares->ofrece($empresa, $tipo)) {
+            return redirect()->to('/parametros/lugares')->with('error', 'Habilita ese dato para la empresa antes de agregarlo.');
+        }
+        $creado = $lugares->crear(
             (int) $empresa['id'],
-            (string) $this->request->getPost('tipo'),
+            $tipo,
             (string) $this->request->getPost('nombre'),
         );
         if (! $creado['ok']) {
@@ -366,6 +378,29 @@ class Parametros extends BaseController
         }
 
         return redirect()->to('/parametros/lugares')->with('ok', 'Quedó disponible para la carga.');
+    }
+
+    public function lugarUso()
+    {
+        [$usuario, $empresa] = $this->admin();
+        if ($usuario === null || $empresa === null) {
+            return $this->fuera($empresa);
+        }
+        $lugares = new \App\Libraries\Lugares();
+        if (! $lugares->dePago($empresa)) {
+            return redirect()->to('/parametros/lugares')->with('error', 'Centro de costo, sucursal y otro concepto están en los planes de pago.');
+        }
+        $tipo = (string) $this->request->getPost('tipo');
+        if (! isset(\App\Libraries\Lugares::USO[$tipo])) {
+            return redirect()->to('/parametros/lugares')->with('error', 'Ese dato no existe.');
+        }
+        $prendido = (string) $this->request->getPost('habilitado') === '1';
+        $lugares->marcar((int) $empresa['id'], $tipo, $prendido);
+
+        return redirect()->to('/parametros/lugares')->with(
+            'ok',
+            $prendido ? 'Quien rinde ya puede anotarlo en el gasto.' : 'Quien rinde ya no lo ve en el gasto.',
+        );
     }
 
     public function quitarLugar()
